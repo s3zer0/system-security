@@ -14,12 +14,7 @@ PyYAML CVE-2020-1747 취약점 테스트용 Docker 컨테이너
    docker build -t pyyaml-vuln .
    ```
 
-2. **컨테이너 실행**
-   ```bash
-   docker run -p 5000:5000 pyyaml-vuln
-   ```
-
-3. **Docker 이미지를 tar 파일로 저장**
+2. **Docker 이미지를 tar 파일로 저장**
    ```bash
    docker save -o test_target/pyyaml-vuln.tar pyyaml-vuln
    ```
