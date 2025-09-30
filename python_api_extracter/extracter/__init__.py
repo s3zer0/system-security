@@ -16,5 +16,3 @@ __all__ = [
     'config',
     'Config'
 ]
-
-__version__ = '1.0.0'

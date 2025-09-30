@@ -37,8 +37,9 @@ def main():
             obj = getattr(mod, name)
         except Exception:
             continue
-        if callable(obj):
-            apis.add(f"{modname}.{name}")
+        # 함수나 메서드만 추가 (클래스는 제외)
+        if inspect.isfunction(obj) or inspect.ismethod(obj) or inspect.isbuiltin(obj) or inspect.isroutine(obj):
+            apis.add(f"{name}")
 
     # 패키지인 경우 하위 모듈을 탐색
     if hasattr(mod, '__path__'):
@@ -57,8 +58,11 @@ def main():
                     obj = getattr(submod, name)
                 except Exception:
                     continue
-                if callable(obj):
-                    apis.add(f"{subname}.{name}")
+                # 함수나 메서드만 추가 (클래스는 제외)
+                if inspect.isfunction(obj) or inspect.ismethod(obj) or inspect.isbuiltin(obj) or inspect.isroutine(obj):
+                    # 최상위 패키지명을 제외한 서브모듈 경로만 포함
+                    submodule_path = subname.replace(modname + '.', '')
+                    apis.add(f"{submodule_path}.{name}")
 
     # 추출된 API 목록을 JSON 형식으로 출력
     print(json.dumps({"functions": sorted(apis)}))
