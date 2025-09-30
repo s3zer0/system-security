@@ -67,17 +67,17 @@ def clean_scan_results(output_file: str):
         for vuln in vulnerabilities:
             cleaned_vuln = {
                 "id": vuln.get("VulnerabilityID", ""),
-                "package": {
-                    "name": vuln.get("PkgName", ""),
-                    "version": vuln.get("InstalledVersion", ""),
-                    "type": package_type
-                },
+                "package_name": vuln.get("PkgName", ""),
+                "installed_version": vuln.get("InstalledVersion", ""),
+                "package_type": package_type,
                 "severity": vuln.get("Severity", "UNKNOWN"),
                 "title": vuln.get("Title", ""),
                 "description": vuln.get("Description", ""),
                 "fixed_version": vuln.get("FixedVersion", ""),
-                "published_date": vuln.get("PublishedDate", ""),
-                "cvss": vuln.get("CVSS", {})
+                "cvss": vuln.get("CVSS", {}),
+                "references": vuln.get("References", []),
+                "primary_url": vuln.get("PrimaryURL", ""),
+                "data_source": vuln.get("DataSource", {})
             }
 
             cleaned_data["vulnerabilities"].append(cleaned_vuln)
