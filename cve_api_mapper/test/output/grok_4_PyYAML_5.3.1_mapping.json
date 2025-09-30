@@ -1,0 +1,8 @@
+{
+  "CVE-2020-14343": {
+    "apis": [
+      "yaml.load"
+    ],
+    "reason": "The phrase 'flaw in the yaml.load() function' in the CVE description indicates that yaml.load is directly related to the vulnerability, as it allows a remote attacker to execute arbitrary code by persuading a victim to open a specially-crafted YAML file."
+  }
+}

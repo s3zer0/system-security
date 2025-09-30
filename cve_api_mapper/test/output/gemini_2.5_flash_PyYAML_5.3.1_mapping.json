@@ -1,0 +1,22 @@
+{
+  "CVE-2020-14343": {
+    "apis": [
+      "yaml.load",
+      "yaml.full_load",
+      "yaml.unsafe_load",
+      "yaml.Loader",
+      "yaml.FullLoader",
+      "yaml.UnsafeLoader",
+      "yaml.constructor.Constructor",
+      "yaml.constructor.FullConstructor",
+      "yaml.constructor.UnsafeConstructor",
+      "yaml.load_all",
+      "yaml.full_load_all",
+      "yaml.unsafe_load_all",
+      "yaml.loader.Loader",
+      "yaml.loader.FullLoader",
+      "yaml.loader.UnsafeLoader"
+    ],
+    "reason": "The CVE description explicitly states, 'A vulnerability was discovered in the PyYAML library caused by a flaw in the yaml.load() function. By persuading a victim to open a specially-crafted YAML file, a remote attacker could execute arbitrary code on the system.' This directly implicates `yaml.load` and its related, less safe loading functions (`full_load`, `unsafe_load`) and their underlying loader classes (`Loader`, `FullLoader`, `UnsafeLoader`) and constructors (`Constructor`, `FullConstructor`, `UnsafeConstructor`) as they are responsible for parsing and constructing Python objects from YAML data, which can lead to arbitrary code execution with specially crafted input. The `_all` variants are also included as they perform similar loading operations for multiple documents."
+  }
+}

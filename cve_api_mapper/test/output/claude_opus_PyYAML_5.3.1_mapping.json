@@ -1,0 +1,15 @@
+{
+  "CVE-2020-14343": {
+    "apis": [
+      "yaml.load",
+      "yaml.load_all",
+      "yaml.Loader",
+      "yaml.loader.Loader",
+      "yaml.UnsafeLoader",
+      "yaml.loader.UnsafeLoader",
+      "yaml.unsafe_load",
+      "yaml.unsafe_load_all"
+    ],
+    "reason": "The CVE description explicitly states 'a flaw in the yaml.load() function' and mentions that 'a remote attacker could execute arbitrary code on the system' by using 'a specially-crafted YAML file'. The yaml.load and yaml.load_all functions are directly named as vulnerable. The Loader, UnsafeLoader classes and unsafe_load variants are included because they use the same unsafe deserialization mechanism that allows arbitrary code execution when processing untrusted YAML input."
+  }
+}

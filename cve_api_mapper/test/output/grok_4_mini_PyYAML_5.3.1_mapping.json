@@ -1,0 +1,8 @@
+{
+  "CVE-2020-14343": {
+    "apis": [
+      "yaml.load"
+    ],
+    "reason": "The CVE description explicitly states 'a flaw in the yaml.load() function' that allows arbitrary code execution when processing a specially-crafted YAML file, indicating this API is directly responsible for the vulnerable deserialization behavior."
+  }
+}

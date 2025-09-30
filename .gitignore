@@ -3,7 +3,6 @@ test_target/*.tar
 test_target/*.zip
 
 # Database results
-DB/*.json
 !DB/.gitkeep
 
 # Python cache
@@ -14,6 +13,7 @@ __pycache__/
 
 # Virtual environment
 venv/
+syssec/
 env/
 .env
 

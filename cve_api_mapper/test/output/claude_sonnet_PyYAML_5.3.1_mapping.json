@@ -1,0 +1,14 @@
+{
+  "CVE-2020-14343": {
+    "apis": [
+      "yaml.load",
+      "yaml.Loader",
+      "yaml.UnsafeLoader",
+      "yaml.loader.Loader",
+      "yaml.loader.UnsafeLoader",
+      "yaml.constructor.Constructor",
+      "yaml.constructor.UnsafeConstructor"
+    ],
+    "reason": "The CVE description explicitly states 'a flaw in the yaml.load() function' that allows 'a remote attacker could execute arbitrary code on the system' when processing a specially-crafted YAML file. The yaml.load() function is directly mentioned as vulnerable. The yaml.Loader and yaml.UnsafeLoader classes are the default and unsafe loader implementations used by yaml.load() that enable arbitrary Python object construction, which is the root cause of arbitrary code execution. The yaml.loader.Loader and yaml.loader.UnsafeLoader are the module-qualified versions of these loaders. The yaml.constructor.Constructor and yaml.constructor.UnsafeConstructor are the constructor classes used by these loaders to instantiate Python objects during deserialization, which is the mechanism that enables the arbitrary code execution vulnerability."
+  }
+}
