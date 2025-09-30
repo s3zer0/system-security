@@ -1,73 +1,73 @@
-# system-security
-25-2 고려대학교 세종캠퍼스 시스템보안 4조
+# System Security Project
 
-## 프로젝트 구조
+## 1\. 프로젝트 개요
 
-### test_target/
-PyYAML CVE-2020-1747 취약점 테스트용 Docker 컨테이너
+이 프로젝트는 **컨테이너 이미지의 취약점을 분석**하고, 발견된 **CVE(Common Vulnerabilities and Exposures)가 소스 코드의 어떤 API와 관련**이 있는지 자동으로 매핑해주는 시스템입니다.
 
-### python_api_extracter/
-Trivy 스캔 결과에서 CVE와 API 매핑을 추출하는 도구
+## 2\. 프로젝트 구조
 
 ```
-python_api_extracter/
-├── main.py                              # 메인 진입점
-├── extracter/                           # 핵심 모듈들
-│   ├── __init__.py                      # 패키지 초기화
-│   ├── api_extracter.py                 # 통합 API
-│   ├── trivy_parser.py                  # Trivy 보고서 파싱
-│   ├── package_api_extractor.py         # 패키지 API 추출
-│   └── config.py                        # 설정 관리
-└── scripts/                             # 유틸리티 스크립트들
-    ├── extract_apis.py                  # API 추출 스크립트
-    └── detect_modules.py                # 모듈 탐지 스크립트
+/
+├── trivy_extracter/ # Trivy를 이용한 컨테이너 취약점 스캔 및 결과 정제
+├── python_api_extracter/ # Python 라이브러리의 API 목록 추출
+├── cve_api_mapper/ # LLM을 이용해 CVE와 API를 매핑
+├── test_target/ # 취약점 분석을 위한 테스트용 Docker 컨테이너
+└── DB/ # 분석 결과 데이터베이스
 ```
 
-### DB/
-분석 결과 저장소
-- `trivy_analysis_result.json`: Trivy 스캔 결과
-- `lib2cve2api.json`: CVE-API 매핑 결과
+## 3\. 시스템 워크플로우
 
-## 사용 방법
+1.  **컨테이너 이미지 스캔 (Trivy)**: `trivy_extracter`가 Docker 이미지를 스캔하여 `trivy_analysis_result.json`에 취약점 정보를 저장합니다.
+2.  **API 목록 추출**: `python_api_extracter`가 스캔된 라이브러리들의 공개 API를 추출하여 `lib2cve2api.json`에 저장합니다.
+3.  **CVE-API 매핑 (LLM)**: `cve_api_mapper`가 `trivy_analysis_result.json`의 CVE 설명과 `lib2cve2api.json`의 API 목록을 기반으로, LLM(GPT-4)을 통해 어떤 API가 각 CVE에 해당하는지 분석하고 `gpt5_results.json`에 저장합니다.
 
-### 1. Docker 이미지 빌드 및 스캔
+## 4\. 사용 방법
 
-```bash
-# Docker 이미지 빌드
-cd test_target
-docker build -t pyyaml-vuln .
+### 4.1. 환경 설정
 
-# Docker 이미지를 tar 파일로 저장
-docker save -o pyyaml-vuln.tar pyyaml-vuln
+  - **API 키 설정**: `.env.example` 파일을 `.env`로 복사하고, 사용하는 LLM의 API 키를 입력합니다.
 
-# Trivy로 스캔 (별도 실행 필요)
-```
+### 4.2. 실행
 
-### 2. API 추출 도구 사용
+1.  **테스트용 Docker 이미지 빌드 및 저장**:
 
-```bash
-cd python_api_extracter
+    ```bash
+    cd test_target
+    docker build -t pyyaml-vuln .
+    docker save -o pyyaml-vuln.tar pyyaml-vuln
+    cd ..
+    ```
 
-# Trivy 결과에서 CVE-API 매핑 생성
-python3 main.py ../DB/trivy_analysis_result.json -o ../DB/lib2cve2api.json
+2.  **Trivy 취약점 스캔**:
 
-# 또는 표준 출력으로 결과 확인
-python3 main.py ../DB/trivy_analysis_result.json
-```
+    ```bash
+    cd trivy_extracter
+    python main.py ../test_target/pyyaml-vuln.tar ../DB/trivy_analysis_result.json
+    cd ..
+    ```
 
-## 주요 기능
+3.  **라이브러리 API 추출**:
 
-### python_api_extracter
-- **CVE 매핑**: Trivy 결과에서 Python 패키지별 CVE 추출
-- **API 추출**: 각 패키지 버전별 공개 API 목록 생성
-- **통합 매핑**: CVE와 API 정보를 결합한 JSON 출력
-- **모듈식 설계**: 확장 가능한 구조로 개별 모듈 재사용 가능
+    ```bash
+    cd python_api_extracter
+    python main.py ../DB/trivy_analysis_result.json -o ../DB/lib2cve2api.json
+    cd ..
+    ```
 
-### 지원 형식
-- **입력**: Trivy JSON 보고서 (표준/사용자 정의 형식)
-- **출력**: JSON 형식의 CVE-API 매핑
+4.  **CVE-API 매핑**:
 
-## 주요 취약점
-- **CVE-2020-1747**: PyYAML 5.3.1의 yaml.load() 취약점
-- **External APIs**: 5개의 Flask 엔드포인트
-- **Internal APIs**: 내부 yaml.load() 호출들
+    ```bash
+    cd cve_api_mapper
+    python main.py
+    cd ..
+    ```
+
+## 5\. 주요 기능
+
+  - **자동화된 취약점 분석**: Trivy를 통해 컨테이너 이미지의 취약점을 자동으로 스캔하고, 결과를 정제합니다.
+  - **정확한 API 추출**: 각 라이브러리 버전별로 실제 사용 가능한 공개 API 목록을 동적으로 추출합니다.
+  - **지능적인 CVE-API 매핑**: 최신 언어 모델(LLM)을 활용하여 CVE의 자연어 설명과 API 명세를 분석, 연관 관계를 추론합니다.
+
+## 6\. 라이선스
+
+이 프로젝트는 MIT 라이선스를 따릅니다.
