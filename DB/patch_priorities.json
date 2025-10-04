@@ -1,0 +1,297 @@
+{
+  "modules_by_priority": [
+    {
+      "package_name": "setuptools",
+      "current_version": "58.1.0",
+      "priority_level": "CRITICAL",
+      "risk_score": 100,
+      "docker_external_exposure": true,
+      "vulnerabilities": [
+        {
+          "cve_id": "CVE-2022-40897",
+          "severity": "HIGH",
+          "cvss_score": 5.9,
+          "vulnerable_functions": [
+            "setuptools.package_index.distros_for_url",
+            "setuptools.package_index.interpret_distro_name",
+            "setuptools.package_index.parse_bdist_wininst"
+          ],
+          "functions_used_in_code": true,
+          "external_api_exposed": true,
+          "exploit_scenario": "자동 평가: HIGH 심각도 취약점 - Docker 외부 노출 ⚠️",
+          "potential_impact": "CVSS 점수 5.9는 중간 영향을 나타냄 - 외부 공격자가 직접 접근 가능"
+        },
+        {
+          "cve_id": "CVE-2024-6345",
+          "severity": "HIGH",
+          "cvss_score": 8.8,
+          "vulnerable_functions": [
+            "setuptools.package_index.distros_for_url",
+            "setuptools.package_index.interpret_distro_name"
+          ],
+          "functions_used_in_code": true,
+          "external_api_exposed": true,
+          "exploit_scenario": "자동 평가: HIGH 심각도 취약점 - Docker 외부 노출 ⚠️",
+          "potential_impact": "CVSS 점수 8.8는 높은 영향을 나타냄 - 외부 공격자가 직접 접근 가능"
+        },
+        {
+          "cve_id": "CVE-2025-47273",
+          "severity": "HIGH",
+          "cvss_score": 8.8,
+          "vulnerable_functions": [
+            "setuptools.package_index.distros_for_url",
+            "setuptools.package_index.interpret_distro_name",
+            "setuptools.package_index.parse_bdist_wininst"
+          ],
+          "functions_used_in_code": true,
+          "external_api_exposed": true,
+          "exploit_scenario": "자동 평가: HIGH 심각도 취약점 - Docker 외부 노출 ⚠️",
+          "potential_impact": "CVSS 점수 8.8는 높은 영향을 나타냄 - 외부 공격자가 직접 접근 가능"
+        }
+      ],
+      "patching": {
+        "target_version": "78.1.1",
+        "upgrade_command": "pip install setuptools==78.1.1",
+        "breaking_changes": [],
+        "compatibility_notes": "자동 권장사항입니다. 릴리스 노트를 확인하세요.",
+        "testing_steps": [
+          "전체 테스트 스위트 실행",
+          "애플리케이션 기능 확인"
+        ]
+      },
+      "real_world_cases": [],
+      "overall_recommendation": "즉시 패치 권장. 점수: 100/100 - Docker 외부 노출로 인한 긴급 조치 필요"
+    },
+    {
+      "package_name": "PyYAML",
+      "current_version": "5.3.1",
+      "priority_level": "HIGH",
+      "risk_score": 69,
+      "docker_external_exposure": false,
+      "vulnerabilities": [
+        {
+          "cve_id": "CVE-2020-14343",
+          "severity": "CRITICAL",
+          "cvss_score": 9.8,
+          "vulnerable_functions": [
+            "yaml.full_load"
+          ],
+          "functions_used_in_code": false,
+          "external_api_exposed": false,
+          "exploit_scenario": "자동 평가: CRITICAL 심각도 취약점",
+          "potential_impact": "CVSS 점수 9.8는 높은 영향을 나타냄"
+        }
+      ],
+      "patching": {
+        "target_version": "5.4",
+        "upgrade_command": "pip install PyYAML==5.4",
+        "breaking_changes": [],
+        "compatibility_notes": "자동 권장사항입니다. 릴리스 노트를 확인하세요.",
+        "testing_steps": [
+          "전체 테스트 스위트 실행",
+          "애플리케이션 기능 확인"
+        ]
+      },
+      "real_world_cases": [],
+      "overall_recommendation": "계획된 패치 권장. 점수: 69/100"
+    },
+    {
+      "package_name": "Flask",
+      "current_version": "2.0.2",
+      "priority_level": "HIGH",
+      "risk_score": 52,
+      "docker_external_exposure": false,
+      "vulnerabilities": [
+        {
+          "cve_id": "CVE-2023-30861",
+          "severity": "HIGH",
+          "cvss_score": 7.5,
+          "vulnerable_functions": [],
+          "functions_used_in_code": false,
+          "external_api_exposed": false,
+          "exploit_scenario": "자동 평가: HIGH 심각도 취약점",
+          "potential_impact": "CVSS 점수 7.5는 높은 영향을 나타냄"
+        }
+      ],
+      "patching": {
+        "target_version": "2.3.2, 2.2.5",
+        "upgrade_command": "pip install Flask==2.3.2, 2.2.5",
+        "breaking_changes": [],
+        "compatibility_notes": "자동 권장사항입니다. 릴리스 노트를 확인하세요.",
+        "testing_steps": [
+          "전체 테스트 스위트 실행",
+          "애플리케이션 기능 확인"
+        ]
+      },
+      "real_world_cases": [],
+      "overall_recommendation": "계획된 패치 권장. 점수: 52/100"
+    },
+    {
+      "package_name": "Werkzeug",
+      "current_version": "2.0.2",
+      "priority_level": "MEDIUM",
+      "risk_score": 40,
+      "docker_external_exposure": false,
+      "vulnerabilities": [
+        {
+          "cve_id": "CVE-2023-25577",
+          "severity": "HIGH",
+          "cvss_score": 7.5,
+          "vulnerable_functions": [
+            "werkzeug.wrappers.request.get_data",
+            "werkzeug.wrappers.request.data"
+          ],
+          "functions_used_in_code": false,
+          "external_api_exposed": false,
+          "exploit_scenario": "자동 평가: HIGH 심각도 취약점",
+          "potential_impact": "CVSS 점수 7.5는 높은 영향을 나타냄"
+        },
+        {
+          "cve_id": "CVE-2024-34069",
+          "severity": "HIGH",
+          "cvss_score": 7.5,
+          "vulnerable_functions": [
+            "werkzeug.debug.get_current_traceback",
+            "werkzeug.debug.repr.debug_repr"
+          ],
+          "functions_used_in_code": false,
+          "external_api_exposed": false,
+          "exploit_scenario": "자동 평가: HIGH 심각도 취약점",
+          "potential_impact": "CVSS 점수 7.5는 높은 영향을 나타냄"
+        },
+        {
+          "cve_id": "CVE-2023-46136",
+          "severity": "MEDIUM",
+          "cvss_score": 7.5,
+          "vulnerable_functions": [
+            "werkzeug.formparser.parse_form_data",
+            "werkzeug.sansio.response.parse_content_range_header"
+          ],
+          "functions_used_in_code": false,
+          "external_api_exposed": false,
+          "exploit_scenario": "자동 평가: MEDIUM 심각도 취약점",
+          "potential_impact": "CVSS 점수 7.5는 높은 영향을 나타냄"
+        },
+        {
+          "cve_id": "CVE-2024-49766",
+          "severity": "MEDIUM",
+          "cvss_score": 3.7,
+          "vulnerable_functions": [
+            "werkzeug.utils.safe_join"
+          ],
+          "functions_used_in_code": false,
+          "external_api_exposed": false,
+          "exploit_scenario": "자동 평가: MEDIUM 심각도 취약점",
+          "potential_impact": "CVSS 점수 3.7는 중간 영향을 나타냄"
+        },
+        {
+          "cve_id": "CVE-2024-49767",
+          "severity": "MEDIUM",
+          "cvss_score": 7.5,
+          "vulnerable_functions": [
+            "werkzeug.formparser.MultiPartParser",
+            "werkzeug.formparser.parse_form_data"
+          ],
+          "functions_used_in_code": false,
+          "external_api_exposed": false,
+          "exploit_scenario": "자동 평가: MEDIUM 심각도 취약점",
+          "potential_impact": "CVSS 점수 7.5는 높은 영향을 나타냄"
+        },
+        {
+          "cve_id": "CVE-2023-23934",
+          "severity": "LOW",
+          "cvss_score": 3.5,
+          "vulnerable_functions": [
+            "werkzeug.http.parse_cookie"
+          ],
+          "functions_used_in_code": false,
+          "external_api_exposed": false,
+          "exploit_scenario": "자동 평가: LOW 심각도 취약점",
+          "potential_impact": "CVSS 점수 3.5는 중간 영향을 나타냄"
+        }
+      ],
+      "patching": {
+        "target_version": "3.0.6",
+        "upgrade_command": "pip install Werkzeug==3.0.6",
+        "breaking_changes": [],
+        "compatibility_notes": "자동 권장사항입니다. 릴리스 노트를 확인하세요.",
+        "testing_steps": [
+          "전체 테스트 스위트 실행",
+          "애플리케이션 기능 확인"
+        ]
+      },
+      "real_world_cases": [],
+      "overall_recommendation": "계획된 패치 권장. 점수: 40/100"
+    },
+    {
+      "package_name": "pip",
+      "current_version": "23.0.1",
+      "priority_level": "MEDIUM",
+      "risk_score": 32,
+      "docker_external_exposure": false,
+      "vulnerabilities": [
+        {
+          "cve_id": "CVE-2023-5752",
+          "severity": "MEDIUM",
+          "cvss_score": 3.3,
+          "vulnerable_functions": [],
+          "functions_used_in_code": false,
+          "external_api_exposed": false,
+          "exploit_scenario": "자동 평가: MEDIUM 심각도 취약점",
+          "potential_impact": "CVSS 점수 3.3는 중간 영향을 나타냄"
+        },
+        {
+          "cve_id": "CVE-2025-8869",
+          "severity": "MEDIUM",
+          "cvss_score": 5.3,
+          "vulnerable_functions": [],
+          "functions_used_in_code": false,
+          "external_api_exposed": false,
+          "exploit_scenario": "자동 평가: MEDIUM 심각도 취약점",
+          "potential_impact": "CVSS 점수 5.3는 중간 영향을 나타냄"
+        }
+      ],
+      "patching": {
+        "target_version": "25.2",
+        "upgrade_command": "pip install pip==25.2",
+        "breaking_changes": [],
+        "compatibility_notes": "자동 권장사항입니다. 릴리스 노트를 확인하세요.",
+        "testing_steps": [
+          "전체 테스트 스위트 실행",
+          "애플리케이션 기능 확인"
+        ]
+      },
+      "real_world_cases": [],
+      "overall_recommendation": "계획된 패치 권장. 점수: 32/100"
+    }
+  ],
+  "summary": {
+    "total_modules": 5,
+    "critical_modules": 1,
+    "high_priority_modules": 2,
+    "medium_priority_modules": 2,
+    "low_priority_modules": 0,
+    "total_vulnerabilities": 13,
+    "external_exposed_modules": 1
+  },
+  "patching_roadmap": {
+    "immediate": [
+      "setuptools"
+    ],
+    "this_week": [
+      "PyYAML",
+      "Flask"
+    ],
+    "this_month": [
+      "Werkzeug",
+      "pip"
+    ],
+    "when_convenient": []
+  },
+  "overall_assessment": "폴백 우선순위 지정이 사용되었습니다. 외부 노출된 모듈과 위험 점수 >= 75인 모듈에 즉시 집중하세요.",
+  "metadata": {
+    "total_vulnerabilities": 13,
+    "scan_date": "2025-09-30T01:28:51.523641371Z",
+    "target": "../test_target/pyyaml-vuln.tar"
+  }
+}
