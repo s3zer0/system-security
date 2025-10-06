@@ -7,7 +7,8 @@ import logging
 base_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(base_dir))
 
-from cve_api_mapper.mapper.cve_api_mapper import CveApiMapper, setup_logging
+import CveApiMapper
+import setup_logging
 
 def main():
     """
@@ -27,8 +28,8 @@ def main():
     api_input_file = os.path.join(db_dir, "lib2cve2api.json")
     
     # 출력 디렉토리 설정 (모델별로 구분)
-    output_dir = os.path.join("", "results")
-    llm_raw_output_dir = os.path.join("", "raw_responses")
+    output_dir = os.path.join(db_dir, "results")
+    llm_raw_output_dir = os.path.join(db_dir, "raw_responses")
     
     # 출력 디렉토리 생성
     os.makedirs(output_dir, exist_ok=True)

@@ -50,8 +50,8 @@
         }
       ],
       "patching": {
-        "target_version": "78.1.1",
-        "upgrade_command": "pip install setuptools==78.1.1",
+        "target_version": "70.0.0",
+        "upgrade_command": "pip install setuptools==70.0.0",
         "breaking_changes": [],
         "compatibility_notes": "자동 권장사항입니다. 릴리스 노트를 확인하세요.",
         "testing_steps": [
@@ -66,7 +66,7 @@
       "package_name": "PyYAML",
       "current_version": "5.3.1",
       "priority_level": "HIGH",
-      "risk_score": 69,
+      "risk_score": 69, 
       "docker_external_exposure": false,
       "vulnerabilities": [
         {
@@ -211,8 +211,8 @@
         }
       ],
       "patching": {
-        "target_version": "3.0.6",
-        "upgrade_command": "pip install Werkzeug==3.0.6",
+        "target_version": "3.0.1, 2.3.8",
+        "upgrade_command": "pip install Werkzeug==3.0.1, 2.3.8",
         "breaking_changes": [],
         "compatibility_notes": "자동 권장사항입니다. 릴리스 노트를 확인하세요.",
         "testing_steps": [
@@ -252,8 +252,8 @@
         }
       ],
       "patching": {
-        "target_version": "25.2",
-        "upgrade_command": "pip install pip==25.2",
+        "target_version": "23.3",
+        "upgrade_command": "pip install pip==23.3",
         "breaking_changes": [],
         "compatibility_notes": "자동 권장사항입니다. 릴리스 노트를 확인하세요.",
         "testing_steps": [

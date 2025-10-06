@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from enum import Enum
 from dotenv import load_dotenv
 
-# OpenAI API 사용 예시 - Anthropic이나 다른 제공자로도 변경 가능
-import openai
+# Anthropic API 사용
+import anthropic
 
 # .env 파일에서 환경 변수 로드
 load_dotenv()
@@ -40,15 +40,15 @@ class VulnerabilityContext:
 class PatchPriorityEvaluator:
     """취약점 패치 우선순위를 평가하는 클래스"""
     
-    def __init__(self, api_key: str, model: str = "gpt-4"):
+    def __init__(self, api_key: str, model: str = "claude-sonnet-4-5-20250929"):
         """
         LLM 자격 증명으로 평가자 초기화
         
         Args:
-            api_key: OpenAI API 키 (또는 다른 제공자)
-            model: 사용할 모델 이름
+            api_key: Anthropic API 키
+            model: 사용할 Claude 모델 이름
         """
-        self.client = openai.OpenAI(api_key=api_key)
+        self.client = anthropic.Anthropic(api_key=api_key)
         self.model = model
     
     def load_data(self, 
@@ -332,9 +332,8 @@ class PatchPriorityEvaluator:
    - 프로덕션 환경에서의 유사한 사고
    - 보안 권고사항 링크
 
-응답은 JSON 형식으로 제공해주세요:
+응답은 반드시 유효한 JSON 형식으로만 제공해주세요. JSON 코드 블록(```)이나 다른 텍스트 없이 순수 JSON만 출력하세요:
 
-```json
 {{
   "modules_by_priority": [
     {{
@@ -387,7 +386,6 @@ class PatchPriorityEvaluator:
   }},
   "overall_assessment": "전체 보안 평가 및 행동 계획"
 }}
-```
 
 기억하세요: 위에 나열된 모든 {len(modules)}개 모듈을 분석해야 합니다.
 """
@@ -407,27 +405,36 @@ class PatchPriorityEvaluator:
         prompt = self.create_llm_prompt(modules)
         
         try:
-            # API 파라미터 구성
-            api_params = {
-                "model": self.model,
-                "messages": [
-                    {"role": "system", "content": "당신은 취약점 평가와 패치 우선순위 결정을 전문으로 하는 보안 분석 전문가입니다."},
+            # Claude API 호출
+            response = self.client.messages.create(
+                model=self.model,
+                max_tokens=8000,
+                temperature=0.3,
+                system="당신은 취약점 평가와 패치 우선순위 결정을 전문으로 하는 보안 분석 전문가입니다.",
+                messages=[
                     {"role": "user", "content": prompt}
                 ]
-            }
+            )
             
-            # 호환되는 모델에만 temperature와 response_format 추가
-            if "o1" not in self.model.lower():
-                api_params["temperature"] = 0.3
-                api_params["response_format"] = {"type": "json_object"}
+            # 응답 텍스트 추출
+            response_text = response.content[0].text
             
-            response = self.client.chat.completions.create(**api_params)
+            # JSON 파싱 (코드 블록이 있다면 제거)
+            if "```json" in response_text:
+                json_start = response_text.find("```json") + 7
+                json_end = response_text.find("```", json_start)
+                response_text = response_text[json_start:json_end].strip()
+            elif "```" in response_text:
+                json_start = response_text.find("```") + 3
+                json_end = response_text.find("```", json_start)
+                response_text = response_text[json_start:json_end].strip()
             
-            result = json.loads(response.choices[0].message.content)
+            result = json.loads(response_text)
             return result
             
         except Exception as e:
             print(f"LLM API 호출 오류: {e}")
+            print(f"오류 세부사항: {type(e).__name__}")
             return self._fallback_prioritization_by_module(modules)
     
     def _fallback_prioritization_by_module(self, modules: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
@@ -577,7 +584,7 @@ class PatchPriorityEvaluator:
         modules = self.group_by_module(contexts)
         print(f"{len(modules)}개 모듈로 그룹화됨: {', '.join(modules.keys())}")
         
-        print("LLM을 통한 우선순위 평가 중...")
+        print("Claude를 통한 우선순위 평가 중...")
         results = self.evaluate_priorities(modules)
         
         # 메타데이터 추가
@@ -610,11 +617,11 @@ if __name__ == "__main__":
     import sys
     
     # API 키는 .env 파일에서 로드됨
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("ANTHROPIC_API_KEY")
     
     if not api_key:
-        print("오류: .env 파일에서 OPENAI_API_KEY를 찾을 수 없습니다")
-        print(".env 파일을 생성하고 다음과 같이 작성하세요: OPENAI_API_KEY=your-api-key-here")
+        print("오류: .env 파일에서 ANTHROPIC_API_KEY를 찾을 수 없습니다")
+        print(".env 파일을 생성하고 다음과 같이 작성하세요: ANTHROPIC_API_KEY=your-api-key-here")
         exit(1)
     
     # 커맨드 라인을 통한 사용자 정의 데이터 디렉토리 허용
@@ -640,7 +647,7 @@ if __name__ == "__main__":
         print(f"현재 디렉토리: {os.path.abspath(data_dir)}")
         exit(1)
     
-    evaluator = PatchPriorityEvaluator(api_key=api_key, model="gpt-4-turbo")
+    evaluator = PatchPriorityEvaluator(api_key=api_key, model="claude-sonnet-4-5-20250929")
     
     # 분석 실행
     results = evaluator.run_analysis(
