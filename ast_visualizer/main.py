@@ -10,9 +10,11 @@ Options:
     -t, --target <api>       Target API to highlight (e.g., yaml.load)
     --no-graph               Skip graph generation (only output API analysis)
     -j, --json               Save results to JSON file
+    --security-analysis      Enable LLM-based security analysis  # ← 추가
+    --trivy-data <file>      Path to Trivy analysis result JSON  # ← 추가
 
 Example:
-    python3 main.py ../DB/output/ -o ../DB/test_output --json
+    python3 main.py ../DB/output/ -o ../DB/test_output --json --security-analysis --trivy-data ../DB/trivy_analysis_result.json
 """
 
 import os
@@ -21,8 +23,19 @@ import logging
 import json
 
 from utils import ast_to_png
+from utils.security_analyzer import SecurityAnalyzer  # ← 추가
 
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
+
+
+def load_trivy_data(trivy_file: str):
+    """Trivy 분석 결과 로드"""
+    try:
+        with open(trivy_file, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        logging.warning(f"Trivy 데이터 로드 실패: {e}")
+        return None
 
 
 def main():
@@ -38,6 +51,13 @@ def main():
                        help='Skip graph generation (only output API analysis)')
     parser.add_argument('-j', '--json', action='store_true',
                        help='Save results to JSON file')
+    
+    # ← 새로운 보안 분석 옵션 추가
+    parser.add_argument('--security-analysis', action='store_true',
+                       help='Enable LLM-based security analysis')
+    parser.add_argument('--trivy-data', type=str,
+                       help='Path to Trivy analysis result JSON')
+    
     args = parser.parse_args()
 
     target_list = args.target
@@ -84,6 +104,48 @@ def main():
         with open(json_filename, 'w', encoding='utf-8') as f:
             json.dump(result, f, indent=2, ensure_ascii=False)
         logging.info(f"Results saved to {json_filename}")
+    
+    # ← 새로운 보안 분석 실행
+    if args.security_analysis:
+        print("\n" + "=" * 80)
+        print("🔐 보안 분석 시작 (LLM 기반)")
+        print("=" * 80)
+        
+        try:
+            # Trivy 데이터 로드 (있으면)
+            trivy_data = None
+            if args.trivy_data:
+                trivy_data = load_trivy_data(args.trivy_data)
+                if trivy_data:
+                    logging.info(f"Trivy 데이터 로드 완료: {args.trivy_data}")
+            
+            # 보안 분석 실행
+            analyzer = SecurityAnalyzer()
+            analysis = analyzer.analyze_security_posture(
+                external_apis=external_apis,
+                internal_apis=internal_only_apis,
+                unused_apis=unused_apis,
+                vulnerability_data=trivy_data
+            )
+            
+            # 리포트 생성 및 출력
+            report = analyzer.generate_report(
+                analysis,
+                output_file=f"{args.output}_security_report.txt"
+            )
+            print(report)
+            
+            # JSON 저장
+            security_json = f"{args.output}_security_analysis.json"
+            with open(security_json, 'w', encoding='utf-8') as f:
+                json.dump(analysis, f, indent=2, ensure_ascii=False)
+            logging.info(f"보안 분석 JSON 저장: {security_json}")
+            
+        except ValueError as e:
+            logging.error(f"보안 분석 실패: {e}")
+            logging.info("ANTHROPIC_API_KEY 환경변수를 설정하세요.")
+        except Exception as e:
+            logging.error(f"보안 분석 중 오류: {e}", exc_info=True)
 
 
 if __name__ == '__main__':
