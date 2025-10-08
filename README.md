@@ -162,7 +162,34 @@ cd ..
 * 실행 전에 `DB/`에 다음 파일이 준비되어 있는지 확인하세요: `ast_visualize_result.json`, `gpt5_results.json`, `lib2cve2api.json`, `trivy_analysis_result.json`. 위 절차를 따르면 자동으로 해당 파일명이 맞춰집니다.
 * `python -m fetch_priority --output <경로> --model <모델명>` 형태로 산출물 위치나 사용할 Claude 모델을 조정할 수 있습니다.
 
-## 6. 산출물 요약
+## 6. 구현 진행 현황
+
+### 6.1 파이프라인 및 공통 인프라
+- `main.py`는 단계별 산출물 존재 여부를 확인해 자동으로 건너뛰고 `--force`로 재실행을 강제할 수 있게 구성했습니다.
+- `.env` 로드와 CLI 인자를 통해 DB 경로, 소스 저장 위치, 그래프 생성, 보안 분석 옵션 등을 유연하게 설정합니다.
+- 공통 유틸 함수(`path_exists_and_non_empty`, `ensure_parent_dir`, `read_json`)로 단계 간 파일 입출력을 일관되게 처리합니다.
+- 파이프라인 완료 시 최종 결과(`DB/fetch_priority.json`) 위치를 로깅하고, 실패 시 예외 메시지로 중단 지점을 안내합니다.
+
+### 6.2 모듈별 정리
+- `search_source`: Docker 레이어를 화이트아웃까지 반영해 병합하고 자동 탐지, 수동 경로, 확장자 필터링을 지원합니다.
+- `trivy_extracter`: `--enhance` 옵션으로 Claude 기반 취약점 설명 보강과 사람이 읽기 쉬운 TXT 리포트를 생성합니다.
+- `python_api_extracter`: Trivy 리포트를 패키지·버전별로 재구성하고 wheel 메타에서 라이브러리 공개 API를 수집합니다.
+- `ast_visualizer`: 호출 그래프와 외부·내부·미사용 API 분류를 제공하고 Trivy 데이터를 입력으로 LLM 보안 진단을 수행합니다.
+- `cve_api_mapper`: GPT-5를 기본으로 Claude, Gemini, Grok까지 병렬 분석하고 모델별 결과·Raw 응답·비교 요약을 보관합니다.
+- `fetch_priority`: Claude 기반 우선순위 산정과 선택적 Perplexity 사례 검색을 통합해 외부 노출 여부까지 반영합니다.
+
+### 6.3 산출물 및 로그 디렉터리
+- `DB/trivy_analysis_result.json`: 기본 Trivy 출력이며 `*_enhanced.json`과 `_report.txt`는 설명 보강 결과입니다.
+- `DB/ast_visualize_result.json`과 `_security_analysis.json`은 호출 흐름과 LLM 진단이며 그래프는 `ast_visualize.png`로 생성됩니다.
+- `DB/gpt5_results.json`과 `DB/cve_api_mapper_*/`는 CVE-API 매핑 결과와 원본 응답, 비교 요약을 제공합니다.
+- `DB/fetch_priority.json` 혹은 CLI로 지정한 경로에 패치 우선순위 결과를 저장하며 필요 시 `--output`으로 변경 가능합니다.
+
+### 6.4 테스트 및 참고 리소스
+- `test_target/`: PyYAML 취약 이미지를 위한 Dockerfile과 샘플 tar 생성 스크립트를 포함합니다.
+- `app.log`: CVE-API 매퍼 실행 로그를 저장하며 최근 실행 상태 확인에 활용합니다.
+- `fetch_priority/module/perplexity_searcher.py`: Perplexity Raw 응답을 기본으로 `DB/perplexity_raw_responses/`에 보관합니다.
+
+## 7. 산출물 요약
 
 | 파일 | 설명 |
 | --- | --- |
@@ -171,8 +198,8 @@ cd ..
 | `DB/trivy_analysis_result.json` / `_enhanced.json` | Trivy 스캔 결과 및 LLM 향상 설명 |
 | `DB/lib2cve2api.json` | 라이브러리별 CVE와 공개 API 매핑 |
 | `cve_api_mapper/results/*.json` | 모델별 CVE↔API 매핑 결과 |
-| `DB/patch_priorities.json` | 패치 우선순위와 대응 권장사항 |
+| `DB/fetch_priority.json` 또는 `DB/patch_priorities.json` | 패치 우선순위와 대응 권장사항 |
 
-## 7. 라이선스
+## 8. 라이선스
 
 이 프로젝트는 MIT 라이선스를 따릅니다.
