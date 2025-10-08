@@ -1,0 +1,102 @@
+{
+    "setuptools": {
+        "58.1.0": {
+            "cves": [
+                "CVE-2022-40897",
+                "CVE-2024-6345",
+                "CVE-2025-47273"
+            ],
+            "mapping_result": {
+                "CVE-2022-40897": {
+                    "apis": [],
+                    "reason": "The description cites 'package_index.py' and 'HTML in a crafted package or custom PackageIndex page' causing a 'Regular Expression Denial of Service (ReDoS)'; none of the listed APIs are part of package_index or handle HTML/regex parsing."
+                },
+                "CVE-2024-6345": {
+                    "apis": [],
+                    "reason": "This issue is in the 'package_index module' and its 'download functions' that can lead to 'remote code execution'; the provided APIs are distutils shim helpers, not package_index download functions."
+                },
+                "CVE-2025-47273": {
+                    "apis": [],
+                    "reason": "The vulnerability is a 'path traversal' in 'PackageIndex' allowing writes 'to arbitrary locations on the filesystem'; none of the given APIs belong to PackageIndex or perform file download/write operations."
+                }
+            }
+        }
+    },
+    "PyYAML": {
+        "5.3.1": {
+            "cves": [
+                "CVE-2020-14343"
+            ],
+            "mapping_result": {
+                "CVE-2020-14343": {
+                    "apis": [
+                        "full_load",
+                        "full_load_all",
+                        "load",
+                        "load_all"
+                    ],
+                    "reason": "The phrase 'arbitrary code execution when it processes untrusted YAML files through the full_load method or with the FullLoader loader' directly names full_load and implies any API that uses FullLoader. full_load_all is the multi-document variant that also uses FullLoader, and load/load_all are vulnerable when called 'with the FullLoader loader'. Because the flaw allows abuse of 'python/object/new', these deserialization APIs can construct attacker-controlled objects leading to code execution."
+                }
+            }
+        }
+    },
+    "Werkzeug": {
+        "2.0.2": {
+            "cves": [
+                "CVE-2023-25577",
+                "CVE-2024-34069",
+                "CVE-2023-46136",
+                "CVE-2024-49766",
+                "CVE-2024-49767",
+                "CVE-2023-23934"
+            ],
+            "mapping_result": {
+                "CVE-2023-25577": {
+                    "apis": [
+                        "formparser.parse_form_data",
+                        "formparser.get_input_stream",
+                        "formparser.default_stream_factory"
+                    ],
+                    "reason": "The phrase \"multipart form data parser will parse an unlimited number of parts, including file parts\" maps directly to formparser.parse_form_data as the entry point for parsing multipart/form-data. The mention that accessing \"request.data\", \"request.form\", or \"request.files\" triggers parsing implies use of formparser.get_input_stream to read the body. \"Unlimited file parts can use up memory and file handles\" ties to formparser.default_stream_factory, which creates in-memory or temporary file objects for each part."
+                },
+                "CVE-2024-34069": {
+                    "apis": [
+                        "debug.get_pin_and_cookie_name",
+                        "debug.hash_pin",
+                        "debug.get_machine_id"
+                    ],
+                    "reason": "The description notes the attacker must \"enter the debugger PIN\" and can get \"access to the debugger even if it is only running on localhost.\" These are directly related to the debugger's PIN generation and verification, handled by debug.get_pin_and_cookie_name and debug.hash_pin, with debug.get_machine_id being part of the PIN derivation."
+                },
+                "CVE-2023-46136": {
+                    "apis": [
+                        "formparser.parse_form_data",
+                        "formparser.get_input_stream"
+                    ],
+                    "reason": "The vulnerability occurs when parsing a multipart upload where a file \"starts with CR or LF\" and boundary \"lookup... is performed on [a] growing buffer,\" which is the multipart parsing logic implemented by formparser.parse_form_data reading from the request body via formparser.get_input_stream."
+                },
+                "CVE-2024-49766": {
+                    "apis": [
+                        "security.safe_join",
+                        "utils.safe_join",
+                        "middleware.shared_data.safe_join"
+                    ],
+                    "reason": "The CVE explicitly states \"Werkzeug's safe_join() relies on [os.path.isabs()] and so can produce a path that is not safe\" on Windows with UNC paths like \"//server/share.\" These safe_join implementations (security.safe_join, utils.safe_join, middleware.shared_data.safe_join) are directly responsible for the affected path-joining behavior."
+                },
+                "CVE-2024-49767": {
+                    "apis": [
+                        "formparser.parse_form_data",
+                        "formparser.default_stream_factory"
+                    ],
+                    "reason": "It states that applications using \"werkzeug.formparser.MultiPartParser... to parse multipart/form-data\" can cause the parser to \"allocate and block 3 to 8 times the upload size in main memory.\" This corresponds to formparser.parse_form_data invoking the multipart parser, while formparser.default_stream_factory influences how uploaded parts are buffered in memory vs. files."
+                },
+                "CVE-2023-23934": {
+                    "apis": [
+                        "http.parse_cookie",
+                        "sansio.request.parse_cookie"
+                    ],
+                    "reason": "The issue is that Werkzeug would \"parse the cookie `=__Host-test=bad` as `__Host-test=bad`\" when encountering \"nameless\" cookies like \"=value\". This is handled by the cookie parsing routines http.parse_cookie and sansio.request.parse_cookie."
+                }
+            }
+        }
+    }
+}
