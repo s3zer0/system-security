@@ -71,13 +71,13 @@ cd ..
 
 ```bash
 cd ast_visualizer
-python main.py ../DB/output -o ../DB/test_output --json --security-analysis \
+python main.py ../DB/output -o ../DB/ast_visualize --json --security-analysis \
   --trivy-data ../DB/trivy_analysis_result.json
 cd ..
 ```
 
-* 그래프 이미지는 `test_output.png`, API 분류 결과는 `test_output_result.json`에 저장됩니다.
-* `--security-analysis`를 사용하면 `ANTHROPIC_API_KEY`로 보강된 JSON 리포트(`test_output_security_analysis.json`)와 텍스트 요약(`test_output_security_report.txt`)이 생성됩니다.
+* 그래프 이미지는 `ast_visualize.png`, API 분류 결과는 `ast_visualize_result.json`에 저장되어 이후 단계(`fetch_priority`)가 요구하는 파일명과 일치합니다.
+* `--security-analysis`를 사용하면 `ANTHROPIC_API_KEY`로 보강된 JSON 리포트(`ast_visualize_security_analysis.json`)와 텍스트 요약(`ast_visualize_security_report.txt`)이 생성됩니다.
 
 ### 4.3. Trivy 취약점 스캔 및 설명 향상
 
@@ -109,11 +109,14 @@ cd ..
 ```bash
 cd cve_api_mapper
 python main.py  # 모델 인자를 지정하면 선택 실행 가능
+# 대표 모델(GPT-5) 결과를 fetch_priority가 요구하는 파일명으로 복사합니다.
+cp results/gpt-5_results.json ../DB/gpt5_results.json
 cd ..
 ```
 
-* 모델별 결과는 `DB/results/<model>_results.json`, 원본 응답은 `DB/raw_responses/`에 축적됩니다.
-* 비교 요약본은 `DB/results/model_comparison_summary.json`에서 확인할 수 있습니다.
+* 모델별 결과는 `cve_api_mapper/results/<model>_results.json`, 원본 응답은 `cve_api_mapper/raw_responses/`에 축적됩니다.
+* `fetch_priority`는 기본적으로 GPT-5 결과를 사용하므로, 상기 `cp` 명령으로 `gpt5_results.json`을 `DB/` 루트에 준비해야 합니다. 다른 모델을 사용할 경우 해당 파일을 동일한 이름으로 복사해 덮어쓰세요.
+* 비교 요약본은 `cve_api_mapper/results/model_comparison_summary.json`에서 확인할 수 있습니다.
 
 ### 4.6. 패치 우선순위 산정
 
@@ -126,16 +129,17 @@ cd ..
 ```
 
 * 출력 파일 `DB/patch_priorities.json`에는 모듈별 위험 점수, Docker 외부 노출 여부, 권장 패치 명령 등이 포함됩니다.
+* 실행 전에 `DB/`에 다음 파일이 준비되어 있는지 확인하세요: `ast_visualize_result.json`, `gpt5_results.json`, `lib2cve2api.json`, `trivy_analysis_result.json`. 위 절차를 따르면 자동으로 해당 파일명이 맞춰집니다.
 
 ## 5. 산출물 요약
 
 | 파일 | 설명 |
 | --- | --- |
 | `DB/output/` | 컨테이너에서 추출한 애플리케이션 소스 트리 |
-| `DB/test_output_result.json`, `DB/test_output.png` | AST 기반 API 분류 결과 및 호출 그래프 |
+| `DB/ast_visualize_result.json`, `DB/ast_visualize.png` | AST 기반 API 분류 결과 및 호출 그래프 |
 | `DB/trivy_analysis_result.json` / `_enhanced.json` | Trivy 스캔 결과 및 LLM 향상 설명 |
 | `DB/lib2cve2api.json` | 라이브러리별 CVE와 공개 API 매핑 |
-| `DB/results/*.json` | 모델별 CVE↔API 매핑 결과 |
+| `cve_api_mapper/results/*.json` | 모델별 CVE↔API 매핑 결과 |
 | `DB/patch_priorities.json` | 패치 우선순위와 대응 권장사항 |
 
 ## 6. 라이선스
