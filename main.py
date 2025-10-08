@@ -24,6 +24,7 @@ import logging
 import os
 import shutil
 import sys
+from dotenv import load_dotenv
 from pathlib import Path
 from typing import Iterable, List, Optional, Tuple
 
@@ -273,6 +274,8 @@ def step_fetch_priority(
     trivy_json: Path,
     output_json: Path,
     force: bool,
+    enable_perplexity: bool,
+    perplexity_api_key: Optional[str],
 ) -> None:
     """Evaluate patch priorities and emit fetch_priority.json."""
     if output_json.exists() and not force:
@@ -290,9 +293,16 @@ def step_fetch_priority(
             "ANTHROPIC_API_KEY is required for fetch_priority. Set it in the environment."
         )
 
+    if enable_perplexity and not perplexity_api_key:
+        logger.warning("Perplexity search requested but no API key supplied; set PERPLEXITY_API_KEY before running.")
+
     ensure_parent_dir(output_json)
     logger.info("Evaluating patch priorities  ->  %s", output_json)
-    evaluator = PatchPriorityEvaluator(api_key=api_key)
+    evaluator = PatchPriorityEvaluator(
+        api_key=api_key,
+        perplexity_api_key=perplexity_api_key,
+        enable_perplexity=enable_perplexity,
+    )
     evaluator.run_analysis(
         ast_file=str(ast_json),
         gpt5_results_file=str(gpt5_json),
@@ -367,6 +377,8 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
+    load_dotenv()
+
     db_dir: Path = args.db_dir.resolve()
     sources_dir: Path = (
         args.sources_dir.resolve()
@@ -382,6 +394,13 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
 
     results_dir = (db_dir / "cve_api_mapper_results").resolve()
     raw_dir = (db_dir / "cve_api_mapper_raw").resolve()
+
+    perplexity_api_key = os.getenv("PERPLEXITY_API_KEY")
+    enable_perplexity = bool(perplexity_api_key)
+    if enable_perplexity:
+        logger.info("Perplexity case search enabled using PERPLEXITY_API_KEY.")
+    else:
+        logger.info("Perplexity case search disabled (set PERPLEXITY_API_KEY to enable).")
 
     try:
         step_source_extraction(
@@ -431,6 +450,8 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
             trivy_json=trivy_output,
             output_json=fetch_priority_output,
             force=args.force,
+            enable_perplexity=enable_perplexity,
+            perplexity_api_key=perplexity_api_key,
         )
 
     except Exception as exc:  # pragma: no cover - top-level guard

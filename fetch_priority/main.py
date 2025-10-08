@@ -41,6 +41,16 @@ def build_parser() -> argparse.ArgumentParser:
         default="claude-sonnet-4-5-20250929",
         help="Anthropic model identifier to use (default: claude-sonnet-4-5-20250929)",
     )
+    parser.add_argument(
+        "--enable-perplexity",
+        action="store_true",
+        default=False,
+        help="Enable Perplexity API for real-world case search (requires PERPLEXITY_API_KEY)",
+    )
+    parser.add_argument(
+        "--perplexity-api-key",
+        help="Perplexity API key (alternative to PERPLEXITY_API_KEY env var)",
+    )
     return parser
 
 
@@ -71,9 +81,28 @@ def main(argv: list[str] | None = None) -> int:
         print(".env 파일에 ANTHROPIC_API_KEY=... 값을 설정하거나 환경 변수로 지정하세요.")
         return 1
 
+    # Perplexity 설정 확인
+    perplexity_key = args.perplexity_api_key or os.getenv("PERPLEXITY_API_KEY")
+    if args.enable_perplexity and not perplexity_key:
+        print("경고: --enable-perplexity가 지정되었지만 PERPLEXITY_API_KEY가 설정되지 않았습니다")
+        print("실제 사례 검색이 비활성화됩니다.")
+        print(".env 파일에 PERPLEXITY_API_KEY=... 값을 설정하거나 --perplexity-api-key 옵션을 사용하세요.")
+
     output_path = args.output.resolve() if args.output else data_dir / "patch_priorities.json"
 
-    evaluator = PatchPriorityEvaluator(api_key=api_key, model=args.model)
+    print(f"설정:")
+    print(f"  - Claude 모델: {args.model}")
+    print(f"  - Perplexity 검색: {'활성화' if args.enable_perplexity and perplexity_key else '비활성화'}")
+    print(f"  - 출력 파일: {output_path}")
+    print()
+
+    evaluator = PatchPriorityEvaluator(
+        api_key=api_key, 
+        model=args.model,
+        perplexity_api_key=perplexity_key,
+        enable_perplexity=args.enable_perplexity
+    )
+    
     evaluator.run_analysis(
         ast_file=str(file_paths["ast_file"]),
         gpt5_results_file=str(file_paths["gpt5_results_file"]),

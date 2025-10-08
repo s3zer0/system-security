@@ -1,27 +1,4 @@
 {
-    "setuptools": {
-        "58.1.0": {
-            "cves": [
-                "CVE-2022-40897",
-                "CVE-2024-6345",
-                "CVE-2025-47273"
-            ],
-            "mapping_result": {
-                "CVE-2022-40897": {
-                    "apis": [],
-                    "reason": "The description cites 'package_index.py' and 'HTML in a crafted package or custom PackageIndex page' causing a 'Regular Expression Denial of Service (ReDoS)'; none of the listed APIs are part of package_index or handle HTML/regex parsing."
-                },
-                "CVE-2024-6345": {
-                    "apis": [],
-                    "reason": "This issue is in the 'package_index module' and its 'download functions' that can lead to 'remote code execution'; the provided APIs are distutils shim helpers, not package_index download functions."
-                },
-                "CVE-2025-47273": {
-                    "apis": [],
-                    "reason": "The vulnerability is a 'path traversal' in 'PackageIndex' allowing writes 'to arbitrary locations on the filesystem'; none of the given APIs belong to PackageIndex or perform file download/write operations."
-                }
-            }
-        }
-    },
     "PyYAML": {
         "5.3.1": {
             "cves": [
@@ -35,7 +12,30 @@
                         "load",
                         "load_all"
                     ],
-                    "reason": "The phrase 'arbitrary code execution when it processes untrusted YAML files through the full_load method or with the FullLoader loader' directly names full_load and implies any API that uses FullLoader. full_load_all is the multi-document variant that also uses FullLoader, and load/load_all are vulnerable when called 'with the FullLoader loader'. Because the flaw allows abuse of 'python/object/new', these deserialization APIs can construct attacker-controlled objects leading to code execution."
+                    "reason": "The phrase 'arbitrary code execution when it processes untrusted YAML files through the full_load method or with the FullLoader loader' directly implicates full_load and any use of load/load_all with FullLoader. full_load_all also uses FullLoader to process multiple documents, so it inherits the same risk. The attack abuses the 'python/object/new constructor', which FullLoader permitted before 5.4."
+                }
+            }
+        }
+    },
+    "setuptools": {
+        "58.1.0": {
+            "cves": [
+                "CVE-2022-40897",
+                "CVE-2024-6345",
+                "CVE-2025-47273"
+            ],
+            "mapping_result": {
+                "CVE-2022-40897": {
+                    "apis": [],
+                    "reason": "The CVE targets \"Regular Expression Denial of Service (ReDoS) in package_index.py\" triggered by \"HTML in a crafted package or custom PackageIndex page.\" The listed APIs (distutils shim/override helpers) are unrelated to package_index parsing, networking, or regex handling, so none directly relate."
+                },
+                "CVE-2024-6345": {
+                    "apis": [],
+                    "reason": "This issue is \"in the package_index module\" and involves RCE \"via its download functions\" that handle \"URLs provided by users\" and can \"execute arbitrary commands.\" The provided APIs are distutils shim controls, not package_index download functions, so no direct linkage exists."
+                },
+                "CVE-2025-47273": {
+                    "apis": [],
+                    "reason": "The vulnerability is a \"path traversal\" in \"PackageIndex\" that allows writing files \"to arbitrary locations on the filesystem.\" The target APIs are only for distutils shim/override (e.g., add/remove shim, ensure_local_distutils) and do not participate in PackageIndex file download/write paths."
                 }
             }
         }
@@ -54,47 +54,50 @@
                 "CVE-2023-25577": {
                     "apis": [
                         "formparser.parse_form_data",
+                        "formparser.parse_multipart_headers",
                         "formparser.get_input_stream",
                         "formparser.default_stream_factory"
                     ],
-                    "reason": "The phrase \"multipart form data parser will parse an unlimited number of parts, including file parts\" maps directly to formparser.parse_form_data as the entry point for parsing multipart/form-data. The mention that accessing \"request.data\", \"request.form\", or \"request.files\" triggers parsing implies use of formparser.get_input_stream to read the body. \"Unlimited file parts can use up memory and file handles\" ties to formparser.default_stream_factory, which creates in-memory or temporary file objects for each part."
+                    "reason": "The phrase 'multipart form data parser will parse an unlimited number of parts' maps to the multipart handling implemented by formparser.parse_form_data, which iterates and parses all parts. Per-part header parsing is handled by formparser.parse_multipart_headers. The phrase 'endpoint that accesses request.data, request.form, request.files, or request.get_data(parse_form_data=False)' implies the request body is fed into the parser via formparser.get_input_stream, while file parts and memory usage are influenced by formparser.default_stream_factory, contributing to the described CPU/RAM/resource exhaustion when 'crafted multipart data' is sent."
                 },
                 "CVE-2024-34069": {
                     "apis": [
                         "debug.get_pin_and_cookie_name",
                         "debug.hash_pin",
-                        "debug.get_machine_id"
+                        "debug.render_console_html",
+                        "debug.get_current_traceback"
                     ],
-                    "reason": "The description notes the attacker must \"enter the debugger PIN\" and can get \"access to the debugger even if it is only running on localhost.\" These are directly related to the debugger's PIN generation and verification, handled by debug.get_pin_and_cookie_name and debug.hash_pin, with debug.get_machine_id being part of the PIN derivation."
+                    "reason": "The phrases 'The debugger ... can allow an attacker to execute code' and 'enter the debugger PIN' indicate involvement of PIN handling via debug.get_pin_and_cookie_name and debug.hash_pin. Accessing 'the debugger even if it is only running on localhost' refers to the interactive debugger UI and console, which are served via debug.render_console_html and driven by traceback data from debug.get_current_traceback."
                 },
                 "CVE-2023-46136": {
                     "apis": [
                         "formparser.parse_form_data",
+                        "formparser.parse_multipart_headers",
                         "formparser.get_input_stream"
                     ],
-                    "reason": "The vulnerability occurs when parsing a multipart upload where a file \"starts with CR or LF\" and boundary \"lookup... is performed on [a] growing buffer,\" which is the multipart parsing logic implemented by formparser.parse_form_data reading from the request body via formparser.get_input_stream."
+                    "reason": "The phrase 'upload of a file that starts with CR or LF ... appended chunk by chunk ... lookup for boundary is performed on growing buffer' describes a flaw in multipart parsing. formparser.parse_form_data orchestrates multipart/form-data parsing and boundary scanning, formparser.parse_multipart_headers processes per-part headers, and the vulnerable byte stream is consumed through formparser.get_input_stream, enabling the described denial of service when 'crafted multipart data' is sent."
                 },
                 "CVE-2024-49766": {
                     "apis": [
-                        "security.safe_join",
                         "utils.safe_join",
+                        "security.safe_join",
                         "middleware.shared_data.safe_join"
                     ],
-                    "reason": "The CVE explicitly states \"Werkzeug's safe_join() relies on [os.path.isabs()] and so can produce a path that is not safe\" on Windows with UNC paths like \"//server/share.\" These safe_join implementations (security.safe_join, utils.safe_join, middleware.shared_data.safe_join) are directly responsible for the affected path-joining behavior."
+                    "reason": "The phrases 'Werkzeug's safe_join() relies on this check' and 'can produce a path that is not safe' due to 'UNC paths like //server/share' directly implicate the safe_join implementations. utils.safe_join, security.safe_join, and middleware.shared_data.safe_join are the safe path-joining APIs that can incorrectly permit unsafe paths on 'Python < 3.11 on Windows'."
                 },
                 "CVE-2024-49767": {
                     "apis": [
                         "formparser.parse_form_data",
-                        "formparser.default_stream_factory"
+                        "formparser.default_stream_factory",
+                        "formparser.get_input_stream"
                     ],
-                    "reason": "It states that applications using \"werkzeug.formparser.MultiPartParser... to parse multipart/form-data\" can cause the parser to \"allocate and block 3 to 8 times the upload size in main memory.\" This corresponds to formparser.parse_form_data invoking the multipart parser, while formparser.default_stream_factory influences how uploaded parts are buffered in memory vs. files."
+                    "reason": "The phrases 'Applications using werkzeug.formparser.MultiPartParser' to 'parse multipart/form-data requests' and 'allocate and block 3 to 8 times the upload size in main memory' indicate the multipart parsing pipeline handled by formparser.parse_form_data, with memory allocation behavior influenced by formparser.default_stream_factory for file parts, and data ingestion via formparser.get_input_stream that enables the excessive buffering."
                 },
                 "CVE-2023-23934": {
                     "apis": [
-                        "http.parse_cookie",
-                        "sansio.request.parse_cookie"
+                        "http.parse_cookie"
                     ],
-                    "reason": "The issue is that Werkzeug would \"parse the cookie `=__Host-test=bad` as `__Host-test=bad`\" when encountering \"nameless\" cookies like \"=value\". This is handled by the cookie parsing routines http.parse_cookie and sansio.request.parse_cookie."
+                    "reason": "The phrase 'Browsers may allow \"nameless\" cookies that look like =value' and 'Werkzeug prior to 2.2.3 will parse the cookie `=__Host-test=bad` as `__Host-test=bad`' directly implicate the cookie parsing routine http.parse_cookie, which misinterprets nameless cookies and exposes the application to the described issue."
                 }
             }
         }

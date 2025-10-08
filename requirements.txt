@@ -3,3 +3,4 @@ google-genai>=0.3.0
 graphviz>=0.20.1
 openai>=1.0.0
 python-dotenv>=1.0.0
+perplexity>=0.3.0

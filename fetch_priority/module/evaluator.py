@@ -1,15 +1,23 @@
 import json
 import os
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any, Tuple, Optional
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
 from dotenv import load_dotenv
+import logging
+from datetime import datetime
 
 # Anthropic API 사용
 import anthropic
 
+# Perplexity 검색기
+from .perplexity_searcher import create_searcher, PerplexitySearcher
+
 # .env 파일에서 환경 변수 로드
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 
 class Severity(Enum):
@@ -40,16 +48,40 @@ class VulnerabilityContext:
 class PatchPriorityEvaluator:
     """취약점 패치 우선순위를 평가하는 클래스"""
     
-    def __init__(self, api_key: str, model: str = "claude-sonnet-4-5-20250929"):
+    def __init__(self, 
+                 api_key: str, 
+                 model: str = "claude-sonnet-4-5-20250929",
+                 perplexity_api_key: Optional[str] = None,
+                 enable_perplexity: bool = False):
         """
         LLM 자격 증명으로 평가자 초기화
         
         Args:
             api_key: Anthropic API 키
             model: 사용할 Claude 모델 이름
+            perplexity_api_key: Perplexity API 키 (선택사항, 환경변수에서 로드 가능)
+            enable_perplexity: Perplexity 검색 활성화 여부
         """
         self.client = anthropic.Anthropic(api_key=api_key)
         self.model = model
+        
+        # Perplexity 검색기 초기화
+        self.perplexity_enabled = enable_perplexity
+        self.perplexity_searcher: Optional[PerplexitySearcher] = None
+        self._claude_raw_response_path: Optional[Path] = None
+        
+        if enable_perplexity:
+            perplexity_key = perplexity_api_key or os.getenv("PERPLEXITY_API_KEY")
+            if perplexity_key:
+                try:
+                    self.perplexity_searcher = create_searcher(perplexity_key)
+                    logger.info("Perplexity 검색 활성화됨")
+                except Exception as e:
+                    logger.warning(f"Perplexity 검색기 초기화 실패: {e}")
+                    self.perplexity_enabled = False
+            else:
+                logger.warning("PERPLEXITY_API_KEY 없음 - 실제 사례 검색 비활성화")
+                self.perplexity_enabled = False
     
     def load_data(self, 
                   ast_file: str,
@@ -199,17 +231,54 @@ class PatchPriorityEvaluator:
         
         return contexts
     
-    def group_by_module(self, contexts: List[VulnerabilityContext]) -> Dict[str, Dict[str, Any]]:
+    def search_real_world_cases(self, contexts: List[VulnerabilityContext]) -> Dict[str, List[Dict[str, str]]]:
         """
-        취약점을 패키지/모듈별로 그룹화합니다
+        Perplexity를 사용해 실제 사례 검색
         
         Args:
             contexts: 취약점 컨텍스트 리스트
             
         Returns:
+            CVE ID를 키로 하는 실제 사례 딕셔너리
+        """
+        if not self.perplexity_enabled or not self.perplexity_searcher:
+            logger.info("Perplexity 검색 비활성화됨 - 실제 사례 생략")
+            return {}
+        
+        logger.info("Perplexity를 통한 실제 사례 검색 시작...")
+        
+        # 컨텍스트를 딕셔너리로 변환
+        cve_contexts = [
+            {
+                "cve_id": ctx.cve_id,
+                "package_name": ctx.package_name,
+                "description": ctx.description
+            }
+            for ctx in contexts
+        ]
+        
+        # 일괄 검색
+        results = self.perplexity_searcher.search_multiple_cves(cve_contexts)
+        
+        return results
+    
+    def group_by_module(self, 
+                       contexts: List[VulnerabilityContext],
+                       real_world_cases: Optional[Dict[str, List[Dict[str, str]]]] = None) -> Dict[str, Dict[str, Any]]:
+        """
+        취약점을 패키지/모듈별로 그룹화합니다
+        
+        Args:
+            contexts: 취약점 컨텍스트 리스트
+            real_world_cases: CVE별 실제 사례 딕셔너리 (선택사항)
+            
+        Returns:
             모듈별로 그룹화된 취약점 딕셔너리
         """
         modules = {}
+        
+        if real_world_cases is None:
+            real_world_cases = {}
         
         for ctx in contexts:
             if ctx.package_name not in modules:
@@ -221,6 +290,9 @@ class PatchPriorityEvaluator:
                     'has_external_exposure': False  # Docker 외부 노출 여부
                 }
             
+            # 이 CVE에 대한 실제 사례 가져오기
+            cve_cases = real_world_cases.get(ctx.cve_id, [])
+            
             # 취약점 정보 추가
             vuln_info = {
                 'cve_id': ctx.cve_id,
@@ -230,8 +302,9 @@ class PatchPriorityEvaluator:
                 'vulnerable_functions': ctx.vulnerable_apis,
                 'functions_used_in_code': ctx.is_api_used,
                 'matching_functions': ctx.used_apis,
-                'external_api_exposed': ctx.is_external_api_used,  # Docker 외부 노출 API 사용
-                'external_functions': ctx.external_apis
+                'external_api_exposed': ctx.is_external_api_used,
+                'external_functions': ctx.external_apis,
+                'real_world_cases': cve_cases  # 실제 사례 추가
             }
             
             modules[ctx.package_name]['vulnerabilities'].append(vuln_info)
@@ -291,6 +364,16 @@ class PatchPriorityEvaluator:
                 if vuln.get('external_api_exposed', False):
                     external_exposure = f"\n⚠️ **CRITICAL: Docker 환경에서 외부로 노출되는 API 사용 중!**\n- 노출된 취약 함수: {', '.join(vuln.get('external_functions', []))}"
                 
+                # 실제 사례 정보 추가
+                real_cases = vuln.get('real_world_cases', [])
+                cases_info = ""
+                if real_cases:
+                    cases_info = f"\n\n**Real-World Cases Found ({len(real_cases)} cases):**\n"
+                    for case in real_cases[:3]:  # 최대 3개만 표시
+                        cases_info += f"- {case.get('title', 'N/A')} ({case.get('date', 'Unknown date')})\n"
+                        cases_info += f"  {case.get('description', '')[:150]}...\n"
+                        cases_info += f"  Source: {case.get('source_url', 'N/A')}\n"
+                
                 prompt += f"""
 #### {j}. {vuln['cve_id']} ({vuln['severity']}, CVSS: {vuln['cvss_score']})
 
@@ -303,6 +386,7 @@ class PatchPriorityEvaluator:
 - Functions used in code: {'YES ✓' if vuln['functions_used_in_code'] else 'NO ✗'}
 {f"- Matching functions: {', '.join(vuln['matching_functions'])}" if vuln['matching_functions'] else ""}
 {external_exposure}
+{cases_info}
 
 ---
 """
@@ -315,9 +399,10 @@ class PatchPriorityEvaluator:
 
 **우선순위 결정 시 핵심 고려사항:**
 1. **Docker 외부 노출 (최우선)**: 외부로 노출되는 취약한 API가 사용되는 경우 CRITICAL 우선순위로 처리
-2. CVSS 점수와 심각도
-3. 취약한 함수의 실제 사용 여부
-4. 공격 가능성과 잠재적 영향도
+2. **실제 사례**: 실제 공격이나 사고가 보고된 경우 우선순위 상향
+3. CVSS 점수와 심각도
+4. 취약한 함수의 실제 사용 여부
+5. 공격 가능성과 잠재적 영향도
 
 각 모듈별로 다음을 제공하세요:
 
@@ -341,7 +426,7 @@ class PatchPriorityEvaluator:
    - 테스트 권장사항
 
 4. **실제 사례**
-   - 이러한 CVE에 대한 알려진 공격이나 사례
+   - 제공된 실제 사례를 기반으로 분석
    - 프로덕션 환경에서의 유사한 사고
    - 보안 권고사항 링크
 
@@ -354,6 +439,7 @@ class PatchPriorityEvaluator:
       "current_version": "1.0.0",
       "priority_level": "CRITICAL",
       "risk_score": 95,
+      "docker_external_exposure": true,
       "vulnerabilities": [
         {{
           "cve_id": "CVE-XXXX-XXXXX",
@@ -361,6 +447,7 @@ class PatchPriorityEvaluator:
           "cvss_score": 9.8,
           "vulnerable_functions": ["function1", "function2"],
           "functions_used_in_code": true,
+          "external_api_exposed": true,
           "exploit_scenario": "어떻게 악용될 수 있는지",
           "potential_impact": "어떤 피해가 발생할 수 있는지"
         }}
@@ -389,7 +476,8 @@ class PatchPriorityEvaluator:
     "high_priority_modules": 0,
     "medium_priority_modules": 0,
     "low_priority_modules": 0,
-    "total_vulnerabilities": 0
+    "total_vulnerabilities": 0,
+    "external_exposed_modules": 0
   }},
   "patching_roadmap": {{
     "immediate": ["지금 패치할 패키지"],
@@ -405,6 +493,66 @@ class PatchPriorityEvaluator:
         
         return prompt
     
+    def _attempt_json_recovery(self, response_text: str) -> Optional[Any]:
+        """LLM 응답에서 유효한 JSON 세그먼트를 추출하려고 시도합니다."""
+        decoder = json.JSONDecoder()
+        candidates: List[Tuple[int, int, Any]] = []
+
+        for opening in ("{", "["):
+            start = response_text.find(opening)
+            while start != -1:
+                try:
+                    obj, end = decoder.raw_decode(response_text, start)
+                except json.JSONDecodeError:
+                    start = response_text.find(opening, start + 1)
+                    continue
+
+                if isinstance(obj, (dict, list)):
+                    candidates.append((start, end, obj))
+
+                start = response_text.find(opening, start + 1)
+
+        if not candidates:
+            return None
+
+        # 가장 앞에서 찾은 JSON 조각 사용
+        candidates.sort(key=lambda item: item[0])
+        start, end, obj = candidates[0]
+        if end < len(response_text.strip()):
+            logger.warning("LLM 응답의 JSON 이후 텍스트를 무시했습니다 (offset %d-%d).", start, end)
+
+        return obj if isinstance(obj, (dict, list)) else None
+
+    def _persist_claude_response(
+        self,
+        raw_text: str,
+        cleaned_text: str,
+        parsed_payload: Optional[Any] = None,
+        error: Optional[str] = None,
+    ) -> None:
+        """Claude 응답을 JSON 포맷으로 저장합니다."""
+        target_path = getattr(self, '_claude_raw_response_path', None)
+        if not target_path:
+            return
+        payload: Dict[str, Any] = {
+            'timestamp': datetime.utcnow().isoformat(timespec='seconds'),
+            'raw_text': raw_text,
+            'cleaned_text': cleaned_text,
+        }
+        if parsed_payload is not None:
+            payload['parsed_payload'] = parsed_payload
+        if error:
+            payload['error'] = error
+        try:
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            with target_path.open('w', encoding='utf-8') as fh:
+                json.dump(payload, fh, ensure_ascii=False, indent=2)
+        except Exception as exc:
+            logger.debug('Claude raw 응답 저장 실패(%s): %s', target_path, exc)
+        else:
+            logger.debug('Claude raw 응답 저장 -> %s', target_path)
+
+
     def evaluate_priorities(self, modules: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
         """
         그룹화된 취약점 데이터를 LLM에 전송하여 우선순위를 평가합니다
@@ -417,39 +565,117 @@ class PatchPriorityEvaluator:
         """
         prompt = self.create_llm_prompt(modules)
         
+        response_text = ""
+        cleaned_text = ""
         try:
             # Claude API 호출
             response = self.client.messages.create(
                 model=self.model,
-                max_tokens=8000,
+                max_tokens=20000,
                 temperature=0.3,
                 system="당신은 취약점 평가와 패치 우선순위 결정을 전문으로 하는 보안 분석 전문가입니다.",
                 messages=[
                     {"role": "user", "content": prompt}
                 ]
             )
-            
+
             # 응답 텍스트 추출
-            response_text = response.content[0].text
-            
-            # JSON 파싱 (코드 블록이 있다면 제거)
-            if "```json" in response_text:
-                json_start = response_text.find("```json") + 7
-                json_end = response_text.find("```", json_start)
-                response_text = response_text[json_start:json_end].strip()
-            elif "```" in response_text:
-                json_start = response_text.find("```") + 3
-                json_end = response_text.find("```", json_start)
-                response_text = response_text[json_start:json_end].strip()
-            
-            result = json.loads(response_text)
-            return result
-            
+            content_blocks = getattr(response, "content", [])
+            if not content_blocks:
+                raise ValueError("LLM 응답이 비어 있습니다.")
+
+            parts: List[str] = []
+            for block in content_blocks:
+                text_value = getattr(block, "text", None)
+                if text_value is None and isinstance(block, dict):
+                    text_value = block.get("text")
+                if text_value is not None:
+                    parts.append(text_value)
+
+            response_text = "".join(parts) if parts else str(content_blocks[0])
+            logger.debug("LLM raw response length: %d chars", len(response_text))
+
+            cleaned_text = response_text
+            if "```json" in cleaned_text:
+                json_start = cleaned_text.find("```json") + 7
+                json_end = cleaned_text.find("```", json_start)
+                cleaned_text = cleaned_text[json_start:json_end].strip()
+            elif "```" in cleaned_text:
+                json_start = cleaned_text.find("```") + 3
+                json_end = cleaned_text.find("```", json_start)
+                cleaned_text = cleaned_text[json_start:json_end].strip()
+
+            try:
+                result = json.loads(cleaned_text)
+            except json.JSONDecodeError as decode_error:
+                recovered = self._attempt_json_recovery(cleaned_text)
+                if recovered is not None:
+                    logger.info('LLM 응답 JSON 복구 성공 (원본 오류: %s)', decode_error)
+                    self._persist_claude_response(
+                        response_text,
+                        cleaned_text,
+                        parsed_payload=recovered,
+                        error=str(decode_error),
+                    )
+                    return recovered
+                self._persist_claude_response(
+                    response_text,
+                    cleaned_text,
+                    parsed_payload=None,
+                    error=str(decode_error),
+                )
+                raise
+            else:
+                self._persist_claude_response(
+                    response_text,
+                    cleaned_text,
+                    parsed_payload=result,
+                )
+                return result
+
+        except json.JSONDecodeError as e:
+            logger.error(f"LLM JSON 파싱 실패: {e}")
+            candidate_text = cleaned_text or response_text or ""
+            if candidate_text:
+                snippet = candidate_text[:800].replace("\n", " ")
+                logger.debug("LLM raw response (truncated): %s", snippet)
+            recovered = self._attempt_json_recovery(candidate_text)
+            if recovered is not None:
+                logger.info("LLM 응답에서 JSON 구조를 복구했습니다.")
+                self._persist_claude_response(
+                    response_text or candidate_text,
+                    candidate_text,
+                    parsed_payload=recovered,
+                    error=str(e),
+                )
+                return recovered
+            logger.warning("LLM 응답을 JSON으로 파싱하지 못해 점수 기반 폴백을 사용합니다.")
+            fallback_result = self._fallback_prioritization_by_module(modules)
+            self._persist_claude_response(
+                response_text or candidate_text,
+                candidate_text,
+                parsed_payload=fallback_result,
+                error=str(e),
+            )
+            return fallback_result
         except Exception as e:
-            print(f"LLM API 호출 오류: {e}")
-            print(f"오류 세부사항: {type(e).__name__}")
-            return self._fallback_prioritization_by_module(modules)
-    
+            logger.error(f"LLM API 호출 오류: {e}")
+            candidate_text = cleaned_text or response_text or ""
+            if candidate_text:
+                snippet = candidate_text[:800].replace("\n", " ")
+                logger.debug("LLM raw response (truncated): %s", snippet)
+            else:
+                logger.debug("LLM raw response가 비어 있습니다.")
+            logger.warning("LLM 호출 실패로 점수 기반 폴백을 사용합니다.")
+            fallback_result = self._fallback_prioritization_by_module(modules)
+            self._persist_claude_response(
+                response_text or candidate_text,
+                candidate_text,
+                parsed_payload=fallback_result,
+                error=str(e),
+            )
+            return fallback_result
+
     def _fallback_prioritization_by_module(self, modules: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
         """
         LLM 실패 시 간단한 점수 기반 폴백 우선순위 지정
@@ -474,7 +700,9 @@ class PatchPriorityEvaluator:
             module_score = 0
             has_used_vuln = False
             has_external_exposure = module_data.get('has_external_exposure', False)
+            has_real_cases = False
             max_cvss = 0
+            all_real_cases = []
             
             for vuln in module_data['vulnerabilities']:
                 vuln_score = severity_weights.get(vuln['severity'], 10)
@@ -485,9 +713,15 @@ class PatchPriorityEvaluator:
                     vuln_score += 25
                     has_used_vuln = True
                 
-                # Docker 외부 노출 API 사용 시 점수 대폭 증가 (최우선 처리)
+                # Docker 외부 노출 API 사용 시 점수 대폭 증가
                 if vuln.get('external_api_exposed', False):
-                    vuln_score += 50  # 외부 노출 시 추가 점수
+                    vuln_score += 50
+                
+                # 실제 사례가 있는 경우 점수 증가
+                if vuln.get('real_world_cases'):
+                    vuln_score += 20
+                    has_real_cases = True
+                    all_real_cases.extend(vuln['real_world_cases'])
                 
                 module_score += vuln_score
                 max_cvss = max(max_cvss, vuln['cvss_score'])
@@ -495,13 +729,13 @@ class PatchPriorityEvaluator:
             # 취약점당 평균 점수
             avg_score = module_score / len(module_data['vulnerabilities'])
             
-            # 취약한 함수가 사용되는 경우 점수 증가
+            # 추가 점수 조정
             if has_used_vuln:
                 avg_score += 15
-            
-            # Docker 외부 노출이 있는 경우 추가 점수 (모듈 레벨)
             if has_external_exposure:
                 avg_score += 30
+            if has_real_cases:
+                avg_score += 10
             
             # 100점 초과 방지
             avg_score = min(avg_score, 100)
@@ -525,7 +759,8 @@ class PatchPriorityEvaluator:
                         'functions_used_in_code': v['functions_used_in_code'],
                         'external_api_exposed': v.get('external_api_exposed', False),
                         'exploit_scenario': f"자동 평가: {v['severity']} 심각도 취약점" + 
-                                          (" - Docker 외부 노출 ⚠️" if v.get('external_api_exposed', False) else ""),
+                                          (" - Docker 외부 노출 ⚠️" if v.get('external_api_exposed', False) else "") +
+                                          (" - 실제 공격 사례 존재" if v.get('real_world_cases') else ""),
                         'potential_impact': f"CVSS 점수 {v['cvss_score']}는 {'높은' if v['cvss_score'] >= 7 else '중간'} 영향을 나타냄" +
                                           (" - 외부 공격자가 직접 접근 가능" if v.get('external_api_exposed', False) else "")
                     }
@@ -538,10 +773,11 @@ class PatchPriorityEvaluator:
                     'compatibility_notes': '자동 권장사항입니다. 릴리스 노트를 확인하세요.',
                     'testing_steps': ['전체 테스트 스위트 실행', '애플리케이션 기능 확인']
                 },
-                'real_world_cases': [],
+                'real_world_cases': all_real_cases[:5],  # 최대 5개
                 'overall_recommendation': f"{'즉시' if avg_score >= 75 or has_external_exposure else '계획된'} 패치 권장. " +
                                         f"점수: {int(avg_score)}/100" +
-                                        (" - Docker 외부 노출로 인한 긴급 조치 필요" if has_external_exposure else "")
+                                        (" - Docker 외부 노출로 인한 긴급 조치 필요" if has_external_exposure else "") +
+                                        (" - 실제 공격 사례 존재" if has_real_cases else "")
             })
         
         scored_modules.sort(key=lambda x: x['risk_score'], reverse=True)
@@ -586,43 +822,61 @@ class PatchPriorityEvaluator:
         Returns:
             분석 결과 딕셔너리
         """
-        print("취약점 데이터 로딩 중...")
+        data_dir = Path(ast_file).resolve().parent
+        self._claude_raw_response_path = data_dir / 'fetch_prioiriy_raw_response.json'
+        if self.perplexity_searcher:
+            self.perplexity_searcher.set_raw_response_dir(data_dir / 'perplexity_raw_responses')
+        logger.info("취약점 데이터 로딩 중...")
         data = self.load_data(ast_file, gpt5_results_file, lib2cve2api_file, trivy_file)
         
-        print("취약점 컨텍스트 구축 중...")
+        logger.info("취약점 컨텍스트 구축 중...")
         contexts = self.build_vulnerability_contexts(data)
-        print(f"분석할 취약점 {len(contexts)}개 발견")
+        logger.info(f"분석할 취약점 {len(contexts)}개 발견")
         
-        print("모듈별로 취약점 그룹화 중...")
-        modules = self.group_by_module(contexts)
-        print(f"{len(modules)}개 모듈로 그룹화됨: {', '.join(modules.keys())}")
+        # Perplexity로 실제 사례 검색
+        real_world_cases = {}
+        if self.perplexity_enabled:
+            try:
+                real_world_cases = self.search_real_world_cases(contexts)
+            except Exception as e:
+                logger.warning(f"실제 사례 검색 중 오류 발생: {e}")
         
-        print("Claude를 통한 우선순위 평가 중...")
+        logger.info("모듈별로 취약점 그룹화 중...")
+        modules = self.group_by_module(contexts, real_world_cases)
+        logger.info(f"{len(modules)}개 모듈로 그룹화됨: {', '.join(modules.keys())}")
+        
+        logger.info("Claude를 통한 우선순위 평가 중...")
         results = self.evaluate_priorities(modules)
         
         # 메타데이터 추가
         results['metadata'] = {
             'total_vulnerabilities': len(contexts),
             'scan_date': data['trivy']['scan_info']['scan_date'],
-            'target': data['trivy']['scan_info']['target']
+            'target': data['trivy']['scan_info']['target'],
+            'perplexity_enabled': self.perplexity_enabled,
+            'real_world_cases_found': sum(len(cases) for cases in real_world_cases.values())
         }
         
         # 결과 저장
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(results, f, indent=2, ensure_ascii=False)
         
-        print(f"\n✓ 분석 완료! 결과가 {output_file}에 저장되었습니다")
-        print(f"\n요약:")
+        logger.info(f"\n✓ 분석 완료! 결과가 {output_file}에 저장되었습니다")
+        logger.info(f"\n요약:")
         summary = results.get('summary', {})
-        print(f"  분석된 전체 모듈 수: {summary.get('total_modules', 0)}")
-        print(f"  🚨 Docker 외부 노출 모듈: {summary.get('external_exposed_modules', 0)}")
-        print(f"  Critical 우선순위: {summary.get('critical_modules', 0)}")
-        print(f"  High 우선순위: {summary.get('high_priority_modules', 0)}")
-        print(f"  Medium 우선순위: {summary.get('medium_priority_modules', 0)}")
-        print(f"  Low 우선순위: {summary.get('low_priority_modules', 0)}")
-        print(f"  전체 취약점 수: {summary.get('total_vulnerabilities', 0)}")
+        logger.info(f"  분석된 전체 모듈 수: {summary.get('total_modules', 0)}")
+        logger.info(f"  🚨 Docker 외부 노출 모듈: {summary.get('external_exposed_modules', 0)}")
+        logger.info(f"  Critical 우선순위: {summary.get('critical_modules', 0)}")
+        logger.info(f"  High 우선순위: {summary.get('high_priority_modules', 0)}")
+        logger.info(f"  Medium 우선순위: {summary.get('medium_priority_modules', 0)}")
+        logger.info(f"  Low 우선순위: {summary.get('low_priority_modules', 0)}")
+        logger.info(f"  전체 취약점 수: {summary.get('total_vulnerabilities', 0)}")
+        if self.perplexity_enabled:
+            logger.info(f"  📚 발견된 실제 사례: {results['metadata'].get('real_world_cases_found', 0)}개")
         
+        self._claude_raw_response_path = None
         return results
+
 
 __all__ = [
     "Severity",
