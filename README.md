@@ -2,7 +2,7 @@
 
 ## 1. 프로젝트 개요
 
-이 프로젝트는 컨테이너 이미지를 입력으로 받아 **소스 코드 추출 → 취약점 스캔 → 라이브러리 API 정리 → AST 기반 보안 분석 → CVE-API 매핑 → 패치 우선순위 산정**까지 이어지는 엔드-투-엔드 보안 자동화 파이프라인을 제공합니다. 각 단계는 독립적인 모듈로 구성되어 있으며, 단일 이미지를 대상으로 한 반복 가능한 분석 흐름을 구성할 수 있습니다.
+이 프로젝트는 컨테이너 이미지를 입력으로 받아 **소스 코드 추출 → 취약점 스캔 → 라이브러리 API 정리 → AST 기반 보안 분석 → CVE-API 매핑 → 패치 우선순위 산정**에 이르는 엔드-투-엔드 보안 자동화 파이프라인을 제공합니다. 각 단계는 독립 모듈로 구성돼 단일 이미지를 반복 분석하거나 필요한 단계만 선택 실행할 수 있습니다.
 
 ## 2. 리포지토리 구조
 
@@ -25,21 +25,23 @@
 
 ### 3.1. 선행 조건
 
-* Docker 및 Trivy가 설치되어 있어야 합니다.
+* Docker와 Trivy를 먼저 설치합니다.
 * Python 3.10+ 환경에서 각 서브 모듈을 실행합니다.
 * LLM 기능을 사용하려면 `.env` 파일에 다음 API 키를 설정합니다.
 
   ```bash
   cp .env.example .env
-  # 필요한 키만 입력해도 되지만, 사용 예정인 기능별로 준비하세요.
+  # 필요한 키만 입력해도 되지만, 사용할 모듈에 맞춰 사전 준비하세요.
   OPENAI_API_KEY=...
   ANTHROPIC_API_KEY=...
+  PERPLEXITY_API_KEY=...
   GOOGLE_API_KEY=...
   XAI_API_KEY=...
   ```
 
-  * `ANTHROPIC_API_KEY`는 취약점 설명 향상(`trivy_extracter`), AST 보안 분석(`ast_visualizer`), 패치 우선순위 평가(`fetch_priority`)에서 사용됩니다.
-  * `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `XAI_API_KEY`는 `cve_api_mapper`에서 모델 비교 분석 시 필요합니다.
+  * `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `PERPLEXITY_API_KEY`는 필수이며 `cve_api_mapper`와 오케스트레이터의 기본 분석 흐름에서 사용됩니다.
+  * `ANTHROPIC_API_KEY`는 취약점 설명 향상(`trivy_extracter`), AST 보안 분석(`ast_visualizer`), 패치 우선순위 평가(`fetch_priority`)에도 사용됩니다.
+  * `GOOGLE_API_KEY`, `XAI_API_KEY`는 추가 모델 비교를 위한 테스트용 옵션입니다.
 
 * Python 패키지 의존성 설치:
 
@@ -58,7 +60,7 @@ cd ..
 
 ## 4. 빠른 시작 (오케스트레이터)
 
-프로젝트 루트에서 단일 명령으로 전체 파이프라인을 실행할 수 있습니다.
+프로젝트 루트에서 아래 명령을 실행하면 전체 파이프라인이 한 번에 수행됩니다.
 
 ```bash
 python main.py --image test_target/pyyaml-vuln.tar \
@@ -69,20 +71,20 @@ python main.py --image test_target/pyyaml-vuln.tar \
 
 주요 옵션:
 
-- `--run-security-analysis`: AST 보안 분석(Claude) 활성화
-- `--enhance-trivy`: Trivy 결과 설명을 Claude로 보강
-- `--emit-graph`: AST 호출 그래프를 Graphviz로 생성
-- `--db-dir`: 기본 출력 디렉터리(`DB/`) 변경
-- `--sources-dir`: 추출된 소스를 배치할 디렉터리 지정
-- `--app-path`: 이미지 내부 애플리케이션 경로를 수동 지정
-- `--no-full-scan`: Trivy 스캔을 HIGH/CRITICAL로 제한
-- `--force`: 이미 존재하는 산출물이 있어도 모든 단계를 다시 실행
+- `--run-security-analysis`: AST 보안 분석(Claude)을 활성화합니다.
+- `--enhance-trivy`: Trivy 결과 설명을 Claude로 보강합니다.
+- `--emit-graph`: AST 호출 그래프를 Graphviz로 생성합니다.
+- `--db-dir`: 기본 출력 디렉터리(`DB/`)를 변경합니다.
+- `--sources-dir`: 추출된 소스를 배치할 디렉터리를 지정합니다.
+- `--app-path`: 이미지 내부 애플리케이션 경로를 수동 지정합니다.
+- `--no-full-scan`: Trivy 스캔을 HIGH/CRITICAL로 제한합니다.
+- `--force`: 이미 존재하는 산출물이 있어도 모든 단계를 다시 실행합니다.
 
 오케스트레이터는 단계별 산출물이 이미 존재하면 자동으로 건너뛰며, 최종 결과는 `DB/fetch_priority.json`에 저장됩니다.
 
 ## 5. 모듈별 수동 실행 (선택 사항)
 
-각 단계의 출력은 기본적으로 `DB/` 디렉터리에 누적되며, 다음 명령을 순차 실행하면 전체 파이프라인을 재현할 수 있습니다.
+각 단계의 출력은 기본적으로 `DB/` 디렉터리에 누적되며, 아래 명령을 순서대로 실행하면 전체 파이프라인을 수동으로 재현할 수 있습니다.
 
 ### 5.1. 컨테이너 이미지에서 소스 코드 추출
 
