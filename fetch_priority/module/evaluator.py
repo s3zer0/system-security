@@ -7,6 +7,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import logging
 from datetime import datetime
+import requests
 
 # Anthropic API 사용
 import anthropic
@@ -36,6 +37,7 @@ class VulnerabilityContext:
     version: str
     severity: str
     cvss_score: float
+    epss_score: float
     description: str
     vulnerable_apis: List[str]
     used_apis: List[str]  # 코드베이스에서 실제 사용되는 API
@@ -69,6 +71,7 @@ class PatchPriorityEvaluator:
         self.perplexity_enabled = enable_perplexity
         self.perplexity_searcher: Optional[PerplexitySearcher] = None
         self._claude_raw_response_path: Optional[Path] = None
+        self._epss_cache: Dict[str, float] = {}
         
         if enable_perplexity:
             perplexity_key = perplexity_api_key or os.getenv("PERPLEXITY_API_KEY")
@@ -115,6 +118,41 @@ class PatchPriorityEvaluator:
             'lib2cve2api': lib2cve2api,
             'trivy': trivy_data
         }
+
+    def _fetch_epss_score(self, cve_id: str) -> float:
+        """
+        FIRST EPSS API에서 CVE별 EPSS 점수를 가져옵니다.
+
+        Args:
+            cve_id: EPSS 점수를 조회할 CVE ID
+
+        Returns:
+            EPSS 점수 (조회 실패 시 0.0)
+        """
+        if not cve_id:
+            return 0.0
+
+        if cve_id in self._epss_cache:
+            return self._epss_cache[cve_id]
+
+        url = f"https://api.first.org/data/v1/epss?cve={cve_id}"
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            payload = response.json()
+            data = payload.get('data') or []
+            if not data:
+                logger.warning('EPSS 데이터가 비어 있습니다: %s', cve_id)
+                score = 0.0
+            else:
+                score_str = data[0].get('epss')
+                score = float(score_str) if score_str is not None else 0.0
+        except Exception as exc:
+            logger.warning('EPSS 점수 조회 실패 (%s): %s', cve_id, exc)
+            score = 0.0
+
+        self._epss_cache[cve_id] = score
+        return score
     
     def analyze_api_usage(self, vulnerable_apis: List[str], 
                           external_apis: List[str],
@@ -212,12 +250,15 @@ class PatchPriorityEvaluator:
                 elif 'redhat' in vuln['cvss'] and 'V3Score' in vuln['cvss']['redhat']:
                     cvss_score = vuln['cvss']['redhat']['V3Score']
             
+            epss_score = self._fetch_epss_score(cve_id)
+
             context = VulnerabilityContext(
                 cve_id=cve_id,
                 package_name=package_name,
                 version=version,
                 severity=vuln['severity'],
                 cvss_score=cvss_score,
+                epss_score=epss_score,
                 description=vuln.get('description', '설명 없음'),
                 vulnerable_apis=vulnerable_apis,
                 used_apis=matching_apis,
@@ -298,6 +339,7 @@ class PatchPriorityEvaluator:
                 'cve_id': ctx.cve_id,
                 'severity': ctx.severity,
                 'cvss_score': ctx.cvss_score,
+                'epss_score': ctx.epss_score,
                 'description': ctx.description,
                 'vulnerable_functions': ctx.vulnerable_apis,
                 'functions_used_in_code': ctx.is_api_used,
@@ -347,6 +389,7 @@ class PatchPriorityEvaluator:
             # Docker 외부 노출 여부 표시
             external_warning = " ⚠️ DOCKER 외부 노출" if module_data.get('has_external_exposure', False) else ""
             
+
             prompt += f"""
 ## Module {i}: {pkg_name}{external_warning}
 
@@ -374,10 +417,19 @@ class PatchPriorityEvaluator:
                         cases_info += f"  {case.get('description', '')[:150]}...\n"
                         cases_info += f"  Source: {case.get('source_url', 'N/A')}\n"
                 
+                
+                epss_value = vuln.get('epss_score', 'Unknown')
+                if isinstance(epss_value, (int, float)):
+                    epss_display = f"{epss_value:.3f}"
+                else:
+                    epss_display = str(epss_value)
+
                 prompt += f"""
 #### {j}. {vuln['cve_id']} ({vuln['severity']}, CVSS: {vuln['cvss_score']})
 
 **Description:** {vuln['description'][:300]}...
+
+**EPSS Score:** {epss_display}
 
 **Vulnerable Functions:**
 {', '.join(vuln['vulnerable_functions']) if vuln['vulnerable_functions'] else 'Not specified'}
@@ -400,9 +452,10 @@ class PatchPriorityEvaluator:
 **우선순위 결정 시 핵심 고려사항:**
 1. **Docker 외부 노출 (최우선)**: 외부로 노출되는 취약한 API가 사용되는 경우 CRITICAL 우선순위로 처리
 2. **실제 사례**: 실제 공격이나 사고가 보고된 경우 우선순위 상향
-3. CVSS 점수와 심각도
-4. 취약한 함수의 실제 사용 여부
-5. 공격 가능성과 잠재적 영향도
+3. **EPSS 점수**: 실제 악용 가능성이 높은 취약점일수록 우선순위를 높게 책정
+4. CVSS 점수와 심각도
+5. 취약한 함수의 실제 사용 여부
+6. 공격 가능성과 잠재적 영향도
 
 각 모듈별로 다음을 제공하세요:
 
@@ -445,6 +498,7 @@ class PatchPriorityEvaluator:
           "cve_id": "CVE-XXXX-XXXXX",
           "severity": "CRITICAL",
           "cvss_score": 9.8,
+          "epss_score": 0.85,
           "vulnerable_functions": ["function1", "function2"],
           "functions_used_in_code": true,
           "external_api_exposed": true,
@@ -702,11 +756,18 @@ class PatchPriorityEvaluator:
             has_external_exposure = module_data.get('has_external_exposure', False)
             has_real_cases = False
             max_cvss = 0
+            has_high_epss = False
             all_real_cases = []
             
             for vuln in module_data['vulnerabilities']:
                 vuln_score = severity_weights.get(vuln['severity'], 10)
                 vuln_score += vuln['cvss_score'] * 3
+                epss_val = float(vuln.get('epss_score') or 0.0)
+                vuln_score += epss_val * 60
+                if epss_val >= 0.7:
+                    vuln_score += 15
+                elif epss_val >= 0.4:
+                    vuln_score += 5
                 
                 # 취약한 함수가 사용되는 경우
                 if vuln['functions_used_in_code']:
@@ -722,7 +783,10 @@ class PatchPriorityEvaluator:
                     vuln_score += 20
                     has_real_cases = True
                     all_real_cases.extend(vuln['real_world_cases'])
-                
+
+                if epss_val >= 0.7:
+                    has_high_epss = True
+
                 module_score += vuln_score
                 max_cvss = max(max_cvss, vuln['cvss_score'])
             
@@ -735,6 +799,8 @@ class PatchPriorityEvaluator:
             if has_external_exposure:
                 avg_score += 30
             if has_real_cases:
+                avg_score += 10
+            if has_high_epss:
                 avg_score += 10
             
             # 100점 초과 방지
@@ -755,12 +821,14 @@ class PatchPriorityEvaluator:
                         'cve_id': v['cve_id'],
                         'severity': v['severity'],
                         'cvss_score': v['cvss_score'],
+                        'epss_score': v.get('epss_score', 0.0),
                         'vulnerable_functions': v['vulnerable_functions'],
                         'functions_used_in_code': v['functions_used_in_code'],
                         'external_api_exposed': v.get('external_api_exposed', False),
                         'exploit_scenario': f"자동 평가: {v['severity']} 심각도 취약점" + 
                                           (" - Docker 외부 노출 ⚠️" if v.get('external_api_exposed', False) else "") +
-                                          (" - 실제 공격 사례 존재" if v.get('real_world_cases') else ""),
+                                          (" - 실제 공격 사례 존재" if v.get('real_world_cases') else "") +
+                                          (f" - EPSS {v.get('epss_score', 0.0):.2f}" if v.get('epss_score') is not None else ""),
                         'potential_impact': f"CVSS 점수 {v['cvss_score']}는 {'높은' if v['cvss_score'] >= 7 else '중간'} 영향을 나타냄" +
                                           (" - 외부 공격자가 직접 접근 가능" if v.get('external_api_exposed', False) else "")
                     }
@@ -777,7 +845,8 @@ class PatchPriorityEvaluator:
                 'overall_recommendation': f"{'즉시' if avg_score >= 75 or has_external_exposure else '계획된'} 패치 권장. " +
                                         f"점수: {int(avg_score)}/100" +
                                         (" - Docker 외부 노출로 인한 긴급 조치 필요" if has_external_exposure else "") +
-                                        (" - 실제 공격 사례 존재" if has_real_cases else "")
+                                        (" - 실제 공격 사례 존재" if has_real_cases else "") +
+                                        (" - EPSS 고위험" if has_high_epss else "")
             })
         
         scored_modules.sort(key=lambda x: x['risk_score'], reverse=True)

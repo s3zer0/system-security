@@ -1,7 +1,7 @@
 {
   "scan_info": {
     "target": "/home/s3zer0/system-security/test_target/pyyaml-vuln.tar",
-    "scan_date": "2025-10-08T17:47:49.228888456Z",
+    "scan_date": "2025-10-10T16:47:09.451689875Z",
     "os_info": {
       "Family": "debian",
       "Name": "13.1"
