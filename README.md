@@ -163,6 +163,9 @@ cd ..
 * 출력 파일 `DB/patch_priorities.json`에는 모듈별 위험 점수, Docker 외부 노출 여부, 권장 패치 명령 등이 포함됩니다.
 * 실행 전에 `DB/`에 다음 파일이 준비되어 있는지 확인하세요: `ast_visualize_result.json`, `gpt5_results.json`, `lib2cve2api.json`, `trivy_analysis_result.json`. 위 절차를 따르면 자동으로 해당 파일명이 맞춰집니다.
 * `python -m fetch_priority --output <경로> --model <모델명>` 형태로 산출물 위치나 사용할 Claude 모델을 조정할 수 있습니다.
+* `--enable-perplexity`를 사용하면 Perplexity API를 호출해 실제 침해 사례를 수집하며, `--perplexity-api-key`로 `.env` 대신 키를 직접 전달할 수 있습니다. 결과 요약은 `DB/perplexity_raw_responses/`에 저장됩니다.
+* 패치 우선순위 계산 시 FIRST EPSS 공개 API를 호출해 악용 가능성을 반영합니다. 인터넷 연결이 제한된 환경에서는 해당 단계가 0 점수로 대체됩니다.
+* Claude 응답 전문은 `DB/fetch_prioiriy_raw_response.json`에 저장되며, LLM 실패 시 자동 점수 기반 폴백 로직으로 결과를 생성합니다.
 
 ## 6. 구현 진행 현황
 
@@ -178,18 +181,21 @@ cd ..
 - `python_api_extracter`: Trivy 리포트를 패키지·버전별로 재구성하고 wheel 메타에서 라이브러리 공개 API를 수집합니다.
 - `ast_visualizer`: 호출 그래프와 외부·내부·미사용 API 분류를 제공하고 Trivy 데이터를 입력으로 LLM 보안 진단을 수행합니다.
 - `cve_api_mapper`: GPT-5를 기본으로 Claude, Gemini, Grok까지 병렬 분석하고 모델별 결과·Raw 응답·비교 요약을 보관합니다.
-- `fetch_priority`: Claude 기반 우선순위 산정과 선택적 Perplexity 사례 검색을 통합해 외부 노출 여부까지 반영합니다.
+- `fetch_priority`: Claude 기반 우선순위 산정에 EPSS 스코어와 실제 사례 검색(Perplexity)을 결합하고, Docker 외부 노출·실제 사용 여부를 종합해 위험 점수를 계산하며 LLM 실패 시 점수 기반 폴백과 Raw 응답 로그를 제공합니다.
 
 ### 6.3 산출물 및 로그 디렉터리
 - `DB/trivy_analysis_result.json`: 기본 Trivy 출력이며 `*_enhanced.json`과 `_report.txt`는 설명 보강 결과입니다.
 - `DB/ast_visualize_result.json`과 `_security_analysis.json`은 호출 흐름과 LLM 진단이며 그래프는 `ast_visualize.png`로 생성됩니다.
 - `DB/gpt5_results.json`과 `DB/cve_api_mapper_*/`는 CVE-API 매핑 결과와 원본 응답, 비교 요약을 제공합니다.
 - `DB/fetch_priority.json` 혹은 CLI로 지정한 경로에 패치 우선순위 결과를 저장하며 필요 시 `--output`으로 변경 가능합니다.
+- `DB/fetch_prioiriy_raw_response.json`에는 Claude 응답 원문과 파싱 결과, 오류 정보가 기록됩니다.
+- `DB/perplexity_raw_responses/`에는 Perplexity 실제 사례 검색 응답이 케이스별로 축적됩니다.
 
 ### 6.4 테스트 및 참고 리소스
 - `test_target/`: PyYAML 취약 이미지를 위한 Dockerfile과 샘플 tar 생성 스크립트를 포함합니다.
 - `app.log`: CVE-API 매퍼 실행 로그를 저장하며 최근 실행 상태 확인에 활용합니다.
 - `fetch_priority/module/perplexity_searcher.py`: Perplexity Raw 응답을 기본으로 `DB/perplexity_raw_responses/`에 보관합니다.
+- `fetch_priority/module/evaluator.py`: EPSS 연동, LLM 폴백, Claude Raw 응답 저장 등 패치 우선순위 핵심 로직을 포함합니다.
 
 ## 7. 산출물 요약
 
@@ -201,6 +207,8 @@ cd ..
 | `DB/lib2cve2api.json` | 라이브러리별 CVE와 공개 API 매핑 |
 | `cve_api_mapper/results/*.json` | 모델별 CVE↔API 매핑 결과 |
 | `DB/fetch_priority.json` 또는 `DB/patch_priorities.json` | 패치 우선순위와 대응 권장사항 |
+| `DB/fetch_prioiriy_raw_response.json` | Claude 분석 Raw 응답 및 파싱 결과(오류 포함) |
+| `DB/perplexity_raw_responses/` | CVE별 Perplexity 실제 사례 검색 원문 |
 
 ## 8. 라이선스
 
