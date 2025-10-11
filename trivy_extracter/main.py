@@ -44,13 +44,13 @@ def enhance_descriptions(input_file: str, output_file: str):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Tool to scan container vulnerabilities using Trivy")
+    parser = argparse.ArgumentParser(description="Trivy를 사용해 컨테이너 취약점을 스캔하고 보고서를 생성합니다.")
 
-    parser.add_argument("input", help="Path to image tar/zip file")
-    parser.add_argument("output", help="Path to save JSON report")
-    parser.add_argument("--no-full-scan", action="store_true", help="Disable full scan")
+    parser.add_argument("input", help="이미지 tar/zip 파일 경로")
+    parser.add_argument("output", help="JSON 보고서를 저장할 경로")
+    parser.add_argument("--no-full-scan", action="store_true", help="전체 스캔을 비활성화합니다.")
     parser.add_argument("--enhance", action="store_true",  # ← 추가
-                       help="Enhance vulnerability descriptions with LLM")
+                       help="LLM을 사용해 취약점 설명을 향상합니다.")
 
     args = parser.parse_args()
 
@@ -68,5 +68,5 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"[!] 오류: {e}")
 
-# Usage:
+# 사용 예시:
 # python3 main.py ../test_target/pyyaml-vuln.tar ../DB/trivy_analysis_result.json --enhance

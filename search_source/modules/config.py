@@ -1,4 +1,4 @@
-"""Configuration and constants module for container image source extractor."""
+"""컨테이너 이미지 소스 추출기를 위한 설정 및 상수 모듈입니다."""
 
 # 소스 코드가 위치할 가능성이 높은 경로 목록
 CANDIDATE_APP_PATHS = [

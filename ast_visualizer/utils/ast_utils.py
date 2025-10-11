@@ -1,18 +1,18 @@
 """
-AST Utils - Node Information Collection
+AST 유틸리티 - 노드 정보 수집
 
-This module provides visitor classes and utility functions for analyzing
-Python AST nodes to collect function definitions and call relationships.
+이 모듈은 함수 정의와 호출 관계를 수집하기 위해 Python AST 노드를 분석하는
+방문자 클래스와 유틸리티 함수를 제공합니다.
 """
 
 import ast
 
-# HTTP method names for RESTful API detection
+# RESTful API 감지를 위한 HTTP 메서드 이름 목록
 RESTFUL_HTTP_METHODS = {"get", "post", "put", "delete", "patch", "head", "options"}
 
 
 def is_route_decorator(decorator_node):
-    """Check if decorator is a Flask route decorator"""
+    """데코레이터가 Flask 라우트 데코레이터인지 확인합니다."""
     if not isinstance(decorator_node, ast.Call):
         return False
     func_node = decorator_node.func
@@ -24,7 +24,7 @@ def is_route_decorator(decorator_node):
 
 
 def is_cli_decorator(decorator_node):
-    """Check if decorator is a CLI command decorator"""
+    """데코레이터가 CLI 명령 데코레이터인지 확인합니다."""
     if not isinstance(decorator_node, ast.Call):
         return False
     func_node = decorator_node.func
@@ -38,7 +38,7 @@ def is_cli_decorator(decorator_node):
 
 
 def is_socketio_decorator(decorator_node):
-    """Check if decorator is a SocketIO decorator"""
+    """데코레이터가 SocketIO 데코레이터인지 확인합니다."""
     if not isinstance(decorator_node, ast.Call):
         return False
     func_node = decorator_node.func
@@ -51,7 +51,7 @@ def is_socketio_decorator(decorator_node):
 
 
 def uses_request(function_node):
-    """Check if function uses 'request' object"""
+    """함수가 'request' 객체를 사용하는지 확인합니다."""
     for inner_node in ast.walk(function_node):
         if isinstance(inner_node, ast.Name) and inner_node.id == 'request':
             return True
@@ -59,14 +59,14 @@ def uses_request(function_node):
 
 
 def collect_functions(syntax_tree):
-    """Collect all function definitions with metadata"""
+    """모든 함수 정의를 메타데이터와 함께 수집합니다."""
     visitor = FuncVisitor()
     visitor.visit(syntax_tree)
     return visitor.function_info_map
 
 
 class FuncVisitor(ast.NodeVisitor):
-    """Visitor to collect function definitions and their metadata"""
+    """함수 정의와 관련 메타데이터를 수집하는 방문자 클래스입니다."""
     
     def __init__(self):
         self.current_class_name = None
@@ -96,7 +96,7 @@ class FuncVisitor(ast.NodeVisitor):
 
 
 class CallVisitor(ast.NodeVisitor):
-    """Visitor to collect function calls and build call graph"""
+    """함수 호출을 수집하여 호출 그래프를 구축하는 방문자 클래스입니다."""
     
     def __init__(
         self,
@@ -139,11 +139,11 @@ class CallVisitor(ast.NodeVisitor):
         self.current_function_name = None
 
     def visit_Call(self, call_node):
-        # Additional detection based on decorators
+        # 데코레이터 정보를 기반으로 추가 감지를 수행합니다.
         if isinstance(call_node.func, ast.Attribute):
             attribute_name = call_node.func.attr
 
-            # socketio.on_event handler
+            # socketio.on_event 핸들러를 처리합니다.
             if attribute_name == "on_event" and getattr(call_node.func.value, 'id', None) == "socketio":
                 handler_node = (
                     call_node.args[1]
@@ -157,7 +157,7 @@ class CallVisitor(ast.NodeVisitor):
                             self.global_function_info_map[func_name]['is_socketio'] = True
                             break
 
-            # flask.add_url_rule route detection
+            # flask.add_url_rule 호출을 통해 라우트를 감지합니다.
             elif attribute_name == "add_url_rule":
                 view_func_node = next((kw.value for kw in call_node.keywords if kw.arg == "view_func"), None)
                 if view_func_node is None:
@@ -189,7 +189,7 @@ class CallVisitor(ast.NodeVisitor):
                                     self.global_function_info_map[fn]['is_route'] = True
                                     break
 
-            # flask-restful add_resource detection
+            # flask-restful add_resource 호출을 감지합니다.
             elif attribute_name == "add_resource":
                 resource_class_node = call_node.args[0] if call_node.args else None
                 if isinstance(resource_class_node, (ast.Name, ast.Attribute)):
@@ -204,7 +204,7 @@ class CallVisitor(ast.NodeVisitor):
                             if method_name in RESTFUL_HTTP_METHODS:
                                 self.global_function_info_map[func_name]['is_restful'] = True
 
-            # socketio.on
+            # socketio.on 호출을 처리합니다.
             elif attribute_name == "on" and getattr(call_node.func.value, 'id', None) == "socketio":
                 handler_node = (
                     call_node.args[1]
@@ -218,7 +218,7 @@ class CallVisitor(ast.NodeVisitor):
                             self.global_function_info_map[func_name]['is_socketio'] = True
                             break
 
-        # Record caller-callee relationship
+        # 호출자와 피호출자 간의 관계를 기록합니다.
         if self.current_function_name is not None:
             if isinstance(call_node.func, ast.Name):
                 callee_name = call_node.func.id
@@ -237,7 +237,7 @@ class CallVisitor(ast.NodeVisitor):
                         self.call_graph_map[self.current_function_name].add(func_name)
                         break
 
-        # Record target API calls
+        # 대상 API 호출을 기록합니다.
         container_name = self.current_function_name or self.module_prefix or '<module>'
         is_target_call = self.force_detection or any(
             (module_name and isinstance(call_node.func, ast.Attribute)

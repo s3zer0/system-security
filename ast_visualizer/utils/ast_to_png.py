@@ -1,7 +1,7 @@
 """
-AST to PNG - Visualization and Analysis
+AST를 PNG로 시각화하고 분석하는 모듈입니다.
 
-This module handles the visualization of call graphs and API classification.
+이 모듈은 호출 그래프 시각화와 API 분류를 담당합니다.
 """
 
 import ast
@@ -14,7 +14,7 @@ from . import ast_utils
 
 
 def get_full_name(node):
-    """Get full qualified name from AST node"""
+    """AST 노드에서 완전한 정규화 이름을 추출합니다."""
     if isinstance(node, ast.Name):
         return node.id
     elif isinstance(node, ast.Attribute):
@@ -24,7 +24,7 @@ def get_full_name(node):
 
 
 def invert_graph(call_graph):
-    """Invert call graph to get callers map"""
+    """호출 그래프를 뒤집어 호출자 맵을 생성합니다."""
     inverse_map = defaultdict(set)
     for caller_function, callee_functions in call_graph.items():
         for callee_function in callee_functions:
@@ -33,7 +33,7 @@ def invert_graph(call_graph):
 
 
 def collect_related_functions(target_call_entries, callers_map):
-    """Collect all functions related to target calls"""
+    """대상 호출과 관련된 모든 함수를 수집합니다."""
     related_functions = set()
     for function_name, *_ in target_call_entries:
         related_functions.add(function_name)
@@ -48,7 +48,7 @@ def collect_related_functions(target_call_entries, callers_map):
 
 
 def parse_target_calls(target_call_strings):
-    """Parse target API strings into (module, function) tuples"""
+    """대상 API 문자열을 (모듈, 함수) 튜플로 변환합니다."""
     parsed_targets = []
     for target_string in target_call_strings:
         parts = target_string.split('.', 1)
@@ -60,7 +60,7 @@ def parse_target_calls(target_call_strings):
 
 
 def sanitize_node_identifier(name):
-    """Sanitize node name for Graphviz"""
+    """Graphviz에서 사용할 노드 이름을 정제합니다."""
     return name.replace('.', '_').replace(' ', '_').replace('/', '_')
 
 
@@ -73,25 +73,25 @@ def visualize_call_flow(
     no_graph=False
 ):
     """
-    Main visualization function
+    호출 흐름을 시각화하는 메인 함수입니다.
     
     Args:
-        file_paths: List of Python file paths to analyze
-        base_directory: Base directory for relative path calculation
-        output_path: Output file prefix for graph
-        target_call_list: List of (module, function) tuples to track
-        force_detection: If True, detect all API calls
-        no_graph: If True, skip graph generation
+        file_paths: 분석할 Python 파일 경로 목록입니다.
+        base_directory: 상대 경로 계산에 사용할 기준 디렉터리입니다.
+        output_path: 그래프 출력 파일 접두사입니다.
+        target_call_list: 추적할 (모듈, 함수) 튜플 목록입니다.
+        force_detection: True이면 모든 API 호출을 감지합니다.
+        no_graph: True이면 그래프 생성을 건너뜁니다.
         
     Returns:
-        Tuple of (external_apis, internal_apis, unused_apis)
+        (external_apis, internal_apis, unused_apis) 튜플을 반환합니다.
     """
     logging.info(f"Starting analysis on {len(file_paths)} files in {base_directory}")
     global_function_info = {}
     call_graph = defaultdict(set)
     collected_target_calls = []
 
-    # Flag-to-tag mapping
+    # 플래그와 태그 간 매핑을 정의합니다.
     DETECTION_FLAG_TO_TAG = {
         'is_route':    'route',
         'is_restful':  'restful',
@@ -106,7 +106,7 @@ def visualize_call_flow(
         'is_restful',
     )
 
-    # Collect function definitions
+    # 함수 정의를 수집합니다.
     for file_path in file_paths:
         try:
             source_code = open(file_path, encoding='utf-8').read()
@@ -129,14 +129,14 @@ def visualize_call_flow(
             function_info['file'] = relative_path
             global_function_info[full_function_name] = function_info
 
-    # Force mode: default yaml target processing
+    # 강제 모드: 기본 yaml 대상 처리를 수행합니다.
     if force_detection and target_call_list == [(None, 'yaml')]:
         target_call_list.clear()
         for function_name, function_info in global_function_info.items():
             if any(function_info.get(flag, False) for flag in ROUTE_DETECTION_FLAGS):
                 target_call_list.append((None, function_name.split('.')[-1]))
 
-    # Build call graph and collect target calls
+    # 호출 그래프를 구축하고 대상 호출을 수집합니다.
     for file_path in file_paths:
         try:
             source_code = open(file_path, encoding='utf-8').read()
@@ -167,7 +167,7 @@ def visualize_call_flow(
         if 'target_calls' in call_graph:
             collected_target_calls.extend(call_graph.pop('target_calls'))
 
-    # Expand external functions set
+    # 외부 함수 집합을 확장합니다.
     external_functions = {
         fn for fn, info in global_function_info.items()
         if any(info.get(flag, False) for flag in ROUTE_DETECTION_FLAGS)
@@ -180,18 +180,18 @@ def visualize_call_flow(
                 external_functions.add(callee)
                 extension_stack.append(callee)
 
-    # Invert graph and collect related functions
+    # 그래프를 뒤집어 관련 함수를 수집합니다.
     reversed_call_map = invert_graph(call_graph)
     related_functions = collect_related_functions(collected_target_calls, reversed_call_map)
 
-    # Visualization
+    # 시각화를 수행합니다.
     if not no_graph:
         graph = Digraph()
         graph.attr(rankdir='LR', bgcolor='white')
         graph.attr('node', style='filled')
         graph.attr('edge', fontcolor='black')
 
-        # Create function definition nodes
+        # 함수 정의 노드를 생성합니다.
         for function_name in sorted(related_functions):
             info = global_function_info.get(function_name, {})
             label = f"{function_name}\n(file: {info.get('file','?')}, line: {info.get('line','?')})"
@@ -208,7 +208,7 @@ def visualize_call_flow(
             )
             graph.node(sanitize_node_identifier(function_name), label=label, fillcolor=fill_color)
 
-        # Create function call nodes
+        # 함수 호출 노드를 생성합니다.
         for container_function, call_node, first_arg, keyword_args, relative_path in collected_target_calls:
             line_number = call_node.lineno
             api_full_name = get_full_name(call_node.func)
@@ -225,7 +225,7 @@ def visualize_call_flow(
             graph.edge(sanitize_node_identifier(container_function), call_id,
                        label=f"calls (line {line_number})")
 
-        # Create edges for caller-callee relationships
+        # 호출자-피호출자 간 엣지를 생성합니다.
         for caller_function, callee_functions in call_graph.items():
             if caller_function in related_functions:
                 for callee_function in callee_functions:
@@ -242,7 +242,7 @@ def visualize_call_flow(
     else:
         logging.info("Graph generation skipped (--no-graph option)")
 
-    # Categorize APIs
+    # API를 범주화합니다.
     external_set = set()
     internal_set = set()
     for container_function, call_node, *_ in collected_target_calls:

@@ -10,13 +10,12 @@ from common.models import Vulnerability
 
 def scan_vulnerabilities(input_archive: str, output_file: str, full_scan: bool = True):
     """
-    Scan container image (in tar/zip format) for CVE vulnerabilities using Trivy
-    and save the result as JSON to the specified output file.
+    Trivy를 사용해 tar/zip 형식의 컨테이너 이미지를 스캔하고 JSON 보고서를 생성합니다.
 
     Args:
-        input_archive: Path to the container image tar/zip file to scan
-        output_file: Path to save the JSON report
-        full_scan: If True, includes all severity levels, otherwise only critical/high
+        input_archive: 스캔할 컨테이너 이미지 tar/zip 파일 경로
+        output_file: JSON 보고서를 저장할 경로
+        full_scan: True이면 모든 심각도 수준을 포함하고, False이면 HIGH/CRITICAL만 포함합니다.
     """
     # Trivy 명령어 구성
     cmd = [
@@ -119,5 +118,4 @@ def clean_scan_results(output_file: str):
 
     # 정제된 결과를 동일한 파일에 덮어쓰기
     write_json(output_file, cleaned_data)
-
 

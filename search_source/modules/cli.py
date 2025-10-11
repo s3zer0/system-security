@@ -1,4 +1,4 @@
-"""Command-line interface module for the container image source extractor."""
+"""컨테이너 이미지 소스 추출기를 위한 명령행 인터페이스 모듈입니다."""
 
 import argparse
 from typing import Optional
@@ -10,10 +10,10 @@ from .utils import validate_tar_file
 
 def create_parser() -> argparse.ArgumentParser:
     """
-    Create and configure the argument parser.
+    인자 파서를 생성하고 필요한 옵션을 설정합니다.
 
     Returns:
-        Configured ArgumentParser instance
+        구성된 ArgumentParser 인스턴스입니다.
     """
     parser = argparse.ArgumentParser(
         description="컨테이너 이미지에서 애플리케이션 소스 코드를 추출합니다.",
@@ -65,20 +65,20 @@ def create_parser() -> argparse.ArgumentParser:
 
 def validate_arguments(args: argparse.Namespace) -> bool:
     """
-    Validate command-line arguments.
+    명령행 인자를 검증합니다.
 
     Args:
-        args: Parsed arguments
+        args: 파싱된 인자 값
 
     Returns:
-        True if arguments are valid, False otherwise
+        인자가 유효하면 True, 그렇지 않으면 False
     """
-    # Validate tar file
+    # tar 파일을 검증합니다.
     if not validate_tar_file(args.image_tar):
         print(f"[!] 오류: '{args.image_tar}'는 유효한 tar 파일이 아닙니다.")
         return False
 
-    # Validate mutual exclusivity logic (already handled by argparse)
+    # 상호 배타 옵션 검사 (argparse에서 기본 처리하지만 안전망으로 확인)
     if not args.auto_detect and not args.app_path:
         print("[!] 오류: --auto-detect 또는 --app-path 중 하나를 지정해야 합니다.")
         return False
@@ -88,23 +88,23 @@ def validate_arguments(args: argparse.Namespace) -> bool:
 
 def run_cli(argv: Optional[list] = None) -> int:
     """
-    Run the CLI application.
+    CLI 애플리케이션을 실행합니다.
 
     Args:
-        argv: Command-line arguments (for testing purposes)
+        argv: 테스트 목적으로 전달할 명령행 인자 목록
 
     Returns:
-        Exit code (0 for success, 1 for failure)
+        종료 코드 (성공 시 0, 실패 시 1)
     """
     parser = create_parser()
     args = parser.parse_args(argv)
 
-    # Validate arguments
+    # 인자를 검증합니다.
     if not validate_arguments(args):
         return 1
 
     try:
-        # Execute extraction
+        # 추출 작업을 수행합니다.
         extract_app_layer(
             image_tar_path=args.image_tar,
             output_dir=args.output_dir,

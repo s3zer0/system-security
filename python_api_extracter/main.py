@@ -11,15 +11,15 @@ def main():
     """프로그램의 메인 진입점"""
     # 명령줄 인자 파서 생성
     parser = argparse.ArgumentParser(
-        description="Generate combined CVE and API mapping from Trivy JSON report."
+        description="Trivy JSON 보고서에서 CVE와 API 매핑을 생성합니다."
     )
     parser.add_argument(
         "report",
-        help="Path to the Trivy JSON report file"
+        help="Trivy JSON 보고서 파일 경로"
     )
     parser.add_argument(
         "-o", "--output",
-        help="Path to save the generated mapping file (JSON format)",
+        help="생성된 매핑 파일(JSON)을 저장할 경로",
         metavar="FILE"
     )
     args = parser.parse_args()
@@ -46,5 +46,5 @@ def main():
 if __name__ == "__main__":
     main()
 
-# Usage:
+# 사용 예시:
 # python3 main.py ../DB/trivy_analysis_result.json -o ../DB/lib2cve2api.json

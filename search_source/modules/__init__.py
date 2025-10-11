@@ -1,4 +1,4 @@
-"""Container Image Source Extractor modules."""
+"""컨테이너 이미지 소스 추출기 모듈 모음입니다."""
 
 from .cli import run_cli
 from .extractor import extract_app_layer, ImageExtractor

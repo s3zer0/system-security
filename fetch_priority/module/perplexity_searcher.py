@@ -322,7 +322,7 @@ class PerplexitySearcher:
                     error="; ".join(error_notes) or None,
                 )
 
-                # Rate limiting
+                # 호출 빈도를 제한합니다.
                 time.sleep(self.rate_limit_delay)
                 
                 return cases
@@ -330,7 +330,7 @@ class PerplexitySearcher:
             except Exception as e:
                 logger.warning(f"CVE {cve_id} 검색 시도 {attempt + 1}/{max_retries} 실패: {e}")
                 if attempt < max_retries - 1:
-                    time.sleep(2 ** attempt)  # Exponential backoff
+                    time.sleep(2 ** attempt)  # 지수 백오프 적용
                 else:
                     logger.error(f"CVE {cve_id} 검색 최종 실패")
                     self._persist_raw_response(

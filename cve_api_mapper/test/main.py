@@ -112,7 +112,7 @@ def main():
 if __name__ == "__main__":
     main()
 
-# Usage examples:
-# python3 main.py                              # Test all models
-# python3 main.py gpt-5                        # Test only GPT-5
-# python3 main.py gpt-5 claude-sonnet-4.5     # Test GPT-5 and Claude
+# 사용 예시:
+# python3 main.py                              # 모든 모델을 테스트합니다.
+# python3 main.py gpt-5                        # GPT-5만 테스트합니다.
+# python3 main.py gpt-5 claude-sonnet-4.5     # GPT-5와 Claude를 함께 테스트합니다.

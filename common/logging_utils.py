@@ -1,4 +1,4 @@
-"""Centralised logging configuration helpers."""
+"""중앙 집중식 로깅 구성 도우미 모음입니다."""
 
 from __future__ import annotations
 
@@ -20,15 +20,15 @@ def setup_logging(
     stream: bool = True,
     force: bool = True,
 ) -> None:
-    """Configure root logging with consistent handlers.
+    """일관된 핸들러를 사용하도록 루트 로깅을 구성합니다.
 
     Args:
-        level: Logging level to apply.
-        log_file: Optional file path for log output. File is truncated on setup.
-        fmt: Log message format string.
-        datefmt: Optional date format string.
-        stream: Whether to emit logs to stderr via ``StreamHandler``.
-        force: Whether to override existing logging configuration.
+        level: 적용할 로깅 레벨입니다.
+        log_file: 로그를 기록할 선택적 파일 경로입니다. 설정 시 기존 파일은 비워집니다.
+        fmt: 로그 메시지 형식 문자열입니다.
+        datefmt: 선택적인 날짜 형식 문자열입니다.
+        stream: ``StreamHandler`` 를 통해 stderr에 로그를 출력할지 여부입니다.
+        force: 기존 로깅 구성을 덮어쓸지 여부입니다.
     """
     handlers = []
     if stream:

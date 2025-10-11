@@ -1,4 +1,4 @@
-"""Shared dataclass models for system-security components."""
+"""system-security 구성 요소에서 공유하는 데이터클래스 모델 모음입니다."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 @dataclass(slots=True)
 class Vulnerability:
-    """Normalised vulnerability record produced from Trivy results."""
+    """Trivy 결과로부터 생성된 정규화된 취약점 레코드입니다."""
 
     id: str
     package_name: str
@@ -24,13 +24,13 @@ class Vulnerability:
     package_type: str = "python-pkg"
 
     def to_dict(self) -> Dict[str, Any]:
-        """Return the vulnerability as a plain dictionary for JSON serialisation."""
+        """JSON 직렬화를 위해 취약점 정보를 일반 딕셔너리로 반환합니다."""
         return asdict(self)
 
 
 @dataclass(slots=True)
 class ASTResult:
-    """Summary of AST call graph classification."""
+    """AST 호출 그래프 분류에 대한 요약입니다."""
 
     external: List[str] = field(default_factory=list)
     internal: List[str] = field(default_factory=list)
@@ -46,7 +46,7 @@ class ASTResult:
 
 @dataclass(slots=True)
 class RealWorldCase:
-    """Structured information about a real-world vulnerability incident."""
+    """실제 취약점 사고에 대한 구조화된 정보를 나타냅니다."""
 
     title: str
     description: str
@@ -59,7 +59,7 @@ class RealWorldCase:
 
 @dataclass(slots=True)
 class VulnerabilityContext:
-    """Aggregated context used for patch priority evaluation."""
+    """패치 우선순위 평가에 사용되는 통합 컨텍스트입니다."""
 
     cve_id: str
     package_name: str

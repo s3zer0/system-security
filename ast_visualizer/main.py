@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """
-Python AST Visualizer - Main Entry Point
+Python AST 시각화 도구 - 메인 진입점
 
-Usage:
-    python main.py <path> [options]
+사용법:
+    python main.py <path> [옵션]
 
-Options:
-    -o, --output <prefix>    Output filename prefix (default: callflow)
-    -t, --target <api>       Target API to highlight (e.g., yaml.load)
-    --no-graph               Skip graph generation (only output API analysis)
-    -j, --json               Save results to JSON file
-    --security-analysis      Enable LLM-based security analysis  # ← 추가
-    --trivy-data <file>      Path to Trivy analysis result JSON  # ← 추가
+옵션:
+    -o, --output <prefix>    출력 파일 이름 접두사 (기본값: callflow)
+    -t, --target <api>       강조할 대상 API (예: yaml.load)
+    --no-graph               그래프 생성을 건너뛰고 API 분석만 수행
+    -j, --json               결과를 JSON 파일로 저장
+    --security-analysis      LLM 기반 보안 분석을 활성화합니다.  # ← 추가
+    --trivy-data <file>      Trivy 분석 결과 JSON 경로입니다.  # ← 추가
 
-Example:
+예시:
     python3 main.py ../DB/output/ -o ../DB/test_output --json --security-analysis --trivy-data ../DB/trivy_analysis_result.json
 """
 
@@ -82,7 +82,7 @@ def main():
         files, base, args.output, targets, force, args.no_graph
     )
     
-    # Print results to console
+    # 콘솔에 결과를 출력합니다.
     print("\nExternally exposed APIs:")
     for api in external_apis:
         print(f"  {api}")
@@ -93,7 +93,7 @@ def main():
     for api in unused_apis:
         print(f"  {api}")
     
-    # Save to JSON if requested
+    # 요청 시 결과를 JSON으로 저장합니다.
     if args.json:
         result = ASTResult(
             external=external_apis,

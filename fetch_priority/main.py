@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CLI entry point for the patch priority evaluator."""
+"""패치 우선순위 평가기의 CLI 진입점입니다."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from typing import Dict
 
 try:
     from .module.evaluator import PatchPriorityEvaluator
-except ImportError:  # pragma: no cover - direct script execution fallback
+except ImportError:  # pragma: no cover - 스크립트 직접 실행 대비 폴백
     from module.evaluator import PatchPriorityEvaluator  # type: ignore
 
 REQUIRED_FILES: Dict[str, str] = {
@@ -23,33 +23,33 @@ REQUIRED_FILES: Dict[str, str] = {
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Integrate AST, Trivy, and CVE-API data to compute patch priorities.",
+        description="AST, Trivy, CVE-API 데이터를 통합하여 패치 우선순위를 계산합니다.",
     )
     parser.add_argument(
         "data_dir",
         nargs="?",
         default="../DB",
-        help="Directory containing analysis artefacts (default: ../DB)",
+        help="분석 산출물이 있는 디렉터리 (기본값: ../DB)",
     )
     parser.add_argument(
         "--output",
         type=Path,
-        help="Optional explicit path for the generated patch_priorities.json",
+        help="생성된 patch_priorities.json을 저장할 경로",
     )
     parser.add_argument(
         "--model",
         default="claude-sonnet-4-5-20250929",
-        help="Anthropic model identifier to use (default: claude-sonnet-4-5-20250929)",
+        help="사용할 Anthropic 모델 식별자 (기본값: claude-sonnet-4-5-20250929)",
     )
     parser.add_argument(
         "--enable-perplexity",
         action="store_true",
         default=False,
-        help="Enable Perplexity API for real-world case search (requires PERPLEXITY_API_KEY)",
+        help="Perplexity API를 사용해 실제 사례 검색을 활성화합니다 (PERPLEXITY_API_KEY 필요)",
     )
     parser.add_argument(
         "--perplexity-api-key",
-        help="Perplexity API key (alternative to PERPLEXITY_API_KEY env var)",
+        help="Perplexity API 키 (환경 변수 PERPLEXITY_API_KEY 대체 입력)",
     )
     return parser
 

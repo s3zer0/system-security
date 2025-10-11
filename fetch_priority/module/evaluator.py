@@ -206,7 +206,7 @@ class PatchPriorityEvaluator:
                         if isinstance(apis, str):
                             apis = [apis]
                         elif isinstance(apis, dict):
-                            # Flatten any nested dict values just in case
+                            # 중첩된 딕셔너리 값이 있으면 평탄화합니다.
                             flattened = []
                             for value in apis.values():
                                 if isinstance(value, str):

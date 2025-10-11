@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-"""End-to-end security pipeline orchestrator.
+"""엔드투엔드 보안 파이프라인 오케스트레이터.
 
-This script stitches together the individual modules that make up the security
-analysis workflow:
+이 스크립트는 보안 분석 워크플로를 구성하는 각 모듈을 다음 순서로
+연결합니다:
 
-1. Extract application sources from a container image tarball.
-2. Run a Trivy vulnerability scan.
-3. Build a library  ->  CVE  ->  API mapping.
-4. Perform AST analysis of the extracted sources.
-5. Map CVEs to APIs with the GPT-5 model.
-6. Compute patch priorities and emit ``fetch_priority.json``.
+1. 컨테이너 이미지 타르볼에서 애플리케이션 소스를 추출합니다.
+2. Trivy 취약점 스캔을 실행합니다.
+3. 라이브러리  ->  CVE  ->  API 매핑을 생성합니다.
+4. 추출된 소스에 대해 AST 분석을 수행합니다.
+5. GPT-5 모델로 CVE와 API를 연결합니다.
+6. 패치 우선순위를 계산하고 ``fetch_priority.json`` 을 생성합니다.
 
-Each step is skipped automatically when its expected output already exists
-unless ``--force`` is supplied. Paths default to the layout described in the
-project README, but can be overridden via CLI flags.
+각 단계는 예상 산출물이 이미 존재하고 ``--force`` 가 제공되지 않는 한
+자동으로 건너뜁니다. 경로는 프로젝트 README에 설명된 기본 레이아웃을
+기본값으로 사용하지만 CLI 플래그로 재정의할 수 있습니다.
 """
 
 from __future__ import annotations
@@ -30,7 +30,6 @@ from pathlib import Path
 from typing import Iterable, List, Optional, Tuple
 
 from common import ASTResult, ensure_dir, read_json, setup_logging, write_json
-
 from search_source.modules.extractor import extract_app_layer
 from trivy_extracter.trivy_module import trivy_func
 from python_api_extracter.extracter import api_extracter
@@ -51,34 +50,38 @@ class PipelineContext:
 
 
 # --------------------------------------------------------------------------- #
-# Utility helpers
+# 유틸리티 도우미
 # --------------------------------------------------------------------------- #
 
+
 def path_exists_and_non_empty(path: Path) -> bool:
-    """Return True if the path exists and is not empty (for dirs) or file exists."""
+    """경로가 존재하고 (디렉터리의 경우) 비어 있지 않거나 파일이 존재하면 True를 반환합니다."""
+    # 디렉터리는 최소 하나 이상의 항목을 포함해야 실질적인 산출물이 있다고 판단한다.
     if path.is_dir():
         return any(path.iterdir())
+    # 일반 파일은 존재 여부만 확인해도 충분하다.
     return path.exists()
 
 
-
 def collect_python_files(root: Path) -> List[Path]:
-    """Recursively collect Python files under ``root``."""
+    """``root`` 경로 아래의 모든 Python 파일을 재귀적으로 수집합니다."""
+    # rglob를 사용해 하위 디렉터리까지 모두 훑어서 분석 대상 목록을 구성한다.
     return [path for path in root.rglob("*.py") if path.is_file()]
 
 
-
-
 # --------------------------------------------------------------------------- #
-# Pipeline steps
+# 파이프라인 단계
 # --------------------------------------------------------------------------- #
+
 
 def step_source_extraction(ctx: PipelineContext) -> None:
-    """소스 추출 단계"""
+    """컨테이너 이미지에서 애플리케이션 소스를 추출합니다."""
+    # 이미 추출된 산출물이 있고 강제 재실행 옵션이 없으면 시간을 절약하기 위해 건너뛴다.
     if ctx.sources_dir.exists() and not ctx.force:
         logger.info(f"Skipping: {ctx.sources_dir} exists")
         return
 
+    # 추출기는 tarball 구조와 필터를 참고해 애플리케이션 레이어만 복사한다.
     extract_app_layer(
         image_tar_path=str(ctx.image_tar),
         output_dir=str(ctx.sources_dir),
@@ -95,13 +98,16 @@ def step_trivy_scan(
     enhance: bool,
     force: bool,
 ) -> None:
-    """Run Trivy against the container image tarball."""
+    """컨테이너 이미지 타르볼을 대상으로 Trivy 스캔을 실행합니다."""
+    # 기존 스캔 결과가 있고 --force가 없으면 비용이 큰 스캔을 반복하지 않는다.
     if trivy_output.exists() and not force:
         logger.info("Skipping Trivy scan: %s already exists", trivy_output)
         return
 
+    # 결과 파일을 안전하게 쓰기 위해 출력 디렉터리를 보장한다.
     ensure_dir(trivy_output.parent)
     logger.info("Running Trivy scan (full_scan=%s)  ->  %s", full_scan, trivy_output)
+    # Trivy CLI 래퍼를 호출해 취약점 보고서를 JSON 형태로 수집한다.
     trivy_func.scan_vulnerabilities(
         input_archive=str(image_tar),
         output_file=str(trivy_output),
@@ -109,9 +115,10 @@ def step_trivy_scan(
     )
 
     if enhance:
+        # 선택적 의존성을 필요로 하므로 지연 임포트를 사용한다.
         try:
-            from trivy_extracter.main import enhance_descriptions  # lazy import
-        except ImportError as exc:  # pragma: no cover - optional dependency
+            from trivy_extracter.main import enhance_descriptions
+        except ImportError as exc:  # pragma: no cover - 선택적 의존성
             logger.warning("Unable to import enhance_descriptions: %s", exc)
             return
 
@@ -119,6 +126,7 @@ def step_trivy_scan(
             trivy_output.stem + "_enhanced.json"
         )
         logger.info("Enhancing Trivy descriptions  ->  %s", enhanced_output)
+        # LLM을 활용해 취약점 설명을 보강하고 별도 산출물로 저장한다.
         enhance_descriptions(str(trivy_output), str(enhanced_output))
 
 
@@ -127,12 +135,14 @@ def step_python_api_mapping(
     mapping_output: Path,
     force: bool,
 ) -> None:
-    """Generate the library -> CVE -> API mapping from the Trivy report."""
+    """Trivy 보고서를 기반으로 라이브러리 -> CVE -> API 매핑을 생성합니다."""
+    # 기존 매핑이 있으면 불필요한 재계산을 방지한다.
     if mapping_output.exists() and not force:
         logger.info("Skipping API mapping: %s already exists", mapping_output)
         return
 
     logger.info("Building library -> CVE -> API mapping  ->  %s", mapping_output)
+    # 취약점 데이터를 파싱해 라이브러리 단위 분석 결과를 구성한다.
     trivy_data = read_json(trivy_output)
     combined = api_extracter.build_cve_api_mapping(trivy_data)
     write_json(mapping_output, combined)
@@ -146,7 +156,7 @@ def step_ast_analysis(
     run_security: bool,
     force: bool,
 ) -> Tuple[Path, Optional[Path]]:
-    """Run AST analysis against the extracted source tree."""
+    """추출된 소스 트리에 대해 AST 분석을 실행합니다."""
     json_output = output_prefix.with_name(output_prefix.name + "_result.json")
     security_json: Optional[Path] = output_prefix.with_name(
         output_prefix.name + "_security_analysis.json"
@@ -155,6 +165,7 @@ def step_ast_analysis(
     security_exists = security_json.exists()
     needs_security_rerun = run_security and not security_exists
 
+    # 이전 결과가 남아 있고 강제 실행이나 보안 분석 요구가 없으면 그대로 재사용한다.
     if json_output.exists() and not force and not needs_security_rerun:
         logger.info("Skipping AST analysis: %s already exists", json_output)
         return json_output, security_json if security_exists else None
@@ -167,6 +178,7 @@ def step_ast_analysis(
     if not source_dir.exists():
         raise FileNotFoundError(f"Source directory not found: {source_dir}")
 
+    # 분석 대상 Python 파일을 수집해 AST 시각화와 보안 평가 범위를 확정한다.
     py_files = collect_python_files(source_dir)
     if not py_files:
         raise RuntimeError(f"No Python files found under {source_dir}")
@@ -177,6 +189,7 @@ def step_ast_analysis(
 
     base_dir = source_dir.resolve()
     targets = ast_to_png.parse_target_calls([])
+    # AST 호출 흐름을 그려 외부/내부 API 그래프와 미사용 API 목록을 도출한다.
     external, internal, unused = ast_to_png.visualize_call_flow(
         [str(p) for p in py_files],
         str(base_dir),
@@ -191,9 +204,10 @@ def step_ast_analysis(
 
     security_output_path = None
     if run_security:
+        # 보안 분석 컴포넌트는 선택적 의존성을 요구하므로 실패 시 경고만 남긴다.
         try:
             from ast_visualizer.utils.security_analyzer import SecurityAnalyzer
-        except ImportError as exc:  # pragma: no cover - optional dependency
+        except ImportError as exc:  # pragma: no cover - 선택적 의존성
             logger.warning("Security analysis disabled (missing dependency): %s", exc)
         else:
             trivy_data = read_json(trivy_output) if trivy_output else None
@@ -218,7 +232,8 @@ def step_cve_api_mapper(
     gpt5_output: Path,
     force: bool,
 ) -> None:
-    """Run the CVE -> API mapper using the GPT-5 model."""
+    """GPT-5 모델을 사용하여 CVE -> API 매퍼를 실행합니다."""
+    # GPT-5 결과가 이미 준비되어 있으면 재호출을 피한다.
     if gpt5_output.exists() and not force:
         logger.info("Skipping CVE -> API mapping: %s already exists", gpt5_output)
         return
@@ -262,7 +277,8 @@ def step_fetch_priority(
     enable_perplexity: bool,
     perplexity_api_key: Optional[str],
 ) -> None:
-    """Evaluate patch priorities and emit fetch_priority.json."""
+    """패치 우선순위를 평가하고 ``fetch_priority.json`` 을 생성합니다."""
+    # 산출물이 있으면 반복적인 비용을 줄이기 위해 건너뛴다.
     if output_json.exists() and not force:
         logger.info("Skipping fetch priority: %s already exists", output_json)
         return
@@ -279,7 +295,9 @@ def step_fetch_priority(
         )
 
     if enable_perplexity and not perplexity_api_key:
-        logger.warning("Perplexity search requested but no API key supplied; set PERPLEXITY_API_KEY before running.")
+        logger.warning(
+            "Perplexity search requested but no API key supplied; set PERPLEXITY_API_KEY before running."
+        )
 
     ensure_dir(output_json.parent)
     logger.info("Evaluating patch priorities  ->  %s", output_json)
@@ -288,6 +306,7 @@ def step_fetch_priority(
         perplexity_api_key=perplexity_api_key,
         enable_perplexity=enable_perplexity,
     )
+    # 여러 분석 산출물을 통합하여 취약점 대응 순위를 계산한다.
     evaluator.run_analysis(
         ast_file=str(ast_json),
         gpt5_results_file=str(gpt5_json),
@@ -298,10 +317,12 @@ def step_fetch_priority(
 
 
 # --------------------------------------------------------------------------- #
-# CLI
+# CLI 명령행
 # --------------------------------------------------------------------------- #
 
+
 def build_parser() -> argparse.ArgumentParser:
+    """파이프라인 전체를 제어하는 CLI 파서를 구성합니다."""
     parser = argparse.ArgumentParser(
         description="Run the full system-security analysis pipeline."
     )
@@ -359,11 +380,13 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[Iterable[str]] = None) -> int:
+    """CLI 진입점: 각 하위 모듈을 순차적으로 호출해 파이프라인을 실행합니다."""
     parser = build_parser()
     args = parser.parse_args(argv)
 
     load_dotenv()
 
+    # 데이터베이스 디렉터리와 산출물 경로를 절대 경로로 정규화한다.
     db_dir: Path = args.db_dir.resolve()
     sources_dir: Path = (
         args.sources_dir.resolve()
@@ -397,6 +420,7 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
     )
 
     try:
+        # 컨테이너에서 소스를 꺼낸 뒤 이하 단계에서 해당 산출물을 공유한다.
         step_source_extraction(ctx)
 
         step_trivy_scan(
@@ -432,7 +456,9 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
         )
 
         step_fetch_priority(
-            ast_json=ast_output_prefix.with_name(ast_output_prefix.name + "_result.json"),
+            ast_json=ast_output_prefix.with_name(
+                ast_output_prefix.name + "_result.json"
+            ),
             gpt5_json=gpt5_output,
             mapping_json=mapping_output,
             trivy_json=trivy_output,
@@ -442,11 +468,14 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
             perplexity_api_key=perplexity_api_key,
         )
 
-    except Exception as exc:  # pragma: no cover - top-level guard
+    except Exception as exc:  # pragma: no cover - 최상위 가드
         logger.error("Pipeline failed: %s", exc)
         return 1
 
-    logger.info("Pipeline completed successfully; final report at %s", fetch_priority_output)
+    logger.info(
+        "Pipeline completed successfully; final report at %s",
+        fetch_priority_output,
+    )
     return 0
 
 

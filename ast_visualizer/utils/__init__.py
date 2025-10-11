@@ -1,7 +1,7 @@
 """
-Utils package for Python AST Visualizer
+Python AST 시각화 도구를 위한 유틸리티 패키지입니다.
 
-This package contains modules for AST analysis and visualization.
+이 패키지는 AST 분석과 시각화를 수행하는 모듈들을 포함합니다.
 """
 
 from . import ast_utils
