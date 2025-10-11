@@ -152,12 +152,17 @@ def step_ast_analysis(
         output_prefix.name + "_security_analysis.json"
     )
 
-    if json_output.exists() and not force:
+    security_exists = security_json.exists()
+    needs_security_rerun = run_security and not security_exists
+
+    if json_output.exists() and not force and not needs_security_rerun:
         logger.info("Skipping AST analysis: %s already exists", json_output)
-        if run_security and security_json and not security_json.exists():
-            logger.info("Security analysis requested but missing; rerunning analysis.")
-        else:
-            return json_output, security_json if security_json.exists() else None
+        return json_output, security_json if security_exists else None
+
+    if needs_security_rerun:
+        logger.info(
+            "Security analysis requested but missing; rerunning AST/security analysis."
+        )
 
     if not source_dir.exists():
         raise FileNotFoundError(f"Source directory not found: {source_dir}")

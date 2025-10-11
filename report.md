@@ -157,13 +157,13 @@ cd ..
 
 ```bash
 cd fetch_priority
-python -m fetch_priority ../DB
+python fetch_priority/main.py ../DB
 cd ..
 ```
 
-* 출력 파일 `DB/patch_priorities.json`에는 모듈별 위험 점수, Docker 외부 노출 여부, 권장 패치 명령 등이 포함됩니다.
+* 출력 파일 `DB/fetch_priority.json`에는 모듈별 위험 점수, Docker 외부 노출 여부, 권장 패치 명령 등이 포함됩니다.
 * 실행 전에 `DB/`에 다음 파일이 준비되어 있는지 확인하세요: `ast_visualize_result.json`, `gpt5_results.json`, `lib2cve2api.json`, `trivy_analysis_result.json`. 위 절차를 따르면 자동으로 해당 파일명이 맞춰집니다.
-* `python -m fetch_priority --output <경로> --model <모델명>` 형태로 산출물 위치나 사용할 Claude 모델을 조정할 수 있습니다.
+* `python fetch_priority/main.py --output <경로> --model <모델명>` 형태로 산출물 위치나 사용할 Claude 모델을 조정할 수 있습니다.
 * `--enable-perplexity`를 사용하면 Perplexity API를 호출해 실제 침해 사례를 수집하며, `--perplexity-api-key`로 `.env` 대신 키를 직접 전달할 수 있습니다. 결과 요약은 `DB/perplexity_raw_responses/`에 저장됩니다.
 * 패치 우선순위 계산 시 FIRST EPSS 공개 API를 호출해 악용 가능성을 반영합니다. 인터넷 연결이 제한된 환경에서는 해당 단계가 0 점수로 대체됩니다.
 * Claude 응답 전문은 `DB/fetch_prioiriy_raw_response.json`에 저장되며, LLM 실패 시 자동 점수 기반 폴백 로직으로 결과를 생성합니다.
@@ -207,7 +207,7 @@ cd ..
 | `DB/trivy_analysis_result.json` / `_enhanced.json` | Trivy 스캔 결과 및 LLM 향상 설명 |
 | `DB/lib2cve2api.json` | 라이브러리별 CVE와 공개 API 매핑 |
 | `cve_api_mapper/results/*.json` | 모델별 CVE↔API 매핑 결과 |
-| `DB/fetch_priority.json` 또는 `DB/patch_priorities.json` | 패치 우선순위와 대응 권장사항 |
+| `DB/fetch_priority.json` | 패치 우선순위와 대응 권장사항 |
 | `DB/fetch_prioiriy_raw_response.json` | Claude 분석 Raw 응답 및 파싱 결과(오류 포함) |
 | `DB/perplexity_raw_responses/` | CVE별 Perplexity 실제 사례 검색 원문 |
 
