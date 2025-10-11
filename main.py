@@ -18,6 +18,8 @@ project README, but can be overridden via CLI flags.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import argparse
 import logging
 import os
@@ -36,6 +38,16 @@ from ast_visualizer.utils import ast_to_png
 
 setup_logging(level=logging.INFO, fmt="[%(levelname)s] %(message)s")
 logger = logging.getLogger("pipeline")
+
+
+@dataclass
+class PipelineContext:
+    image_tar: Path
+    sources_dir: Path
+    app_path: Optional[str]
+    include_filter: Optional[str]
+    auto_detect: bool
+    force: bool
 
 
 # --------------------------------------------------------------------------- #
@@ -61,32 +73,18 @@ def collect_python_files(root: Path) -> List[Path]:
 # Pipeline steps
 # --------------------------------------------------------------------------- #
 
-def step_source_extraction(
-    image_tar: Path,
-    output_dir: Path,
-    app_path: Optional[str],
-    include_filter: Optional[str],
-    force: bool,
-) -> None:
-    """Extract application sources from the container image tarball."""
-    if path_exists_and_non_empty(output_dir) and not force:
-        logger.info("Skipping source extraction: %s already populated", output_dir)
+def step_source_extraction(ctx: PipelineContext) -> None:
+    """소스 추출 단계"""
+    if ctx.sources_dir.exists() and not ctx.force:
+        logger.info(f"Skipping: {ctx.sources_dir} exists")
         return
 
-    if output_dir.exists() and force:
-        logger.info("Clearing existing source output: %s", output_dir)
-        shutil.rmtree(output_dir)
-
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    auto_detect = app_path is None
-    logger.info("Extracting sources (auto_detect=%s)  ->  %s", auto_detect, output_dir)
     extract_app_layer(
-        image_tar_path=str(image_tar),
-        output_dir=str(output_dir),
-        app_path=app_path,
-        auto_detect=auto_detect,
-        include_filter=include_filter,
+        image_tar_path=str(ctx.image_tar),
+        output_dir=str(ctx.sources_dir),
+        app_path=ctx.app_path,
+        auto_detect=ctx.auto_detect,
+        include_filter=ctx.include_filter,
     )
 
 
@@ -384,14 +382,17 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
     else:
         logger.info("Perplexity case search disabled (set PERPLEXITY_API_KEY to enable).")
 
+    ctx = PipelineContext(
+        image_tar=args.image.resolve(),
+        sources_dir=sources_dir,
+        app_path=args.app_path,
+        include_filter=args.include_filter,
+        auto_detect=args.app_path is None,
+        force=args.force,
+    )
+
     try:
-        step_source_extraction(
-            image_tar=args.image.resolve(),
-            output_dir=sources_dir,
-            app_path=args.app_path,
-            include_filter=args.include_filter,
-            force=args.force,
-        )
+        step_source_extraction(ctx)
 
         step_trivy_scan(
             image_tar=args.image.resolve(),
