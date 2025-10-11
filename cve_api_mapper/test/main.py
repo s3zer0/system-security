@@ -1,14 +1,14 @@
 import os
 import sys
-import json
 import logging
 
 # 상위 디렉토리의 모듈을 import할 수 있도록 경로 추가
 base_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(base_dir))
 
-import CveApiMapper
-import setup_logging
+from cve_api_mapper.mapper.cve_api_mapper import CveApiMapper
+from common import ensure_dir, write_json
+from common.logging_utils import setup_logging
 
 def main():
     """
@@ -20,8 +20,7 @@ def main():
     db_dir = os.path.join(project_root, 'DB')
     
     # DB 폴더가 없으면 생성
-    if not os.path.exists(db_dir):
-        os.makedirs(db_dir)
+    ensure_dir(db_dir)
 
     # 입력 파일 경로 정의
     trivy_input_file = os.path.join(db_dir, "trivy_analysis_result.json")
@@ -32,8 +31,8 @@ def main():
     llm_raw_output_dir = os.path.join(db_dir, "raw_responses")
     
     # 출력 디렉토리 생성
-    os.makedirs(output_dir, exist_ok=True)
-    os.makedirs(llm_raw_output_dir, exist_ok=True)
+    ensure_dir(output_dir)
+    ensure_dir(llm_raw_output_dir)
     
     # 로깅 설정
     log_file = os.path.join(project_root, 'app.log')
@@ -69,8 +68,7 @@ def main():
                 }
             }
         }
-        with open(api_input_file, 'w', encoding='utf-8') as f:
-            json.dump(sample_data, f, indent=4)
+        write_json(api_input_file, sample_data)
         logging.info("Sample file created. Please populate it with real API data and run again.")
         return
 

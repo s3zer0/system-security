@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+from common.logging_utils import setup_logging
 from typing import Dict, List, Tuple, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dotenv import load_dotenv
@@ -10,17 +11,6 @@ from google import genai
 from google.genai import types
 
 logger = logging.getLogger(__name__)
-
-def setup_logging(log_file: str = "app.log", log_level: int = logging.INFO):
-    """로깅을 설정하는 함수"""
-    logging.basicConfig(
-        level=log_level,
-        format="%(asctime)s - %(levelname)s - %(message)s",
-        handlers=[
-            logging.FileHandler(log_file, mode="w"),
-            logging.StreamHandler()
-        ]
-    )
 
 class LLMClient:
     """LLM 클라이언트의 기본 클래스"""

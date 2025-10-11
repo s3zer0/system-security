@@ -172,7 +172,7 @@ cd ..
 ### 6.1 파이프라인 및 공통 인프라
 - `main.py`는 단계별 산출물 존재 여부를 확인해 자동으로 건너뛰고 `--force`로 재실행을 강제할 수 있게 구성했습니다.
 - `.env` 로드와 CLI 인자를 통해 DB 경로, 소스 저장 위치, 그래프 생성, 보안 분석 옵션 등을 유연하게 설정합니다.
-- 공통 유틸 함수(`path_exists_and_non_empty`, `ensure_parent_dir`, `read_json`)로 단계 간 파일 입출력을 일관되게 처리합니다.
+- 공통 유틸 함수(`path_exists_and_non_empty`, `ensure_dir`, `read_json`, `write_json`, `setup_logging`)로 단계 간 파일 입출력과 로깅을 일관되게 처리합니다.
 - 파이프라인 완료 시 최종 결과(`DB/fetch_priority.json`) 위치를 로깅하고, 실패 시 예외 메시지로 중단 지점을 안내합니다.
 
 ### 6.2 모듈별 정리

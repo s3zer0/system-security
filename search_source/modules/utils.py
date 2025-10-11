@@ -4,6 +4,8 @@ import os
 import shutil
 from typing import Optional
 
+from common import ensure_dir
+
 
 def copy_directory(src: str, dest: str, include_filter: Optional[str] = None) -> None:
     """
@@ -80,7 +82,7 @@ def ensure_directory(path: str) -> None:
     Args:
         path: Directory path to ensure exists
     """
-    os.makedirs(path, exist_ok=True)
+    ensure_dir(path)
 
 
 def safe_remove_directory(path: str) -> None:

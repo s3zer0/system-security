@@ -11,17 +11,6 @@ from google.genai import types
 
 logger = logging.getLogger(__name__)
 
-def setup_logging(log_file: str = "app.log", log_level: int = logging.INFO):
-    """로깅을 설정하는 함수"""
-    logging.basicConfig(
-        level=log_level,
-        format="%(asctime)s - %(levelname)s - %(message)s",
-        handlers=[
-            logging.FileHandler(log_file, mode="w"),
-            logging.StreamHandler()
-        ]
-    )
-
 class LLMClient:
     """LLM 클라이언트의 기본 클래스"""
     def __init__(self, model_name: str):

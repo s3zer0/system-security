@@ -6,7 +6,8 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Union
-from dataclasses import dataclass
+
+from common.models import RealWorldCase
 import logging
 
 try:
@@ -16,14 +17,6 @@ except ImportError as exc:
 
 logger = logging.getLogger(__name__)
 
-
-@dataclass
-class RealWorldCase:
-    """실제 사례 데이터 클래스"""
-    title: str
-    description: str
-    source_url: str
-    date: str
 
 
 class PerplexitySearcher:

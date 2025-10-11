@@ -3,8 +3,10 @@ Trivy 취약점 스캐닝 기능 모듈
 """
 
 import subprocess
-import json
 from typing import Dict, List, Any
+
+from common import read_json, write_json
+from common.models import Vulnerability
 
 def scan_vulnerabilities(input_archive: str, output_file: str, full_scan: bool = True):
     """
@@ -50,8 +52,7 @@ def clean_scan_results(output_file: str):
         output_file: 정제할 JSON 파일 경로
     """
     # 기존 스캔 결과 파일 읽기
-    with open(output_file, 'r', encoding='utf-8') as f:
-        data = json.load(f)
+    data = read_json(output_file)
 
     # 정제된 데이터 구조 초기화
     cleaned_data = {
@@ -84,30 +85,31 @@ def clean_scan_results(output_file: str):
 
         for vuln in vulnerabilities:
             # 필수 정보만 추출하여 정제된 취약점 객체 생성
-            cleaned_vuln = {
-                "id": vuln.get("VulnerabilityID", ""),  # CVE ID
-                "package_name": vuln.get("PkgName", ""),  # 패키지명
-                "installed_version": vuln.get("InstalledVersion", ""),  # 설치 버전
-                "package_type": package_type,  # 패키지 타입
-                "severity": vuln.get("Severity", "UNKNOWN"),  # 심각도
-                "title": vuln.get("Title", ""),  # 취약점 제목
-                "description": vuln.get("Description", ""),  # 설명
-                "fixed_version": vuln.get("FixedVersion", ""),  # 수정 버전
-                "cvss": vuln.get("CVSS", {}),  # CVSS 점수
-                "references": vuln.get("References", []),  # 참조 링크
-                "primary_url": vuln.get("PrimaryURL", ""),  # 주 URL
-                "data_source": vuln.get("DataSource", {})  # 데이터 소스
-            }
+            cleaned_vuln = Vulnerability(
+                id=vuln.get("VulnerabilityID", ""),
+                package_name=vuln.get("PkgName", ""),
+                installed_version=vuln.get("InstalledVersion", ""),
+                severity=vuln.get("Severity", "UNKNOWN"),
+                title=vuln.get("Title", ""),
+                description=vuln.get("Description", ""),
+                fixed_version=vuln.get("FixedVersion", ""),
+                cvss=vuln.get("CVSS", {}),
+                references=vuln.get("References", []),
+                primary_url=vuln.get("PrimaryURL", ""),
+                data_source=vuln.get("DataSource", {}),
+                package_type=package_type,
+            )
 
             # 정제된 취약점을 목록에 추가
-            cleaned_data["vulnerabilities"].append(cleaned_vuln)
+            cleaned_vuln_dict = cleaned_vuln.to_dict()
+            cleaned_data["vulnerabilities"].append(cleaned_vuln_dict)
 
             # 통계 정보 업데이트
             # 총 취약점 수 증가
             cleaned_data["vulnerability_summary"]["total_vulnerabilities"] += 1
 
             # 심각도별 통계 업데이트
-            severity = cleaned_vuln["severity"]
+            severity = cleaned_vuln_dict["severity"]
             cleaned_data["vulnerability_summary"]["by_severity"][severity] = \
                 cleaned_data["vulnerability_summary"]["by_severity"].get(severity, 0) + 1
 
@@ -116,7 +118,6 @@ def clean_scan_results(output_file: str):
                 cleaned_data["vulnerability_summary"]["by_package_type"].get(package_type, 0) + 1
 
     # 정제된 결과를 동일한 파일에 덮어쓰기
-    with open(output_file, 'w', encoding='utf-8') as f:
-        json.dump(cleaned_data, f, indent=2, ensure_ascii=False)
+    write_json(output_file, cleaned_data)
 
 

@@ -1,9 +1,11 @@
 import json
 import os
 from typing import Dict, List, Any, Tuple, Optional
-from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
+
+from common import read_json, write_json
+from common.models import VulnerabilityContext
 from dotenv import load_dotenv
 import logging
 from datetime import datetime
@@ -28,23 +30,6 @@ class Severity(Enum):
     MEDIUM = 2
     LOW = 1
 
-
-@dataclass
-class VulnerabilityContext:
-    """취약점 분석을 위한 통합 컨텍스트"""
-    cve_id: str
-    package_name: str
-    version: str
-    severity: str
-    cvss_score: float
-    epss_score: float
-    description: str
-    vulnerable_apis: List[str]
-    used_apis: List[str]  # 코드베이스에서 실제 사용되는 API
-    is_api_used: bool
-    is_external_api_used: bool  # Docker 환경에서 외부 노출 API 사용 여부
-    external_apis: List[str]  # 외부로 노출되는 취약한 API 목록
-    fix_version: str
 
 
 class PatchPriorityEvaluator:
@@ -103,15 +88,11 @@ class PatchPriorityEvaluator:
         Returns:
             모든 취약점 데이터를 포함하는 딕셔너리
         """
-        with open(ast_file, 'r', encoding='utf-8') as f:
-            ast_data = json.load(f)
-        with open(gpt5_results_file, 'r', encoding='utf-8') as f:
-            gpt5_results = json.load(f)
-        with open(lib2cve2api_file, 'r', encoding='utf-8') as f:
-            lib2cve2api = json.load(f)
-        with open(trivy_file, 'r', encoding='utf-8') as f:
-            trivy_data = json.load(f)
-        
+        ast_data = read_json(ast_file)
+        gpt5_results = read_json(gpt5_results_file)
+        lib2cve2api = read_json(lib2cve2api_file)
+        trivy_data = read_json(trivy_file)
+
         return {
             'ast': ast_data,
             'gpt5_results': gpt5_results,
@@ -927,8 +908,7 @@ class PatchPriorityEvaluator:
         }
         
         # 결과 저장
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(results, f, indent=2, ensure_ascii=False)
+        write_json(output_file, results)
         
         logger.info(f"\n✓ 분석 완료! 결과가 {output_file}에 저장되었습니다")
         logger.info(f"\n요약:")

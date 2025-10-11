@@ -1,7 +1,7 @@
 {
   "scan_info": {
     "target": "/home/s3zer0/system-security/test_target/pyyaml-vuln.tar",
-    "scan_date": "2025-10-10T16:47:09.451689875Z",
+    "scan_date": "2025-10-11T04:02:07.816905355Z",
     "os_info": {
       "Family": "debian",
       "Name": "13.1"
@@ -24,7 +24,6 @@
       "id": "CVE-2023-30861",
       "package_name": "Flask",
       "installed_version": "2.0.2",
-      "package_type": "python-pkg",
       "severity": "HIGH",
       "title": "flask: Possible disclosure of permanent session cookie due to missing Vary: Cookie header",
       "description": "Flask is a lightweight WSGI web application framework. When all of the following conditions are met, a response containing data intended for one client may be cached and subsequently sent by the proxy to other clients. If the proxy also caches `Set-Cookie` headers, it may send one client's `session` cookie to other clients. The severity depends on the application's use of the session and the proxy's behavior regarding cookies. The risk depends on all these conditions being met.\n\n1. The application must be hosted behind a caching proxy that does not strip cookies or ignore responses with cookies.\n2. The application sets `session.permanent = True`\n3. The application does not access or modify the session at any point during a request.\n4. `SESSION_REFRESH_EACH_REQUEST` enabled (the default).\n5. The application does not set a `Cache-Control` header to indicate that a page is private or should not be cached.\n\nThis happens because vulnerable versions of Flask only set the `Vary: Cookie` header when the session is accessed or modified, not when it is refreshed (re-sent to update the expiration) without being accessed or modified. This issue has been fixed in versions 2.3.2 and 2.2.5.",
@@ -69,13 +68,13 @@
         "ID": "ghsa",
         "Name": "GitHub Security Advisory pip",
         "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
-      }
+      },
+      "package_type": "python-pkg"
     },
     {
       "id": "CVE-2020-14343",
       "package_name": "PyYAML",
       "installed_version": "5.3.1",
-      "package_type": "python-pkg",
       "severity": "CRITICAL",
       "title": "PyYAML: incomplete fix for CVE-2020-1747",
       "description": "A vulnerability was discovered in the PyYAML library in versions before 5.4, where it is susceptible to arbitrary code execution when it processes untrusted YAML files through the full_load method or with the FullLoader loader. Applications that use the library to process untrusted input may be vulnerable to this flaw. This flaw allows an attacker to execute arbitrary code on the system by abusing the python/object/new constructor. This flaw is due to an incomplete fix for CVE-2020-1747.",
@@ -122,13 +121,13 @@
         "ID": "ghsa",
         "Name": "GitHub Security Advisory pip",
         "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
-      }
+      },
+      "package_type": "python-pkg"
     },
     {
       "id": "CVE-2023-25577",
       "package_name": "Werkzeug",
       "installed_version": "2.0.2",
-      "package_type": "python-pkg",
       "severity": "HIGH",
       "title": "python-werkzeug: high resource usage when parsing multipart form data with many fields",
       "description": "Werkzeug is a comprehensive WSGI web application library. Prior to version 2.2.3, Werkzeug's multipart form data parser will parse an unlimited number of parts, including file parts. Parts can be a small amount of bytes, but each requires CPU time to parse and may use more memory as Python data. If a request can be made to an endpoint that accesses `request.data`, `request.form`, `request.files`, or `request.get_data(parse_form_data=False)`, it can cause unexpectedly high resource usage. This allows an attacker to cause a denial of service by sending crafted multipart data to an endpoint that will parse it. The amount of CPU time required can block worker processes from handling legitimate requests. The amount of RAM required can trigger an out of memory kill of the process. Unlimited file parts can use up memory and file handles. If many concurrent requests are sent continuously, this can exhaust or kill all available workers. Version 2.2.3 contains a patch for this issue.",
@@ -169,13 +168,13 @@
         "ID": "ghsa",
         "Name": "GitHub Security Advisory pip",
         "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
-      }
+      },
+      "package_type": "python-pkg"
     },
     {
       "id": "CVE-2024-34069",
       "package_name": "Werkzeug",
       "installed_version": "2.0.2",
-      "package_type": "python-pkg",
       "severity": "HIGH",
       "title": "python-werkzeug: user may execute code on a developer's machine",
       "description": "Werkzeug is a comprehensive WSGI web application library. The debugger in affected versions of Werkzeug can allow an attacker to execute code on a developer's machine under some circumstances. This requires the attacker to get the developer to interact with a domain and subdomain they control, and enter the debugger PIN, but if they are successful it allows access to the debugger even if it is only running on localhost. This also requires the attacker to guess a URL in the developer's application that will trigger the debugger. This vulnerability is fixed in 3.0.3.",
@@ -211,13 +210,13 @@
         "ID": "ghsa",
         "Name": "GitHub Security Advisory pip",
         "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
-      }
+      },
+      "package_type": "python-pkg"
     },
     {
       "id": "CVE-2023-46136",
       "package_name": "Werkzeug",
       "installed_version": "2.0.2",
-      "package_type": "python-pkg",
       "severity": "MEDIUM",
       "title": "python-werkzeug: high resource consumption leading to denial of service",
       "description": "Werkzeug is a comprehensive WSGI web application library. If an upload of a file that starts with CR or LF and then is followed by megabytes of data without these characters: all of these bytes are appended chunk by chunk into internal bytearray and lookup for boundary is performed on growing buffer. This allows an attacker to cause a denial of service by sending crafted multipart data to an endpoint that will parse it. The amount of CPU time required can block worker processes from handling legitimate requests. This vulnerability has been patched in version 3.0.1.",
@@ -254,13 +253,13 @@
         "ID": "ghsa",
         "Name": "GitHub Security Advisory pip",
         "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
-      }
+      },
+      "package_type": "python-pkg"
     },
     {
       "id": "CVE-2024-49766",
       "package_name": "Werkzeug",
       "installed_version": "2.0.2",
-      "package_type": "python-pkg",
       "severity": "MEDIUM",
       "title": "werkzeug: python-werkzeug: Werkzeug safe_join not safe on Windows",
       "description": "Werkzeug is a Web Server Gateway Interface web application library. On Python < 3.11 on Windows, os.path.isabs() does not catch UNC paths like //server/share. Werkzeug's safe_join() relies on this check, and so can produce a path that is not safe, potentially allowing unintended access to data. Applications using Python >= 3.11, or not using Windows, are not vulnerable. Werkzeug version 3.0.6 contains a patch.",
@@ -287,13 +286,13 @@
         "ID": "ghsa",
         "Name": "GitHub Security Advisory pip",
         "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
-      }
+      },
+      "package_type": "python-pkg"
     },
     {
       "id": "CVE-2024-49767",
       "package_name": "Werkzeug",
       "installed_version": "2.0.2",
-      "package_type": "python-pkg",
       "severity": "MEDIUM",
       "title": "werkzeug: python-werkzeug: Werkzeug possible resource exhaustion when parsing file data in forms",
       "description": "Werkzeug is a Web Server Gateway Interface web application library. Applications using `werkzeug.formparser.MultiPartParser` corresponding to a version of Werkzeug prior to 3.0.6 to parse `multipart/form-data` requests (e.g. all flask applications) are vulnerable to a relatively simple but effective resource exhaustion (denial of service) attack. A specifically crafted form submission request can cause the parser to allocate and block 3 to 8 times the upload size in main memory. There is no upper limit; a single upload at 1 Gbit/s can exhaust 32 GB of RAM in less than 60 seconds. Werkzeug version 3.0.6 fixes this issue.",
@@ -331,13 +330,13 @@
         "ID": "ghsa",
         "Name": "GitHub Security Advisory pip",
         "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
-      }
+      },
+      "package_type": "python-pkg"
     },
     {
       "id": "CVE-2023-23934",
       "package_name": "Werkzeug",
       "installed_version": "2.0.2",
-      "package_type": "python-pkg",
       "severity": "LOW",
       "title": "python-werkzeug: cookie prefixed with = can shadow unprefixed cookie",
       "description": "Werkzeug is a comprehensive WSGI web application library. Browsers may allow \"nameless\" cookies that look like `=value` instead of `key=value`. A vulnerable browser may allow a compromised application on an adjacent subdomain to exploit this to set a cookie like `=__Host-test=bad` for another subdomain. Werkzeug prior to 2.2.3 will parse the cookie `=__Host-test=bad` as __Host-test=bad`. If a Werkzeug application is running next to a vulnerable or malicious subdomain which sets such a cookie using a vulnerable browser, the Werkzeug application will see the bad cookie value but the valid cookie key. The issue is fixed in Werkzeug 2.2.3.",
@@ -378,13 +377,13 @@
         "ID": "ghsa",
         "Name": "GitHub Security Advisory pip",
         "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
-      }
+      },
+      "package_type": "python-pkg"
     },
     {
       "id": "CVE-2023-5752",
       "package_name": "pip",
       "installed_version": "23.0.1",
-      "package_type": "python-pkg",
       "severity": "MEDIUM",
       "title": "pip: Mercurial configuration injectable in repo revision when installing via pip",
       "description": "When installing a package from a Mercurial VCS URL  (ie \"pip install \nhg+...\") with pip prior to v23.3, the specified Mercurial revision could\n be used to inject arbitrary configuration options to the \"hg clone\" \ncall (ie \"--config\"). Controlling the Mercurial configuration can modify\n how and which repository is installed. This vulnerability does not \naffect users who aren't installing from Mercurial.",
@@ -433,13 +432,13 @@
         "ID": "ghsa",
         "Name": "GitHub Security Advisory pip",
         "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
-      }
+      },
+      "package_type": "python-pkg"
     },
     {
       "id": "CVE-2025-8869",
       "package_name": "pip",
       "installed_version": "23.0.1",
-      "package_type": "python-pkg",
       "severity": "MEDIUM",
       "title": "pip: pip missing checks on symbolic link extraction",
       "description": "When extracting a tar archive pip may not check symbolic links point into the extraction directory if the tarfile module doesn't implement PEP 706.\nNote that upgrading pip to a \"fixed\" version for this vulnerability doesn't fix all known vulnerabilities that are remediated by using a Python version that implements PEP 706.\n\nNote that this is a vulnerability in pip's fallback implementation of tar extraction for Python versions that don't implement PEP 706\nand therefore are not secure to all vulnerabilities in the Python 'tarfile' module. If you're using a Python version that implements PEP 706\nthen pip doesn't use the \"vulnerable\" fallback code.\n\nMitigations include upgrading to a version of pip that includes the fix, upgrading to a Python version that implements PEP 706 (Python >=3.9.17, >=3.10.12, >=3.11.4, or >=3.12),\napplying the linked patch, or inspecting source distributions (sdists) before installation as is already a best-practice.",
@@ -466,13 +465,13 @@
         "ID": "ghsa",
         "Name": "GitHub Security Advisory pip",
         "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
-      }
+      },
+      "package_type": "python-pkg"
     },
     {
       "id": "CVE-2022-40897",
       "package_name": "setuptools",
       "installed_version": "58.1.0",
-      "package_type": "python-pkg",
       "severity": "HIGH",
       "title": "pypa-setuptools: Regular Expression Denial of Service (ReDoS) in package_index.py",
       "description": "Python Packaging Authority (PyPA) setuptools before 65.5.1 allows remote attackers to cause a denial of service via HTML in a crafted package or custom PackageIndex page. There is a Regular Expression Denial of Service (ReDoS) in package_index.py.",
@@ -535,13 +534,13 @@
         "ID": "ghsa",
         "Name": "GitHub Security Advisory pip",
         "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
-      }
+      },
+      "package_type": "python-pkg"
     },
     {
       "id": "CVE-2024-6345",
       "package_name": "setuptools",
       "installed_version": "58.1.0",
-      "package_type": "python-pkg",
       "severity": "HIGH",
       "title": "pypa/setuptools: Remote code execution via download functions in the package_index module in pypa/setuptools",
       "description": "A vulnerability in the package_index module of pypa/setuptools versions up to 69.1.1 allows for remote code execution via its download functions. These functions, which are used to download packages from URLs provided by users or retrieved from package index servers, are susceptible to code injection. If these functions are exposed to user-controlled inputs, such as package URLs, they can execute arbitrary commands on the system. The issue is fixed in version 70.0.",
@@ -583,13 +582,13 @@
         "ID": "ghsa",
         "Name": "GitHub Security Advisory pip",
         "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
-      }
+      },
+      "package_type": "python-pkg"
     },
     {
       "id": "CVE-2025-47273",
       "package_name": "setuptools",
       "installed_version": "58.1.0",
-      "package_type": "python-pkg",
       "severity": "HIGH",
       "title": "setuptools: Path Traversal Vulnerability in setuptools PackageIndex",
       "description": "setuptools is a package that allows users to download, build, install, upgrade, and uninstall Python packages. A path traversal vulnerability in `PackageIndex` is present in setuptools prior to version 78.1.1. An attacker would be allowed to write files to arbitrary locations on the filesystem with the permissions of the process running the Python code, which could escalate to remote code execution depending on the context. Version 78.1.1 fixes the issue.",
@@ -630,7 +629,8 @@
         "ID": "ghsa",
         "Name": "GitHub Security Advisory pip",
         "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
-      }
+      },
+      "package_type": "python-pkg"
     }
   ]
 }

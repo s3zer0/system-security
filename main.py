@@ -19,7 +19,6 @@ project README, but can be overridden via CLI flags.
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import os
 import shutil
@@ -28,12 +27,14 @@ from dotenv import load_dotenv
 from pathlib import Path
 from typing import Iterable, List, Optional, Tuple
 
+from common import ASTResult, ensure_dir, read_json, setup_logging, write_json
+
 from search_source.modules.extractor import extract_app_layer
 from trivy_extracter.trivy_module import trivy_func
 from python_api_extracter.extracter import api_extracter
 from ast_visualizer.utils import ast_to_png
 
-logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
+setup_logging(level=logging.INFO, fmt="[%(levelname)s] %(message)s")
 logger = logging.getLogger("pipeline")
 
 
@@ -48,27 +49,12 @@ def path_exists_and_non_empty(path: Path) -> bool:
     return path.exists()
 
 
-def ensure_parent_dir(path: Path) -> None:
-    """Ensure that the parent directory for ``path`` exists."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-
 
 def collect_python_files(root: Path) -> List[Path]:
     """Recursively collect Python files under ``root``."""
     return [path for path in root.rglob("*.py") if path.is_file()]
 
 
-def read_json(path: Path) -> dict:
-    """Read a JSON document from ``path``."""
-    with path.open(encoding="utf-8") as handle:
-        return json.load(handle)
-
-
-def write_json(path: Path, data: dict) -> None:
-    """Write ``data`` as JSON to ``path``."""
-    ensure_parent_dir(path)
-    with path.open("w", encoding="utf-8") as handle:
-        json.dump(data, handle, indent=2, ensure_ascii=False)
 
 
 # --------------------------------------------------------------------------- #
@@ -116,7 +102,7 @@ def step_trivy_scan(
         logger.info("Skipping Trivy scan: %s already exists", trivy_output)
         return
 
-    ensure_parent_dir(trivy_output)
+    ensure_dir(trivy_output.parent)
     logger.info("Running Trivy scan (full_scan=%s)  ->  %s", full_scan, trivy_output)
     trivy_func.scan_vulnerabilities(
         input_archive=str(image_tar),
@@ -197,12 +183,8 @@ def step_ast_analysis(
         no_graph=skip_graph,
     )
 
-    result = {
-        "external": external,
-        "internal": internal,
-        "unused": unused,
-    }
-    write_json(json_output, result)
+    result = ASTResult(external=external, internal=internal, unused=unused)
+    write_json(json_output, result.to_dict())
 
     security_output_path = None
     if run_security:
@@ -296,7 +278,7 @@ def step_fetch_priority(
     if enable_perplexity and not perplexity_api_key:
         logger.warning("Perplexity search requested but no API key supplied; set PERPLEXITY_API_KEY before running.")
 
-    ensure_parent_dir(output_json)
+    ensure_dir(output_json.parent)
     logger.info("Evaluating patch priorities  ->  %s", output_json)
     evaluator = PatchPriorityEvaluator(
         api_key=api_key,

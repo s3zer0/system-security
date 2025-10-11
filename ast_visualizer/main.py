@@ -20,19 +20,19 @@ Example:
 import os
 import argparse
 import logging
-import json
+
+from common import ASTResult, read_json, setup_logging, write_json
 
 from utils import ast_to_png
 from utils.security_analyzer import SecurityAnalyzer  # ← 추가
 
-logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
+setup_logging(fmt='[%(levelname)s] %(message)s')
 
 
 def load_trivy_data(trivy_file: str):
     """Trivy 분석 결과 로드"""
     try:
-        with open(trivy_file, 'r', encoding='utf-8') as f:
-            return json.load(f)
+        return read_json(trivy_file)
     except Exception as e:
         logging.warning(f"Trivy 데이터 로드 실패: {e}")
         return None
@@ -95,14 +95,13 @@ def main():
     
     # Save to JSON if requested
     if args.json:
-        result = {
-            "external": external_apis,
-            "internal": internal_only_apis,
-            "unused": unused_apis
-        }
+        result = ASTResult(
+            external=external_apis,
+            internal=internal_only_apis,
+            unused=unused_apis,
+        )
         json_filename = f"{args.output}_result.json"
-        with open(json_filename, 'w', encoding='utf-8') as f:
-            json.dump(result, f, indent=2, ensure_ascii=False)
+        write_json(json_filename, result.to_dict())
         logging.info(f"Results saved to {json_filename}")
     
     # ← 새로운 보안 분석 실행
@@ -137,8 +136,7 @@ def main():
             
             # JSON 저장
             security_json = f"{args.output}_security_analysis.json"
-            with open(security_json, 'w', encoding='utf-8') as f:
-                json.dump(analysis, f, indent=2, ensure_ascii=False)
+            write_json(security_json, analysis)
             logging.info(f"보안 분석 JSON 저장: {security_json}")
             
         except ValueError as e:
