@@ -2,18 +2,22 @@
 API 추출 모듈 - Trivy 보고서에서 CVE와 API를 매핑하는 기능 제공
 """
 
-from typing import Dict, List
+from typing import Callable, Dict, List, Optional
 from .trivy_parser import map_cves_by_package
 from .package_api_extractor import PackageAPIExtractor
 
 
 
-def build_cve_api_mapping(report_data: dict) -> Dict[str, Dict[str, Dict[str, List[str]]]]:
+def build_cve_api_mapping(
+    report_data: dict,
+    progress_callback: Optional[Callable[[str], None]] = None
+) -> Dict[str, Dict[str, Dict[str, List[str]]]]:
     """
     Trivy 보고서에서 패키지 및 버전별 CVE와 API의 통합 매핑을 생성합니다.
 
     Args:
         report_data (dict): Trivy JSON 보고서 데이터
+        progress_callback (Optional[Callable[[str], None]]): 진행 상황을 보고할 콜백
 
     Returns:
         Dict[str, Dict[str, Dict[str, List[str]]]]: 패키지와 버전별 CVE 및 API 매핑
@@ -32,8 +36,9 @@ def build_cve_api_mapping(report_data: dict) -> Dict[str, Dict[str, Dict[str, Li
     for pkg, versions in mapping.items():
         combined[pkg] = {}
         for ver, cves in versions.items():
-            # 현재 처리 중인 패키지 정보 출력
-            print(f"{pkg}@{ver}의 API 추출 중...")
+            # 진행 상황을 알려줄 콜백을 통해 외부에 보고
+            if progress_callback:
+                progress_callback(f"{pkg}@{ver}")
 
             # 해당 패키지의 API 목록 추출
             apis = api_extractor.extract_api_list(pkg.lower(), ver)
