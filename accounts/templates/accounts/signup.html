@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}회원가입 - Docker 취약점 분석{% endblock %}
+
+{% block content %}
+    <div class="signup-container">
+        <div class="signup-card">
+            <h2 class="card-title">회원가입</h2>
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="form-errors">
+                    {{ form.non_field_errors }}
+                </div>
+
+                {# 1. 이름 (Username) #}
+                <div class="form-group">
+                    <label for="{{ form.username.id_for_label }}">이름</label>
+                    {{ form.username }}
+                    <div class="form-errors">
+                        {{ form.username.errors }}
+                    </div>
+                </div>
+                
+                {# 2. 이메일 (Email) #}
+                <div class="form-group">
+                    <label for="{{ form.email.id_for_label }}">이메일</label>
+                    {{ form.email }}
+                    <div class="form-errors">
+                        {{ form.email.errors }}
+                    </div>
+                </div>
+
+                {# 3. 비밀번호 (Password) #}
+                <div class="form-group">
+                    <label for="{{ form.password.id_for_label }}">비밀번호</label>
+                    {{ form.password }}
+                    <div class="form-errors">
+                        {{ form.password.errors }}
+                    </div>
+                </div>
+                
+                {# 4. 약관 동의 (agree_to_terms) #}
+                <div class="form-group form-check">
+                    {{ form.agree_to_terms }}
+                    <label for="{{ form.agree_to_terms.id_for_label }}">약관에 동의합니다</label>
+                    <div class="form-errors form-check-errors">
+                        {{ form.agree_to_terms.errors }}
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">가입하기</button>
+            </form>
+            <div class="login-link">
+                이미 계정이 있나요? <a href="{% url 'login' %}">로그인</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

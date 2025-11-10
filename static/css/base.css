@@ -1,0 +1,228 @@
+/* 기본 리셋 및 폰트 */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f2f5;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    color: #333;
+}
+
+/* 상단 내비게이션 바 */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff;
+    padding: 15px 30px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.logo-icon {
+    background-color: #007bff;
+    color: #fff;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.1rem;
+    margin-right: 10px;
+}
+
+.navbar-nav {
+    display: flex;
+    gap: 20px;
+}
+
+.nav-item {
+    text-decoration: none;
+    color: #555;
+    font-weight: 500;
+    padding: 5px 0;
+    transition: color 0.2s ease;
+}
+
+.nav-item:hover,
+.nav-item.active {
+    color: #007bff;
+    border-bottom: 2px solid #007bff;
+}
+
+/* 메인 콘텐츠 영역 */
+.content {
+    flex-grow: 1; /* 남은 공간을 채움 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+
+/* 회원가입 카드 - 기존 CSS 재활용 */
+.signup-container {
+    width: 100%;
+    max-width: 400px; /* 카드 최대 너비 */
+    margin: auto; /* 중앙 정렬 */
+}
+
+.signup-card {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* 그림자 강화 */
+    padding: 30px 40px;
+    text-align: center;
+}
+
+.card-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 30px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #555;
+    font-weight: bold;
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="password"] {
+    width: calc(100% - 22px); /* 패딩, 보더 고려 */
+    padding: 12px 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="email"]:focus,
+.form-group input[type="password"]:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.form-check {
+    display: flex;
+    align-items: center;
+    margin-bottom: 25px;
+    font-size: 14px;
+    color: #666;
+}
+
+.form-check input[type="checkbox"] {
+    margin-right: 10px;
+    width: 16px;
+    height: 16px;
+    accent-color: #007bff; /* 체크박스 색상 */
+}
+
+.submit-btn {
+    background-color: #007bff;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    padding: 14px 20px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    transition: background-color 0.3s ease;
+    margin-bottom: 20px;
+}
+
+.submit-btn:hover {
+    background-color: #0056b3;
+}
+
+.login-link {
+    font-size: 14px;
+    color: #666;
+}
+
+.login-link a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.login-link a:hover {
+    text-decoration: underline;
+}
+
+/* 플로팅 버튼 */
+.floating-button {
+    position: fixed; /* 고정 위치 */
+    bottom: 30px;
+    right: 30px;
+    background-color: #007bff;
+    color: #fff;
+    border-radius: 50px; /* 타원형 버튼 */
+    padding: 15px 25px;
+    font-size: 16px;
+    font-weight: bold;
+    text-decoration: none;
+    box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.floating-button:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px); /* 살짝 위로 이동 */
+}
+
+/* Django 폼 오류 메시지 (여전히 유효) */
+.errorlist {
+    color: red;
+    font-size: 13px;
+    text-align: left;
+    margin-top: -15px;
+    margin-bottom: 10px;
+    list-style: none;
+    padding: 0;
+}
+
+/* 폼 오류 메시지 스타일 */
+.form-errors {
+    color: #d93025; /* 빨간색 오류 텍스트 */
+    font-size: 13px;
+    font-weight: bold;
+    margin-top: 5px;
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.form-errors li {
+    padding: 0;
+}
+
+/* 체크박스용 오류 메시지 위치 조절 */
+.form-check-errors {
+    width: 100%; 
+    margin-top: 5px;
+}

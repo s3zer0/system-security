@@ -1,0 +1,36 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Docker 취약점 분석{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}"> {# 베이스 CSS 연결 #}
+    {% block extra_css %}{% endblock %} {# 개별 페이지 CSS 추가 공간 #}
+</head>
+<body>
+    {# 상단 내비게이션 바 #}
+    <header class="navbar">
+        <div class="navbar-brand">
+            <span class="logo-icon">D</span> Docker 취약점 분석
+        </div>
+        <nav class="navbar-nav">
+            <a href="{% url 'login' %}" class="nav-item">로그인</a>|
+            <a href="{% url 'signup' %}" class="nav-item active">회원가입</a>
+        </nav>
+    </header>
+
+    <main class="content">
+        {% block content %}
+        {# 개별 페이지의 내용이 여기에 들어갑니다 #}
+        {% endblock %}
+    </main>
+
+    {# 하단 플로팅 버튼 #}
+    <a href="#" class="floating-button">
+        + 새 분석 시작
+    </a>
+
+    {% block extra_js %}{% endblock %} {# 개별 페이지 JS 추가 공간 #}
+</body>
+</html>
