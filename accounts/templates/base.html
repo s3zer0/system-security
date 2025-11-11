@@ -4,10 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Docker 취약점 분석{% endblock %}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap" rel="stylesheet">
+    
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            line-height: 20.3px;
+            letter-spacing: 0;
+
+            background-color: #f7f8fb;
             margin: 0;
             display: flex;
             flex-direction: column;
@@ -25,35 +36,57 @@
         header .logo {
             display: flex;
             align-items: center;
-            font-size: 1.1rem;
-            font-weight: 600;
         }
         header .logo .icon {
-            background-color: #0d6efd;
+            background: linear-gradient(135deg, #1e88e5 0%, #67b2ff 100%);
+            box-shadow: 0px 4px 14px 0px #11182714;
+
             color: white;
+            font-weight: 700;
             border-radius: 8px;
             padding: 8px 10px;
             margin-right: 12px;
-            font-weight: bold;
+            line-height: 1;
+        }
+        header .logo span:not(.icon){
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 14px;
+            line-height: 20.3px;
+            letter-spacing: 0.2px;
+            color: #1f2430;
+            vertical-align: middle;
         }
         header nav a {
             text-decoration: none;
             color: #0d6efd;
-            font-weight: 500;
-            margin-left: 20px;
+            font-weight: 600;
+        }
+        header nav .separator{
+            font-weight: 400;
+            color: #65708a;
+            margin: 0 12px;
+            vertical-align: middle;
+        }
+        header nav .welcome-msg{
+            color: #333;
+            font-weight: 600;
         }
         .fab {
             position: fixed;
             bottom: 30px;
             right: 30px;
-            background-color: #0d6efd;
+
+            background-color: #1e88e5;
+            box-shadow: 0 12px 30px 0px #1e88e559;
+            border-radius: 999px;
+
+            padding: 14px 20px;
+
             color: white;
             border: none;
-            border-radius: 50px;
-            padding: 14px 20px;
             font-size: 1rem;
             font-weight: 500;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             cursor: pointer;
             text-decoration: none;
         }
@@ -73,8 +106,26 @@
             <span>Docker 취약점 분석</span>
         </div>
         <nav>
-            <a href="{% url 'login' %}">로그인</a>
-            <a href="{% url 'signup' %}">회원가입</a>
+            {% if user.is_authenticated %}
+                <span class="welcome-msg">
+                    {% if user.first_name %}
+                        <strong>{{user.first_name}}</strong>님, 환영합니다.
+                    {% else %}
+                        <strong>{{user.username}}</strong>님, 환영합니다.
+                    {% endif %}
+                </span>
+
+                <span class="separator">|</span>
+
+                <a href="{% url 'logout' %}">로그아웃</a>
+
+            {% else %}    
+                <a href="{% url 'login' %}">로그인</a>
+
+                <span class="separator">|</span>
+
+                <a href="{% url 'signup' %}">회원가입</a>
+            {% endif %}
         </nav>
     </header>
 
