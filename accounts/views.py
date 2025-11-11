@@ -1,10 +1,8 @@
-from .forms import CustomUserCreationForm
 from django.urls import reverse_lazy
-from django.views import generic
+from django.views.generic.edit import CreateView
+from .forms import SignUpForm
 
-class SignUpView(generic.CreateView):
-    form_class = CustomUserCreationForm
-
-    success_url = reverse_lazy('login')
-
+class SignUpView(CreateView):
+    form_class = SignUpForm
     template_name = 'accounts/signup.html'
+    success_url = reverse_lazy('login') # 회원가입 성공 시 로그인 페이지로 이동

@@ -1,36 +1,88 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Docker 취약점 분석{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/base.css' %}"> {# 베이스 CSS 연결 #}
-    {% block extra_css %}{% endblock %} {# 개별 페이지 CSS 추가 공간 #}
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 40px;
+            background-color: #fff;
+            border-bottom: 1px solid #e9ecef;
+            flex-shrink: 0;
+        }
+        header .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        header .logo .icon {
+            background-color: #0d6efd;
+            color: white;
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin-right: 12px;
+            font-weight: bold;
+        }
+        header nav a {
+            text-decoration: none;
+            color: #0d6efd;
+            font-weight: 500;
+            margin-left: 20px;
+        }
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: #0d6efd;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 14px 20px;
+            font-size: 1rem;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+    </style>
 </head>
 <body>
-    {# 상단 내비게이션 바 #}
-    <header class="navbar">
-        <div class="navbar-brand">
-            <span class="logo-icon">D</span> Docker 취약점 분석
+    <header>
+        <div class="logo">
+            <span class="icon">D</span>
+            <span>Docker 취약점 분석</span>
         </div>
-        <nav class="navbar-nav">
-            <a href="{% url 'login' %}" class="nav-item">로그인</a>|
-            <a href="{% url 'signup' %}" class="nav-item active">회원가입</a>
+        <nav>
+            <a href="{% url 'login' %}">로그인</a>
+            <a href="{% url 'signup' %}">회원가입</a>
         </nav>
     </header>
 
-    <main class="content">
-        {% block content %}
-        {# 개별 페이지의 내용이 여기에 들어갑니다 #}
-        {% endblock %}
+    <main class="main-content">
+        {% block content %}{% endblock %}
     </main>
 
-    {# 하단 플로팅 버튼 #}
-    <a href="#" class="floating-button">
-        + 새 분석 시작
-    </a>
+    <a href="#" class="fab">+ 새 분석 시작</a>
 
-    {% block extra_js %}{% endblock %} {# 개별 페이지 JS 추가 공간 #}
 </body>
 </html>

@@ -1,60 +1,126 @@
 {% extends 'base.html' %}
-{% load static %}
 
-{% block title %}회원가입 - Docker 취약점 분석{% endblock %}
+{% block title %}회원가입 - {{ block.super }}{% endblock %}
 
 {% block content %}
-    <div class="signup-container">
-        <div class="signup-card">
-            <h2 class="card-title">회원가입</h2>
-            <form method="post">
-                {% csrf_token %}
+<style>
+    .signup-container {
+        background-color: #fff;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        width: 100%;
+        max-width: 420px;
+        text-align: center;
+    }
+    .signup-container h2 {
+        margin-top: 0;
+        margin-bottom: 30px;
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+    .form-group {
+        margin-bottom: 16px;
+        text-align: left;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+    .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        font-size: 1rem;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        box-sizing: border-box;
+    }
+    .form-check {
+        text-align: left;
+        margin-top: 20px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+    }
+    .form-check-input {
+        margin-right: 10px;
+    }
+    .btn-submit {
+        width: 100%;
+        padding: 14px;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #fff;
+        background-color: #0d6efd;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+    .login-link {
+        margin-top: 24px;
+        font-size: 0.9rem;
+    }
+    .login-link a {
+        color: #0d6efd;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .errorlist {
+        color: #dc3545;
+        font-size: 0.9rem;
+        text-align: left;
+        padding-left: 0;
+        list-style-type: none;
+        margin: 5px 0 0 0;
+    }
+</style>
 
-                <div class="form-errors">
-                    {{ form.non_field_errors }}
-                </div>
+<div class="signup-container">
+    <h2>회원가입</h2>
 
-                {# 1. 이름 (Username) #}
-                <div class="form-group">
-                    <label for="{{ form.username.id_for_label }}">이름</label>
-                    {{ form.username }}
-                    <div class="form-errors">
-                        {{ form.username.errors }}
-                    </div>
-                </div>
-                
-                {# 2. 이메일 (Email) #}
-                <div class="form-group">
-                    <label for="{{ form.email.id_for_label }}">이메일</label>
-                    {{ form.email }}
-                    <div class="form-errors">
-                        {{ form.email.errors }}
-                    </div>
-                </div>
+    <form method="post" novalidate>
+        {% csrf_token %}
+        
+        {{ form.non_field_errors }}
 
-                {# 3. 비밀번호 (Password) #}
-                <div class="form-group">
-                    <label for="{{ form.password.id_for_label }}">비밀번호</label>
-                    {{ form.password }}
-                    <div class="form-errors">
-                        {{ form.password.errors }}
-                    </div>
-                </div>
-                
-                {# 4. 약관 동의 (agree_to_terms) #}
-                <div class="form-group form-check">
-                    {{ form.agree_to_terms }}
-                    <label for="{{ form.agree_to_terms.id_for_label }}">약관에 동의합니다</label>
-                    <div class="form-errors form-check-errors">
-                        {{ form.agree_to_terms.errors }}
-                    </div>
-                </div>
-
-                <button type="submit" class="submit-btn">가입하기</button>
-            </form>
-            <div class="login-link">
-                이미 계정이 있나요? <a href="{% url 'login' %}">로그인</a>
-            </div>
+        <div class="form-group">
+            <label for="{{ form.first_name.id_for_label }}">{{ form.first_name.label }}</label>
+            {{ form.first_name }}
+            {{ form.first_name.errors }}
         </div>
+
+        <div class="form-group">
+            <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+            {{ form.email }}
+            {{ form.email.errors }}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.password1.id_for_label }}">{{ form.password1.label }}</label>
+            {{ form.password1 }}
+            {{ form.password1.errors }}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.password2.id_for_label }}">{{ form.password2.label }}</label>
+            {{ form.password2 }}
+            {{ form.password2.errors }}
+        </div>
+
+        <div class="form-check">
+            {{ form.agree_terms }}
+            <label for="{{ form.agree_terms.id_for_label }}">{{ form.agree_terms.label }}</label>
+            {{ form.agree_terms.errors }}
+        </div>
+
+        <button type="submit" class="btn-submit">가입하기</button>
+    </form>
+
+    <div class="login-link">
+        이미 계정이 있나요? <a href="{% url 'login' %}">로그인</a>
     </div>
+</div>
 {% endblock %}
