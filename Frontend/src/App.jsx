@@ -1,17 +1,13 @@
 import { Routes, Route } from 'react-router-dom';
-import UploadPage from './components/UploadPage';
-import ProgressPage from './components/ProgressPage';
-import SummaryPage from './components/SummaryPage';
-import ReportPage from './components/ReportPage';
+import LandingPage from './pages/LandingPage';
+import AnalysisPage from './pages/AnalysisPage';
 
 function App() {
   return (
     <main className="container mx-auto p-4">
       <Routes>
-        <Route path="/" element={<UploadPage />} />
-        <Route path="/analysis/:jobId" element={<ProgressPage />} />
-        <Route path="/summary/:jobId" element={<SummaryPage />} />
-        <Route path="/report/:jobId" element={<ReportPage />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/analysis/:jobId" element={<AnalysisPage />} />
       </Routes>
     </main>
   );
