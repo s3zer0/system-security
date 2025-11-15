@@ -7,6 +7,7 @@ import argparse
 import logging
 import os
 import sys
+import uuid
 from pathlib import Path
 from typing import Iterable, Optional
 
@@ -84,15 +85,23 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
 
     load_dotenv()
 
-    db_dir: Path = args.db_dir.resolve()
-    sources_dir: Optional[Path] = args.sources_dir.resolve() if args.sources_dir else None
+    base_db_dir: Path = args.db_dir.resolve()
+    base_db_dir.mkdir(parents=True, exist_ok=True)
+    analysis_id = uuid.uuid4().hex
+    analysis_root = (base_db_dir / analysis_id).resolve()
+    analysis_root.mkdir(parents=True, exist_ok=True)
+    sources_dir: Path = (
+        args.sources_dir.resolve()
+        if args.sources_dir
+        else (analysis_root / "output").resolve()
+    )
 
     perplexity_api_key = os.getenv("PERPLEXITY_API_KEY")
     enable_perplexity = bool(perplexity_api_key)
 
     config = PipelineConfig(
         image_path=args.image.resolve(),
-        db_dir=db_dir,
+        db_dir=analysis_root,
         sources_dir=sources_dir,
         app_path=args.app_path,
         include_filter=args.include_filter,
@@ -103,6 +112,7 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
         force=args.force,
         enable_perplexity=enable_perplexity,
         perplexity_api_key=perplexity_api_key,
+        analysis_id=analysis_id,
     )
 
     try:

@@ -54,6 +54,7 @@ class PipelineConfig:
     force: bool = False
     enable_perplexity: bool = False
     perplexity_api_key: Optional[str] = None
+    analysis_id: Optional[str] = None
 
 
 def path_exists_and_non_empty(path: Path) -> bool:
@@ -310,6 +311,14 @@ def _read_json_if_exists(path: Path) -> Optional[Any]:
         return None
 
 
+def _is_path_within(child: Path, parent: Path) -> bool:
+    try:
+        child.relative_to(parent)
+        return True
+    except ValueError:
+        return False
+
+
 def _infer_primary_language(sources_dir: Path) -> str:
     for _ in sources_dir.rglob("*.py"):
         return "Python"
@@ -526,6 +535,8 @@ def _build_meta_block(
 
 def _build_pipeline_response(
     *,
+    analysis_id: str,
+    created_at: str,
     image_path: Path,
     db_dir: Path,
     sources_dir: Path,
@@ -569,8 +580,6 @@ def _build_pipeline_response(
         cve_raw_dir=cve_raw_dir,
     )
 
-    analysis_id = uuid.uuid4().hex
-    created_at = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
     meta_block = _build_meta_block(
         analysis_id=analysis_id,
         created_at=created_at,
@@ -616,7 +625,13 @@ def run_pipeline(config: PipelineConfig) -> Dict[str, Any]:
     image_path = config.image_path.resolve()
     db_dir = config.db_dir.resolve()
     db_dir.mkdir(parents=True, exist_ok=True)
-    sources_dir = (config.sources_dir or (db_dir / "output")).resolve()
+    sources_dir = (
+        config.sources_dir.resolve()
+        if config.sources_dir
+        else (db_dir / "output").resolve()
+    )
+    analysis_id = config.analysis_id or db_dir.name
+    created_at = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
 
     trivy_output = (db_dir / "trivy_analysis_result.json").resolve()
     mapping_output = (db_dir / "lib2cve2api.json").resolve()
@@ -633,6 +648,15 @@ def run_pipeline(config: PipelineConfig) -> Dict[str, Any]:
         logger.info("Perplexity case search enabled using PERPLEXITY_API_KEY.")
     else:
         logger.info("Perplexity case search disabled (set PERPLEXITY_API_KEY to enable).")
+
+    if not _is_path_within(image_path, db_dir):
+        stored_image_path = db_dir / image_path.name
+        try:
+            ensure_dir(stored_image_path.parent)
+            shutil.copy2(image_path, stored_image_path)
+            image_path = stored_image_path
+        except FileNotFoundError:
+            logger.warning("Input image %s not found; proceeding with original path.", image_path)
 
     ctx = PipelineContext(
         image_tar=image_path,
@@ -687,6 +711,8 @@ def run_pipeline(config: PipelineConfig) -> Dict[str, Any]:
     )
 
     return _build_pipeline_response(
+        analysis_id=analysis_id,
+        created_at=created_at,
         image_path=image_path,
         db_dir=db_dir,
         sources_dir=sources_dir,
@@ -705,7 +731,17 @@ def run_pipeline(config: PipelineConfig) -> Dict[str, Any]:
 def run_security_analysis(image_path: str) -> Dict[str, Any]:
     """FastAPI-friendly helper returning both artefact paths and parsed data."""
 
-    config = PipelineConfig(image_path=Path(image_path), db_dir=DEFAULT_DB_DIR)
+    base_dir = DEFAULT_DB_DIR.resolve()
+    base_dir.mkdir(parents=True, exist_ok=True)
+    analysis_id = uuid.uuid4().hex
+    analysis_root = (base_dir / analysis_id).resolve()
+    analysis_root.mkdir(parents=True, exist_ok=True)
+
+    config = PipelineConfig(
+        image_path=Path(image_path).resolve(),
+        db_dir=analysis_root,
+        analysis_id=analysis_id,
+    )
     return run_pipeline(config)
 
 

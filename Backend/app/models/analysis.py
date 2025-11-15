@@ -144,6 +144,11 @@ class AnalysisMeta(BaseModel):
     stats: AnalysisStats
 
 
+class AnalysisResponse(BaseModel):
+    result: AnalysisResult
+    meta: AnalysisMeta
+
+
 __all__ = [
     "AnalysisOverview",
     "VulnerabilitySummary",
@@ -159,4 +164,5 @@ __all__ = [
     "AnalysisResult",
     "AnalysisStats",
     "AnalysisMeta",
+    "AnalysisResponse",
 ]

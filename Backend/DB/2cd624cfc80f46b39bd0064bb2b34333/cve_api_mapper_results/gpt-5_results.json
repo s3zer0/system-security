@@ -1,0 +1,99 @@
+{
+    "setuptools": {
+        "58.1.0": {
+            "cves": [
+                "CVE-2022-40897",
+                "CVE-2024-6345",
+                "CVE-2025-47273"
+            ],
+            "mapping_result": {
+                "CVE-2022-40897": {
+                    "apis": [],
+                    "reason": "The description cites a \"Regular Expression Denial of Service (ReDoS) in package_index.py\" triggered by \"HTML in a crafted package or custom PackageIndex page.\" All provided APIs (add_shim, remove_shim, ensure_local_distutils, clear_distutils, do_override, enabled, warn_distutils_present) are distutils shim controls and are not part of package_index.py, do not parse HTML, and do not run regexes over PackageIndex content."
+                },
+                "CVE-2024-6345": {
+                    "apis": [],
+                    "reason": "This issue is in the \"package_index module\" affecting its \"download functions\" that can \"execute arbitrary commands\" when exposed to user-controlled package URLs. None of the listed APIs are download functions or interact with URLs; they are distutils shim utilities unrelated to package_index or command execution paths."
+                },
+                "CVE-2025-47273": {
+                    "apis": [],
+                    "reason": "The vulnerability is a \"path traversal vulnerability in PackageIndex\" allowing attackers to \"write files to arbitrary locations on the filesystem.\" The provided APIs only manage the distutils shim (add_shim, remove_shim, ensure_local_distutils, clear_distutils, do_override, enabled, warn_distutils_present) and do not perform PackageIndex file download or write operations."
+                }
+            }
+        }
+    },
+    "PyYAML": {
+        "5.3.1": {
+            "cves": [
+                "CVE-2020-14343"
+            ],
+            "mapping_result": {
+                "CVE-2020-14343": {
+                    "apis": [
+                        "full_load",
+                        "full_load_all",
+                        "load",
+                        "load_all"
+                    ],
+                    "reason": "The phrase 'processes untrusted YAML files through the full_load method or with the FullLoader loader' directly implicates full_load and any API that uses or accepts FullLoader. full_load_all uses FullLoader for multiple documents, and load/load_all become vulnerable when used 'with the FullLoader loader.' The impact 'allows an attacker to execute arbitrary code ... by abusing the python/object/new constructor' occurs during object construction performed by these loader-backed APIs."
+                }
+            }
+        }
+    },
+    "Werkzeug": {
+        "2.0.2": {
+            "cves": [
+                "CVE-2023-25577",
+                "CVE-2024-34069",
+                "CVE-2023-46136",
+                "CVE-2024-49766",
+                "CVE-2024-49767",
+                "CVE-2023-23934"
+            ],
+            "mapping_result": {
+                "CVE-2023-25577": {
+                    "apis": [
+                        "formparser.parse_form_data"
+                    ],
+                    "reason": "The phrase \"multipart form data parser will parse an unlimited number of parts\" directly implicates the multipart parser invoked by form parsing. The API \"formparser.parse_form_data\" is the entry point that parses multipart bodies which back \"request.form\" and \"request.files\", matching the description that accessing \"request.data\", \"request.form\", or \"request.files\" can trigger the issue."
+                },
+                "CVE-2024-34069": {
+                    "apis": [
+                        "debug.get_pin_and_cookie_name",
+                        "debug.hash_pin",
+                        "debug.get_machine_id",
+                        "debug.render_console_html"
+                    ],
+                    "reason": "The description states \"The debugger ... can allow an attacker to execute code\" and requires an attacker to \"enter the debugger PIN\" and gain access \"even if it is only running on localhost\". The APIs \"debug.get_pin_and_cookie_name\", \"debug.hash_pin\", and \"debug.get_machine_id\" implement the PIN generation/verification mechanism, while \"debug.render_console_html\" serves the debugger interface that enables code execution."
+                },
+                "CVE-2023-46136": {
+                    "apis": [
+                        "formparser.parse_form_data"
+                    ],
+                    "reason": "The vulnerability states that when a file upload \"starts with CR or LF\" the \"lookup for boundary is performed on growing buffer\", causing a DoS during multipart parsing. The API \"formparser.parse_form_data\" handles multipart/form-data parsing and is directly involved in the boundary scanning logic described."
+                },
+                "CVE-2024-49766": {
+                    "apis": [
+                        "utils.safe_join",
+                        "security.safe_join",
+                        "middleware.shared_data.safe_join"
+                    ],
+                    "reason": "The issue is described as \"Werkzeug's safe_join() relies on this check\" and can be bypassed by UNC paths like \"//server/share\" on Windows with Python < 3.11, producing \"a path that is not safe\". The APIs \"utils.safe_join\" and \"security.safe_join\" expose the affected safe path joining functionality, and \"middleware.shared_data.safe_join\" uses safe joining to serve files, thus all are directly impacted."
+                },
+                "CVE-2024-49767": {
+                    "apis": [
+                        "formparser.parse_form_data"
+                    ],
+                    "reason": "The description explicitly mentions \"Applications using werkzeug.formparser.MultiPartParser ... to parse multipart/form-data\" and that a crafted request can cause the parser to allocate excessive memory. The API \"formparser.parse_form_data\" invokes the multipart parser for such requests and is therefore directly related to the memory amplification vulnerability."
+                },
+                "CVE-2023-23934": {
+                    "apis": [
+                        "http.parse_cookie",
+                        "sansio.request.parse_cookie"
+                    ],
+                    "reason": "The CVE states \"Browsers may allow 'nameless' cookies that look like '=value'\" and that Werkzeug \"will parse the cookie '=__Host-test=bad' as '__Host-test=bad'\". The APIs \"http.parse_cookie\" and \"sansio.request.parse_cookie\" implement cookie parsing and would produce the incorrect key/value interpretation described."
+                }
+            }
+        }
+    }
+}
