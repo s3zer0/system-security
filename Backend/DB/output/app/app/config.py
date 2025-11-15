@@ -10,6 +10,7 @@ class Config:
     @classmethod
     def load_from_yaml(cls, filepath):
         with open(filepath, 'r') as f:
+            # Vulnerable yaml loading in config
             config_data = yaml.load(f, Loader=yaml.Loader)
         return config_data
 
