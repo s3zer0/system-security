@@ -6,9 +6,14 @@ from app.core.analysis_engine import run_security_analysis
 
 
 def main() -> None:
-    result = run_security_analysis("test_target/pyyaml-vuln.tar")
-    fetch_priority = result.get("fetch_priority")
-    print("Fetch priority summary:", fetch_priority)
+    payload = run_security_analysis("test_target/pyyaml-vuln.tar")
+    result = payload.get("result", {})
+    overview = result.get("overview", {})
+    patch_priority = result.get("patch_priority", {})
+    modules = patch_priority.get("modules_by_priority", [])
+
+    print("Risk level:", overview.get("risk_level"))
+    print("Modules by priority count:", len(modules))
 
 
 if __name__ == "__main__":
