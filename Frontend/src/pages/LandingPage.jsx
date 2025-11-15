@@ -1,3 +1,72 @@
-export default function UploadPage() {
-  return <div className="text-xl font-bold">업로드 페이지</div>;
-}
+// src/pages/LandingPage.jsx
+
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import LandingHeader from '../components/LandingHeader';
+import UploadPanel from '../components/UploadPanel';
+import LandingHero from '../components/LandingHero'; // Hero 컴포넌트 추가
+
+const LandingPage = () => {
+  const navigate = useNavigate();
+
+  return (
+    // 랜딩 페이지의 전체 레이아웃 (배경색, 최소 높이, 중앙 정렬 등)
+    <div className="min-h-screen bg-gray-100 p-6">
+      <div className="landing-shell max-w-6xl mx-auto rounded-2xl overflow-hidden shadow-2xl shadow-gray-900/10 border border-gray-200">
+        
+        {/* 1. Header (A 담당) */}
+        <LandingHeader />
+
+        {/* 2. Main Content: Hero 및 Upload Panel 섹션 */}
+        <main className="landing-main p-8 flex flex-col gap-8 bg-gradient-to-br from-indigo-50/50 via-white to-white">
+          
+          <section className="landing-hero grid lg:grid-cols-5 gap-8 items-center">
+            
+            {/* 2-1. Hero Content (LandingHero.jsx로 분리) */}
+            <LandingHero /> 
+
+            {/* 2-2. Upload Panel (UploadPanel.jsx) */}
+            <div className="lg:col-span-2">
+              <UploadPanel />
+            </div>
+          </section>
+
+          {/* 3. Features Section (데모 페이지 UI 재현) */}
+          <section className="landing-features">
+            <div className="landing-features-title text-xs uppercase tracking-wider text-gray-500 mb-3 flex justify-between items-center">
+              주요 기능
+              <button className="btn-text text-blue-700 hover:text-blue-800 text-sm p-1" onClick={() => navigate('/features')}>자세히 보기 →</button>
+            </div>
+            
+            <div className="landing-feature-grid grid sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="landing-feature-card rounded-xl border border-gray-200 bg-white p-3">
+                <h3 className="text-base font-semibold mb-1">자동 취약점 스캔</h3>
+                <p className="text-gray-500 text-xs">Trivy를 기반으로 Docker 이미지를 풀스캔하고, 심각도별로 정리합니다.</p>
+              </div>
+              <div className="landing-feature-card rounded-xl border border-gray-200 bg-white p-3">
+                <h3 className="text-base font-semibold mb-1">라이브러리·API 매핑</h3>
+                <p className="text-gray-500 text-xs">사용 중인 라이브러리와 그 API가 어떤 CVE에 연결되는지 한 눈에 보여줍니다.</p>
+              </div>
+              <div className="landing-feature-card rounded-xl border border-gray-200 bg-white p-3">
+                <h3 className="text-base font-semibold mb-1">AST 호출 그래프</h3>
+                <p className="text-gray-500 text-xs">실제 코드 경로를 AST로 분석해, 공격 경로에 직접 연결된 부분만 필터링합니다.</p>
+              </div>
+              <div className="landing-feature-card rounded-xl border border-gray-200 bg-white p-3">
+                <h3 className="text-base font-semibold mb-1">AI 패치 제안</h3>
+                <p className="text-gray-500 text-xs">LLM이 우선순위 높은 패치 세트를 제안하고, 리포트 형식으로 정리해 줍니다.</p>
+              </div>
+            </div>
+          </section>
+        </main>
+        
+        {/* Footer: .landing-footer */}
+        <footer className="landing-footer border-t border-gray-200 p-3 text-xs text-gray-500 bg-gray-50 text-center">
+          © 2025 System-Security · 내부 PoC 용 UI 시안
+        </footer>
+
+      </div>
+    </div>
+  );
+};
+
+export default LandingPage;
