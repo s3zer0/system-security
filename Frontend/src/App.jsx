@@ -1,3 +1,4 @@
+/*
 import { Routes, Route } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import AnalysisPage from './pages/AnalysisPage';
@@ -11,6 +12,16 @@ function App() {
       </Routes>
     </main>
   );
+}
+
+export default App;
+*/
+
+// src/App.jsx
+import AnalysisPage from './pages/AnalysisPage';  // 또는 './pages/ProgressPage'
+
+function App() {
+  return <AnalysisPage />;
 }
 
 export default App;
