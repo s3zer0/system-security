@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import TabButton from './TabButton';
 
 const AnalysisMain = ({ data }) => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -104,6 +105,15 @@ const AnalysisMain = ({ data }) => {
       { timestamp: '21:30:30', message: '패치 우선순위 리포트 생성 완료' }
     ]
   };
+
+  // 탭 목록
+  const tabs = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'vulns', label: 'Vulnerabilities' },
+    { id: 'libs', label: 'Libraries & APIs' },
+    { id: 'patch', label: 'Patch Priority' },
+    { id: 'logs', label: 'Logs' }
+  ];
 
   const renderTabContent = () => {
     switch(activeTab) {
@@ -274,23 +284,15 @@ const AnalysisMain = ({ data }) => {
       </div>
 
       <div className="mt-2 flex flex-col gap-2">
+        {/* TabButton 컴포넌트 사용 */}
         <div className="inline-flex gap-1.5 p-0.5 rounded-full bg-gray-100 self-start">
-          {['overview', 'vulns', 'libs', 'patch', 'logs'].map((tab) => (
-            <button
-              key={tab}
-              className={`px-2.5 py-1.5 rounded-full text-[11px] transition ${
-                activeTab === tab
-                  ? 'bg-blue-50 border border-blue-600 text-blue-700 font-medium'
-                  : 'border border-transparent text-gray-600 hover:bg-gray-50'
-              }`}
-              onClick={() => setActiveTab(tab)}
-            >
-              {tab === 'overview' && 'Overview'}
-              {tab === 'vulns' && 'Vulnerabilities'}
-              {tab === 'libs' && 'Libraries & APIs'}
-              {tab === 'patch' && 'Patch Priority'}
-              {tab === 'logs' && 'Logs'}
-            </button>
+          {tabs.map((tab) => (
+            <TabButton
+              key={tab.id}
+              label={tab.label}
+              isActive={activeTab === tab.id}
+              onClick={() => setActiveTab(tab.id)}
+            />
           ))}
         </div>
 
