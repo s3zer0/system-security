@@ -1,7 +1,19 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect} from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAnalysis } from '../context/AnalysisContext';
 import RiskBadge from './RiskBadge';
+
+function formatTimeAgo(timestamp) {
+    const now = Date.now();
+    const seconds = Math.floor((now - timestamp)/1000);
+
+    if(seconds < 60) return '방금 전';
+    if(seconds < 60 * 60) return `${Math.floor(seconds / 60)}분 전`;
+    if(seconds < 60 * 60 * 24) return `${Math.floor(seconds / 3600)}시간 전`;
+    if(seconds < 60 * 60 * 24 * 30) return `${Math.floor(seconds / 86400)}일 전`;
+
+    return new Date(timestamp).toLocaleDateString('ko-KR');
+}
 
 function RunItem({ analysis, isActive }){
     return (
@@ -12,7 +24,7 @@ function RunItem({ analysis, isActive }){
         >
             <div className="font-medium text-text-main">{analysis.name}</div>
             <div className="flex justify-between items-center text-xs text-text-muted mt-0.5">
-                <span>{analysis.meta}</span>
+                <span>{formatTimeAgo(analysis.meta)}</span>
                 <RiskBadge level={analysis.risk}/>
             </div>
         </Link>
@@ -28,6 +40,16 @@ export default function AnalysisSidebar() {
     const fileInputRef = useRef(null);
 
     const [isDragging, setIsDragging] = useState(false);
+
+    const [now, setNow] = useState(Date.now());
+
+    useEffect(() => {
+        const interval = setInterval(() =>{
+            setNow(Date.now());
+        }, 60000);
+
+        return () => clearInterval(interval);
+    }, []);
 
     const handleFileUpload = async (file) => {
     
@@ -50,7 +72,7 @@ export default function AnalysisSidebar() {
             addAnalysis({
                 id: fakeResponse.id,
                 name: file.name,
-                meta: '방금 전',
+                meta: Date.now(),
                 risk: fakeResponse.risk,
             });
 

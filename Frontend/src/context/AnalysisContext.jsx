@@ -1,9 +1,24 @@
 import React, { createContext, useContext, useState } from 'react';
 
 const MOCK_DATA = [
-  { id: 'pyyaml-app.tar', name: 'pyyaml-app.tar', meta: '오늘 · 21:30', risk: 'Critical' },
-  { id: 'node-api.zip', name: 'node-api.zip', meta: '어제', risk: 'Low' },
-  { id: 'legacy-service.tar', name: 'legacy-service.tar', meta: '3일 전', risk: 'Medium' },
+  {
+    id: 'pyyaml-app.tar',
+    name: 'pyyaml-app.tar',
+    meta: Date.now() - 5 * 60 * 1000,
+    risk: 'Critical'
+  },
+  {
+    id: 'node-api.zip',
+    name: 'node-api.zip',
+    meta: Date.now() - 2 * 3600 * 1000,
+    risk: 'Low'
+  },
+  {
+    id: 'legacy-service.tar',
+    name: 'legacy-service.tar',
+    meta: Date.now() - 3 * 86400 * 1000,
+    risk: 'Medium'
+  },
 ];
 
 const AnalysisContext = createContext();
