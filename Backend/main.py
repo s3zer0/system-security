@@ -121,9 +121,7 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
         logger.error("Pipeline failed: %s", exc)
         return 1
 
-    fetch_priority_path = (
-        result.get("result", {}).get("artifacts", {}).get("fetch_priority")
-    )
+    fetch_priority_path = result.get("artifacts", {}).get("fetch_priority")
     analysis_id = result.get("meta", {}).get("analysis_id")
     logger.info(
         "Pipeline completed successfully (analysis_id=%s); final report at %s",

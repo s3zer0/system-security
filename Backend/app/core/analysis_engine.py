@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import shutil
 import uuid
 from dataclasses import dataclass
@@ -319,57 +320,61 @@ def _is_path_within(child: Path, parent: Path) -> bool:
         return False
 
 
+def _extract_version(value: Optional[str]) -> Optional[str]:
+    if not value:
+        return None
+
+    match = re.search(r"\d+(?:\.\d+)+", value)
+    return match.group(0) if match else None
+
+
 def _infer_primary_language(sources_dir: Path) -> str:
     for _ in sources_dir.rglob("*.py"):
         return "Python"
     return "Unknown"
 
 
-def _build_vulnerability_summary(trivy_data: Optional[Dict[str, Any]]) -> Dict[str, int]:
-    summary = {
-        "total": 0,
-        "critical": 0,
-        "high": 0,
-        "medium": 0,
-        "low": 0,
-    }
+def _build_vulnerability_summary(trivy_data: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    summary = {"critical": 0, "high": 0, "medium": 0, "low": 0}
 
-    if not trivy_data:
-        return summary
+    if trivy_data:
+        trivy_summary = trivy_data.get("vulnerability_summary") or {}
+        severity_map = trivy_summary.get("by_severity") or {}
+        for key in ("CRITICAL", "HIGH", "MEDIUM", "LOW"):
+            summary[key.lower()] = int(severity_map.get(key, 0))
 
-    trivy_summary = trivy_data.get("vulnerability_summary") or {}
-    severity_map = trivy_summary.get("by_severity") or {}
-    for key in ("CRITICAL", "HIGH", "MEDIUM", "LOW"):
-        summary[key.lower()] = int(severity_map.get(key, 0))
+        if not any(summary.values()) and trivy_data.get("vulnerabilities"):
+            for item in trivy_data["vulnerabilities"]:
+                severity = (item.get("severity") or item.get("Severity") or "").upper()
+                if severity in ("CRITICAL", "HIGH", "MEDIUM", "LOW"):
+                    summary[severity.lower()] += 1
 
-    total = trivy_summary.get("total_vulnerabilities")
-    if total is None and trivy_data.get("vulnerabilities"):
-        total = len(trivy_data["vulnerabilities"])
-    summary["total"] = int(total or sum(summary.values()))
+    summary["overall_risk"] = _determine_risk_level(summary)
     return summary
 
 
-def _determine_risk_level(summary: Dict[str, int]) -> str:
-    if summary["critical"] > 0:
+def _determine_risk_level(summary: Dict[str, Any]) -> str:
+    if summary.get("critical", 0) > 0:
         return "CRITICAL"
-    if summary["high"] > 0:
+    if summary.get("high", 0) > 0:
         return "HIGH"
-    if summary["medium"] > 0:
+    if summary.get("medium", 0) > 0:
         return "MEDIUM"
-    if summary["low"] > 0:
+    if summary.get("low", 0) > 0:
         return "LOW"
-    return "INFO"
+    return "LOW"
 
 
-def _build_overview(summary: Dict[str, int]) -> Dict[str, str]:
-    risk_level = _determine_risk_level(summary)
-    total = summary["total"]
-    critical = summary["critical"]
-    high = summary["high"]
-    overview_text = (
-        f"Detected {total} vulnerabilities ({critical} critical / {high} high)."
+def _build_overview(summary: Dict[str, Any], language: str) -> str:
+    critical = summary.get("critical", 0)
+    high = summary.get("high", 0)
+    medium = summary.get("medium", 0)
+    risk = summary.get("overall_risk", "LOW")
+    total = critical + high + medium + summary.get("low", 0)
+    return (
+        f"{language} 이미지 분석 결과, Critical {critical}, High {high}, Medium {medium} 등 총 "
+        f"{total}건의 취약점이 탐지되었습니다. (위험도: {risk})"
     )
-    return {"summary": overview_text, "risk_level": risk_level}
 
 
 def _build_vulnerabilities(trivy_data: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -381,26 +386,23 @@ def _build_vulnerabilities(trivy_data: Optional[Dict[str, Any]]) -> List[Dict[st
         cve_id = item.get("id") or item.get("VulnerabilityID")
         if not cve_id:
             continue
-        entry = {
-            "cve_id": cve_id,
-            "package_name": item.get("package_name") or item.get("PkgName"),
-            "installed_version": item.get("installed_version")
-            or item.get("InstalledVersion"),
-            "severity": item.get("severity") or item.get("Severity"),
-            "title": item.get("title") or item.get("Title"),
-            "description": item.get("description") or item.get("Description"),
-            "fixed_version": item.get("fixed_version")
-            or item.get("FixedVersion"),
-            "cvss": item.get("cvss") or item.get("CVSS"),
-            "references": item.get("references") or item.get("References") or [],
-            "primary_url": item.get("primary_url") or item.get("PrimaryURL"),
-            "package_type": item.get("package_type") or item.get("PkgType"),
-        }
-        vulns.append(entry)
+        vulns.append(
+            {
+                "cve_id": cve_id,
+                "package": item.get("package_name") or item.get("PkgName") or "unknown",
+                "version": item.get("installed_version")
+                or item.get("InstalledVersion")
+                or "unknown",
+                "severity": (item.get("severity") or item.get("Severity") or "LOW").upper(),
+                "description": item.get("description")
+                or item.get("Description")
+                or "N/A",
+                "direct_call": False,  # TODO: integrate AST usage info
+                "call_example": None,
+            }
+        )
 
     return vulns
-
-
 def _build_library_api_mappings(
     mapping_data: Optional[Dict[str, Any]]
 ) -> List[Dict[str, Any]]:
@@ -408,7 +410,7 @@ def _build_library_api_mappings(
         return []
 
     entries: List[Dict[str, Any]] = []
-    for library, versions in mapping_data.items():
+    for package, versions in mapping_data.items():
         if not isinstance(versions, dict):
             continue
         for version, payload in versions.items():
@@ -417,87 +419,92 @@ def _build_library_api_mappings(
             cves = payload.get("cves") or []
             if isinstance(cves, dict):
                 cves = list(cves.keys())
-            apis = payload.get("apis") or {}
-            if isinstance(apis, list):
-                apis = {"apis": apis}
-            entries.append(
-                {
-                    "library": library,
-                    "version": version,
-                    "cves": cves,
-                    "apis": apis,
-                }
-            )
+            cve_list = [c for c in cves if isinstance(c, str)]
+
+            apis = payload.get("apis")
+            if isinstance(apis, dict) and apis:
+                for module_name, api_list in apis.items():
+                    api_entries = api_list if isinstance(api_list, list) else [api_list]
+                    for api_name in api_entries or ["unknown"]:
+                        entries.append(
+                            {
+                                "package": package,
+                                "version": version,
+                                "module": module_name or "unknown",
+                                "api": api_name or "unknown",
+                                "related_cves": cve_list,
+                            }
+                        )
+            elif isinstance(apis, list) and apis:
+                for api_name in apis:
+                    entries.append(
+                        {
+                            "package": package,
+                            "version": version,
+                            "module": "unknown",
+                            "api": api_name or "unknown",
+                            "related_cves": cve_list,
+                        }
+                    )
+            else:
+                entries.append(
+                    {
+                        "package": package,
+                        "version": version,
+                        "module": "unknown",
+                        "api": "unknown",
+                        "related_cves": cve_list,
+                    }
+                )
     return entries
 
 
-def _build_patch_priority_block(
+def _build_patch_priority_list(
     fetch_priority_data: Optional[Dict[str, Any]]
-) -> Dict[str, Any]:
-    data = fetch_priority_data or {}
-    modules = data.get("modules_by_priority") or []
-    summary_data = data.get("summary") or {}
-    patching_roadmap = data.get("patching_roadmap") or {}
+) -> List[Dict[str, Any]]:
+    modules = (fetch_priority_data or {}).get("modules_by_priority") or []
+    recommendations: List[Dict[str, Any]] = []
 
-    summary = {
-        "total_modules": summary_data.get("total_modules", len(modules)),
-        "total_vulnerabilities": summary_data.get("total_vulnerabilities", 0),
-        "critical_modules": summary_data.get("critical_modules", 0),
-        "high_priority_modules": summary_data.get("high_priority_modules", 0),
-        "medium_priority_modules": summary_data.get("medium_priority_modules", 0),
-        "low_priority_modules": summary_data.get("low_priority_modules", 0),
-        "external_exposed_modules": summary_data.get("external_exposed_modules"),
-    }
+    for idx, module in enumerate(modules, start=1):
+        package = module.get("package_name") or "unknown"
+        version = module.get("current_version") or "unknown"
+        patching = module.get("patching") if isinstance(module.get("patching"), dict) else {}
+        recommended_version = _extract_version(patching.get("target_version")) or _extract_version(
+            patching.get("upgrade_command")
+        )
+        score_raw = module.get("risk_score") or 0
+        try:
+            score = int(float(score_raw))
+        except (TypeError, ValueError):
+            score = 0
+        note = module.get("overall_recommendation") or "업데이트를 권장합니다."
+        priority_level = (module.get("priority_level") or "").lower()
+        text_blob = f"{priority_level} {note}".lower()
+        urgency = (
+            "IMMEDIATE"
+            if any(
+                keyword in text_blob
+                for keyword in ["즉시", "긴급", "immediate", "critical"]
+            )
+            else "PLANNED"
+        )
 
-    return {
-        "modules_by_priority": modules,
-        "summary": summary,
-        "patching_roadmap": patching_roadmap,
-        "overall_assessment": data.get("overall_assessment"),
-        "metadata": data.get("metadata"),
-    }
+        if recommended_version and recommended_version.lower() == "unknown":
+            recommended_version = None
 
+        recommendations.append(
+            {
+                "set_no": idx,
+                "package": package,
+                "current_version": version,
+                "recommended_version": recommended_version,
+                "score": max(0, min(score, 100)),
+                "urgency": urgency,
+                "note": note,
+            }
+        )
 
-def _build_ast_analysis_block(
-    ast_data: Optional[Dict[str, Any]]
-) -> Optional[Dict[str, List[str]]]:
-    if not ast_data:
-        return None
-
-    return {
-        "external": ast_data.get("external", []),
-        "internal": ast_data.get("internal", []),
-        "unused": ast_data.get("unused", []),
-    }
-
-
-def _build_artifacts_block(
-    *,
-    db_dir: Path,
-    sources_dir: Path,
-    trivy_output: Path,
-    mapping_output: Path,
-    ast_json: Path,
-    ast_security_json: Optional[Path],
-    gpt5_json: Path,
-    fetch_priority_json: Path,
-    ast_output_prefix: Path,
-    cve_results_dir: Path,
-    cve_raw_dir: Path,
-) -> Dict[str, Any]:
-    return {
-        "db_dir": str(db_dir),
-        "sources_dir": str(sources_dir),
-        "trivy_report": str(trivy_output),
-        "lib_cve_api_mapping": str(mapping_output),
-        "ast_result": str(ast_json),
-        "ast_security": str(ast_security_json) if ast_security_json else None,
-        "gpt5_results": str(gpt5_json),
-        "fetch_priority": str(fetch_priority_json),
-        "ast_graph_prefix": str(ast_output_prefix),
-        "cve_mapper_results_dir": str(cve_results_dir),
-        "cve_mapper_raw_dir": str(cve_raw_dir),
-    }
+    return recommendations
 
 
 def _build_meta_block(
@@ -505,31 +512,14 @@ def _build_meta_block(
     analysis_id: str,
     created_at: str,
     image_path: Path,
-    language: str,
     risk_level: str,
-    vuln_summary: Dict[str, int],
-    modules: List[Any],
-    ast_analysis: Optional[Dict[str, List[str]]],
 ) -> Dict[str, Any]:
-    stats = {
-        "total_vulnerabilities": vuln_summary["total"],
-        "critical": vuln_summary["critical"],
-        "high": vuln_summary["high"],
-        "medium": vuln_summary["medium"],
-        "low": vuln_summary["low"],
-        "modules_analyzed": len(modules),
-        "external_apis": len(ast_analysis["external"]) if ast_analysis else 0,
-        "internal_apis": len(ast_analysis["internal"]) if ast_analysis else 0,
-    }
-
     return {
         "analysis_id": analysis_id,
-        "image_name": image_path.name,
+        "file_name": image_path.name,
         "image_path": str(image_path),
         "created_at": created_at,
-        "language": language,
         "risk_level": risk_level,
-        "stats": stats,
     }
 
 
@@ -554,7 +544,6 @@ def _build_pipeline_response(
 
     trivy_data = _read_json_if_exists(trivy_output) or {}
     mapping_data = _read_json_if_exists(mapping_output) or {}
-    ast_data = _read_json_if_exists(ast_json)
     ast_security_data = (
         _read_json_if_exists(ast_security_json) if ast_security_json else None
     )
@@ -563,57 +552,53 @@ def _build_pipeline_response(
 
     language = _infer_primary_language(sources_dir)
     vuln_summary = _build_vulnerability_summary(trivy_data)
-    patch_block = _build_patch_priority_block(fetch_priority_data)
-    ast_block = _build_ast_analysis_block(ast_data)
-    overview = _build_overview(vuln_summary)
-    artifacts = _build_artifacts_block(
-        db_dir=db_dir,
-        sources_dir=sources_dir,
-        trivy_output=trivy_output,
-        mapping_output=mapping_output,
-        ast_json=ast_json,
-        ast_security_json=ast_security_json,
-        gpt5_json=gpt5_json,
-        fetch_priority_json=fetch_priority_json,
-        ast_output_prefix=ast_output_prefix,
-        cve_results_dir=cve_results_dir,
-        cve_raw_dir=cve_raw_dir,
-    )
+    overview_text = _build_overview(vuln_summary, language)
+    patch_priority = _build_patch_priority_list(fetch_priority_data)
 
     meta_block = _build_meta_block(
         analysis_id=analysis_id,
         created_at=created_at,
         image_path=image_path,
-        language=language,
-        risk_level=overview["risk_level"],
-        vuln_summary=vuln_summary,
-        modules=patch_block.get("modules_by_priority", []),
-        ast_analysis=ast_block,
+        risk_level=vuln_summary.get("overall_risk", "LOW"),
     )
 
     result_block = {
         "language": language,
-        "overview": overview,
+        "overview": overview_text,
         "vulnerabilities_summary": vuln_summary,
         "vulnerabilities": _build_vulnerabilities(trivy_data),
         "libraries_and_apis": _build_library_api_mappings(mapping_data),
-        "patch_priority": patch_block,
-        "ast_analysis": ast_block,
-        "artifacts": artifacts,
+        "patch_priority": patch_priority,
+        "logs": [],
     }
 
     raw_reports = {
         "trivy": trivy_data,
         "library_cve_api_mapping": mapping_data,
+        "ast_analysis": _read_json_if_exists(ast_json),
         "ast_security_analysis": ast_security_data,
         "cve_api_mapper": gpt5_data,
         "fetch_priority": fetch_priority_data,
+    }
+
+    artifacts = {
+        "analysis_dir": str(db_dir),
+        "trivy_report": str(trivy_output),
+        "lib_cve_api_mapping": str(mapping_output),
+        "ast_result": str(ast_json),
+        "ast_security": str(ast_security_json) if ast_security_json else None,
+        "gpt5_results": str(gpt5_json),
+        "fetch_priority": str(fetch_priority_json),
+        "ast_graph_prefix": str(ast_output_prefix),
+        "cve_mapper_results_dir": str(cve_results_dir),
+        "cve_mapper_raw_dir": str(cve_raw_dir),
     }
 
     return {
         "result": result_block,
         "meta": meta_block,
         "raw_reports": raw_reports,
+        "artifacts": artifacts,
     }
 
 
@@ -710,7 +695,7 @@ def run_pipeline(config: PipelineConfig) -> Dict[str, Any]:
         perplexity_api_key=perplexity_api_key,
     )
 
-    return _build_pipeline_response(
+    response = _build_pipeline_response(
         analysis_id=analysis_id,
         created_at=created_at,
         image_path=image_path,
@@ -726,6 +711,10 @@ def run_pipeline(config: PipelineConfig) -> Dict[str, Any]:
         cve_results_dir=results_dir,
         cve_raw_dir=raw_dir,
     )
+
+    write_json(db_dir / "Result.json", response["result"])
+    write_json(db_dir / "meta.json", response["meta"])
+    return response
 
 
 def run_security_analysis(image_path: str) -> Dict[str, Any]:
