@@ -5,7 +5,31 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors:{
+        border: '#e5e7eb',
+        'text-main': '#111827',
+        'text-muted': '#6b7280',
+
+        primary: '#2563eb',
+        'primary-soft': '#dbeafe',
+        'primary-text': '#1d4ed8',
+
+        'risk-Critical-text': '#d32f2f',
+        'risk-High-text': '#fb8c00',
+        'risk-Medium-text': '#fbc02d',
+        'risk-Low-text': '#388e3c',
+        'risk-Info-text': '#615656'
+      },
+      borderRadius:{
+        'lg': '8px',
+        'xl': '12px',
+        '2xl': '16px',
+        '3xl': '24px',
+        'panel': '18px',
+        'card': '14px',
+      },
+    },
   },
   plugins: [],
 }
