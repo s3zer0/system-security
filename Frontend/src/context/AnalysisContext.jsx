@@ -27,12 +27,11 @@ const AnalysisContext = createContext();
 export function AnalysisProvider({ children }) {
   const [analyses, setAnalyses] = useState(MOCK_DATA);
 
-
   const addAnalysis = (newAnalysis) => {
     setAnalyses((prevAnalyses) => [newAnalysis, ...prevAnalyses]);
   };
 
-  const value = { analyses, addAnalysis };
+  const value = { analyses, addAnalysis, setAnalyses };
 
   return (
     <AnalysisContext.Provider value={value}>
