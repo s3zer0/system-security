@@ -34,7 +34,7 @@ export const uploadImage = async (file, onProgress) => {
             if(xhr.status >= 200 && xhr.status < 300){
                 resolve(JSON.parse(xhr.responseText));
             }else{
-                reject(new Error('Upload failed with status: ${xhr.status}'));
+                reject(new Error(`Upload failed with status: ${xhr.status}`));
             }
         };
 
@@ -42,7 +42,7 @@ export const uploadImage = async (file, onProgress) => {
             reject(new Error('Network error during upload.'));
         };
 
-        xhr.open('Post',  '${API_BASE_URL}/analyses');
+        xhr.open('POST', `${API_BASE_URL}/api/analyses`);
         xhr.send(formData);
     });
 };

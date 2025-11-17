@@ -34,7 +34,7 @@ function RunItem({ analysis, isActive }){
 
 export default function AnalysisSidebar() {
     const navigate = useNavigate();
-    const { analyses, addAnalysis } = useAnalysis();
+    const { analyses, addAnalysis, setAnalyses } = useAnalysis();
     const { jobId } = useParams();
   
     const [isUploading, setIsUploading] = useState(false);
