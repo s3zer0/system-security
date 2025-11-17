@@ -19,7 +19,7 @@ export const uploadImage = async (file, onProgress) => {
 
     return new Promise((resolve, reject) =>{
         const formData = new FormData();
-        formData.append('imageFile', file); // 백엔드에서 받을 key 이름 (예: 'imageFile')
+        formData.append('file', file); // 백엔드에서 받을 key 이름 (예: 'imageFile')
 
         const xhr = new XMLHttpRequest();
 
@@ -42,7 +42,7 @@ export const uploadImage = async (file, onProgress) => {
             reject(new Error('Network error during upload.'));
         };
 
-        xhr.open('Post',  '${API_BASE_URL}/api/analyses');
+        xhr.open('Post',  '${API_BASE_URL}/analyses');
         xhr.send(formData);
     });
 };

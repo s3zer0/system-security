@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect} from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAnalysis } from '../context/AnalysisContext';
 import RiskBadge from './RiskBadge';
+import { uploadImage, getAnalysesList } from "../api/client";
 
 function formatTimeAgo(timestamp) {
     const now = Date.now();
@@ -37,11 +38,23 @@ export default function AnalysisSidebar() {
     const { jobId } = useParams();
   
     const [isUploading, setIsUploading] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+    const [now, setNow] = useState(Date.now());
     const fileInputRef = useRef(null);
 
-    const [isDragging, setIsDragging] = useState(false);
+    useEffect(() =>{
+        const fetchList = async () =>  {
+            try{
+                const ListFromDB = await getAnalysesList();
+                setAnalyses(ListFromDB);
+            }catch(err){
+                console.error("최근 목록 로딩 실패:", err);
+                setAnalyses([]);
+            }
+        };
 
-    const [now, setNow] = useState(Date.now());
+        fetchList();
+    }, [setAnalyses]);
 
     useEffect(() => {
         const interval = setInterval(() =>{
@@ -55,37 +68,35 @@ export default function AnalysisSidebar() {
     
         if (!file) return;
         if (!file.name.toLowerCase().endsWith('.tar') && !file.name.toLowerCase().endsWith('.zip')) {
-        alert('.tar 파일, .zip 파일만 업로드할 수 있습니다.');
-        return;
+            alert('.tar 파일, .zip 파일만 업로드할 수 있습니다.');
+            return;
         }
 
         setIsUploading(true);
+        setIsDragging(false);
 
-        setTimeout(() => {
+        try{
+            const response = await uploadImage(file, () => {});
 
-            const uniqueId = `${file.name}-${Date.now()}`;
-            const fakeResponse = {
-                id: uniqueId,
-                risk: 'Info',
-            };
-
-            addAnalysis({
-                id: fakeResponse.id,
+            const newAnalysis = {
+                id: response.id,
                 name: file.name,
                 meta: Date.now(),
-                risk: fakeResponse.risk,
-            });
+                risk: response.risk || 'Info',
+            };
+            addAnalysis(newAnalysis);
 
-            navigate(`/analysis/${fakeResponse.id}`);
-            
+            navigate(`/analysis/${newAnalysis.id}`);
+        }catch(err){
+            alert('업로드에 실패했습니다: ' + err.message);
+            console.error('[Upload Error] 업로드 실패:', err);
+        }finally{
             setIsUploading(false);
-
-            if (fileInputRef.current) {
+            if(fileInputRef.current){
                 fileInputRef.current.value = '';
             }
-
-        }, 1000);
-    }
+        }
+    };
 
     const handleFileSelect = async (e) => {
         const file = e.target.files[0];
