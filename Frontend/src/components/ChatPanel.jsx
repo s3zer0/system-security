@@ -43,7 +43,7 @@ export default function ChatPanel(){
     };
 
     return(
-        <aside className='border border-border rounded-lg p-3 flex flex-col bg-gray-50 h-[600px] w-[320px]'>
+        <aside className='border-l border-border rounded-lg p-3 flex flex-col bg-gray-50 min-h-0'>
             <div className='text-sm font-medium text-text-main'>Ask the Security Agent</div>
             <div className='text-xs text-text-muted mb-1 truncate'>
                 컨텍스트: <code className='font-semibold'>{ jobId || "분석 선택 안됨" }</code>
