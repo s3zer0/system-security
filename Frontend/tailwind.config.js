@@ -15,11 +15,11 @@ export default {
         'primary-soft': '#dbeafe',
         'primary-text': '#1d4ed8',
 
-        'risk-Critical-text': '#d32f2f',
-        'risk-High-text': '#fb8c00',
-        'risk-Medium-text': '#fbc02d',
-        'risk-Low-text': '#388e3c',
-        'risk-Info-text': '#615656'
+        'risk-CRITICAL-text': '#d32f2f',
+        'risk-HIGH-text': '#fb8c00',
+        'risk-MEDIUM-text': '#fbc02d',
+        'risk-LOW-text': '#388e3c',
+        'risk-SAFE-text': '#615656'
       },
       borderRadius:{
         'lg': '8px',
