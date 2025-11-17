@@ -31,3 +31,4 @@ Thumbs.db
 
 # Logs
 *.log
+Backend/test_target/pyyaml-vuln.tar
