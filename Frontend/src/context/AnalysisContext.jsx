@@ -4,20 +4,20 @@ const MOCK_DATA = [
   {
     id: 'pyyaml-app.tar',
     name: 'pyyaml-app.tar',
-    meta: Date.now() - 5 * 60 * 1000,
-    risk: 'Critical'
+    createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+    risk: 'CRITICAL'
   },
   {
     id: 'node-api.zip',
     name: 'node-api.zip',
-    meta: Date.now() - 2 * 3600 * 1000,
-    risk: 'Low'
+    createdAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+    risk: 'LOW'
   },
   {
     id: 'legacy-service.tar',
     name: 'legacy-service.tar',
-    meta: Date.now() - 3 * 86400 * 1000,
-    risk: 'Medium'
+    createdAt: new Date(Date.now() - 3 * 86400 * 1000).toISOString(),
+    risk: 'MEDIUM'
   },
 ];
 

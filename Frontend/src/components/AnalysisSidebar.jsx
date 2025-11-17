@@ -4,16 +4,26 @@ import { useAnalysis } from '../context/AnalysisContext';
 import RiskBadge from './RiskBadge';
 import { uploadImage, getAnalysesList } from "../api/client";
 
-function formatTimeAgo(timestamp) {
+function formatTimeAgo(isoTimestamp) {
+    if (!isoTimestamp) return '날짜 정보 없음';
+    const timestamp = new Date(isoTimestamp).getTime();
     const now = Date.now();
     const seconds = Math.floor((now - timestamp)/1000);
 
     if(seconds < 60) return '방금 전';
     if(seconds < 60 * 60) return `${Math.floor(seconds / 60)}분 전`;
     if(seconds < 60 * 60 * 24) return `${Math.floor(seconds / 3600)}시간 전`;
-    if(seconds < 60 * 60 * 24 * 30) return `${Math.floor(seconds / 86400)}일 전`;
 
-    return new Date(timestamp).toLocaleDateString('ko-KR');
+    return `${Math.floor(seconds / 86400)}일 전`;
+}
+
+function calculateRisk(summary){
+    if(!summary) return 'N/A';
+    if(summary.critical >= 1) return 'CRITICAL';
+    if(summary.high >= 1) return 'HIGH';
+    if(summary.medium >= 1) return 'MEDIUM';
+    if(summary.low >= 1) return 'LOW';
+    return 'SAFE';
 }
 
 function RunItem({ analysis, isActive }){
@@ -25,7 +35,7 @@ function RunItem({ analysis, isActive }){
         >
             <div className="font-medium text-text-main">{analysis.name}</div>
             <div className="flex justify-between items-center text-xs text-text-muted mt-0.5">
-                <span>{formatTimeAgo(analysis.meta)}</span>
+                <span>{formatTimeAgo(analysis.createdAt)}</span>
                 <RiskBadge level={analysis.risk}/>
             </div>
         </Link>
@@ -42,11 +52,22 @@ export default function AnalysisSidebar() {
     const [now, setNow] = useState(Date.now());
     const fileInputRef = useRef(null);
 
+    /*
     useEffect(() =>{
         const fetchList = async () =>  {
             try{
                 const ListFromDB = await getAnalysesList();
-                setAnalyses(ListFromDB);
+                const formattedList = ListFromDB.map(item => ({
+                    id: item.id,
+                    name: item.image_name,
+                    createAt: item.create_at,
+                    risk: item.status === 'completed'
+                            ? calculateRisk(item.summary)
+                            : item.status.toUpperCase()
+                }));
+
+                setAnalyses(formattedList);
+
             }catch(err){
                 console.error("최근 목록 로딩 실패:", err);
                 setAnalyses([]);
@@ -55,6 +76,7 @@ export default function AnalysisSidebar() {
 
         fetchList();
     }, [setAnalyses]);
+    */
 
     useEffect(() => {
         const interval = setInterval(() =>{
@@ -74,15 +96,38 @@ export default function AnalysisSidebar() {
 
         setIsUploading(true);
         setIsDragging(false);
+        setTimeout(() => {
+            const uniqueId = `${file.name}-${Date.now()}`;
 
+            const fakeResponse = {
+                id: uniqueId,
+                status: "STARTED",
+            };
+
+            const newAnlaysis = {
+                id: fakeResponse.id,
+                name: file.name,
+                createdAt: new Date().toISOString(),
+                risk: fakeResponse.status.toUpperCase(),
+            };
+            addAnalysis(newAnlaysis);
+
+            navigate(`/analysis/${newAnlaysis.id}`);
+
+            setIsUploading(false);
+            if(fileInputRef.current){
+                fileInputRef.current.value = '';
+            }
+        }, 1000);
+        /*
         try{
             const response = await uploadImage(file, () => {});
 
             const newAnalysis = {
                 id: response.id,
                 name: file.name,
-                meta: Date.now(),
-                risk: response.risk || 'Info',
+                createdAt: Date.now().toISOString(),
+                risk: response.status.toUpperCase(),
             };
             addAnalysis(newAnalysis);
 
@@ -96,9 +141,10 @@ export default function AnalysisSidebar() {
                 fileInputRef.current.value = '';
             }
         }
+        */
     };
 
-    const handleFileSelect = async (e) => {
+    const handleFileSelect = (e) => {
         const file = e.target.files[0];
         handleFileUpload(file);      
     };
@@ -125,6 +171,8 @@ export default function AnalysisSidebar() {
             handleFileUpload(file);
         }
     }
+
+    console.log('[sidebar 랜더링 ] 현재 analayes 배열:',analyses);
 
     return(
         <aside
@@ -158,7 +206,7 @@ export default function AnalysisSidebar() {
                 최근 분석
             </div>
 
-            {analyses && analyses.map((analysis) => (
+            {analyses && analyses.filter(analysis => analysis.id).map((analysis) => (
                 <RunItem
                     key={analysis.id}
                     analysis={analysis}
