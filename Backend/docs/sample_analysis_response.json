@@ -1,0 +1,79 @@
+{
+  "result": {
+    "language": "Python",
+    "overview": "Python 이미지 분석 결과, Critical 1, High 2, Medium 1 등 총 4건의 취약점이 탐지되었습니다. (위험도: HIGH)",
+    "vulnerabilities_summary": {
+      "critical": 1,
+      "high": 2,
+      "medium": 1,
+      "low": 0,
+      "overall_risk": "HIGH"
+    },
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2020-14343",
+        "package": "PyYAML",
+        "version": "5.3.1",
+        "severity": "CRITICAL",
+        "description": "PyYAML full_load 경로에서 임의 코드 실행 가능성이 존재합니다.",
+        "direct_call": true,
+        "call_example": "yaml.full_load(request_body)"
+      },
+      {
+        "cve_id": "CVE-2023-30861",
+        "package": "Flask",
+        "version": "2.0.2",
+        "severity": "HIGH",
+        "description": "Werkzeug reloader 경로에서 인증되지 않은 접근이 가능합니다.",
+        "direct_call": false,
+        "call_example": null
+      }
+    ],
+    "libraries_and_apis": [
+      {
+        "package": "PyYAML",
+        "version": "5.3.1",
+        "module": "yaml",
+        "api": "full_load",
+        "related_cves": [
+          "CVE-2020-14343"
+        ]
+      },
+      {
+        "package": "Werkzeug",
+        "version": "2.0.2",
+        "module": "werkzeug.middleware",
+        "api": "dispatcher",
+        "related_cves": []
+      }
+    ],
+    "patch_priority": [
+      {
+        "set_no": 1,
+        "package": "PyYAML",
+        "current_version": "5.3.1",
+        "recommended_version": "6.0",
+        "score": 100,
+        "urgency": "IMMEDIATE",
+        "note": "[PyYAML] 현재 버전 5.3.1. 권장 조치: 즉시 패치 권장. 점수: 100/100 - Docker 외부 노출로 인한 긴급 조치 필요 (권장 버전: 6.0)"
+      },
+      {
+        "set_no": 2,
+        "package": "pip",
+        "current_version": "23.1",
+        "recommended_version": null,
+        "score": 55,
+        "urgency": "PLANNED",
+        "note": "[pip] 현재 버전 23.1. 권장 조치: 차주 배포 시 업데이트하세요."
+      }
+    ],
+    "logs": []
+  },
+  "meta": {
+    "analysis_id": "demo-analysis-id",
+    "file_name": "pyyaml-vuln.tar",
+    "created_at": "2025-11-16T12:34:56Z",
+    "risk_level": "HIGH",
+    "image_path": "/home/user/system-security/Backend/DB/demo-analysis-id/pyyaml-vuln.tar"
+  }
+}
