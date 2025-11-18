@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import CardLayout from './components/CardLayout';
 import AnalysisPage from './pages/AnalysisPage';
+import SampleAnalysisPreviewPage from './pages/SampleAnalysisPreviewPage';
 
 const PlaceholderPage = ({ title }) => (
   <CardLayout title={title} showAnalysisButton={title !== "로그인"}>
@@ -20,7 +21,7 @@ function App() {
       <Route path="/login" element={<PlaceholderPage title="로그인" />} />
       <Route path="/analysis" element={<AnalysisPage />} />
       <Route path="/analysis/:jobId" element={<AnalysisPage />} />
-      <Route path="/summary/:jobId" element={<div>결과 요약 페이지 (준비 중)</div>} />
+      <Route path="/summary/:jobId" element={<SampleAnalysisPreviewPage />} />
       <Route path="*" element={<div>404 Not Found</div>} />
     </Routes>
   );
