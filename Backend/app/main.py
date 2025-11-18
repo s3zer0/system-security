@@ -6,7 +6,7 @@ from typing import Dict
 
 from fastapi import FastAPI
 
-from app.routers import analysis_router
+from app.routers import analysis_router, analyses_router
 
 
 app = FastAPI(title="System Security API", version="0.1.0")
@@ -18,4 +18,5 @@ async def health() -> Dict[str, str]:
     return {"status": "ok"}
 
 
+app.include_router(analyses_router)
 app.include_router(analysis_router)
