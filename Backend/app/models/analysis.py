@@ -67,6 +67,18 @@ class AnalysisResponse(BaseModel):
     meta: AnalysisMeta
 
 
+class AnalysisQARequest(BaseModel):
+    question: str
+
+
+class AnalysisQAResponse(BaseModel):
+    analysis_id: str
+    question: str
+    answer: str
+    used_cves: List[str] = Field(default_factory=list)
+    risk_level: Optional[Literal["CRITICAL", "HIGH", "MEDIUM", "LOW"]] = None
+
+
 __all__ = [
     "VulnerabilitySummary",
     "Vulnerability",
@@ -75,4 +87,6 @@ __all__ = [
     "AnalysisResult",
     "AnalysisMeta",
     "AnalysisResponse",
+    "AnalysisQARequest",
+    "AnalysisQAResponse",
 ]

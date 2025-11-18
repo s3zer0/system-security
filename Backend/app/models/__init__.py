@@ -2,6 +2,8 @@
 
 from .analysis import (
     AnalysisMeta,
+    AnalysisQARequest,
+    AnalysisQAResponse,
     AnalysisResponse,
     AnalysisResult,
     LibraryApiMapping,
@@ -12,6 +14,8 @@ from .analysis import (
 
 __all__ = [
     "AnalysisMeta",
+    "AnalysisQARequest",
+    "AnalysisQAResponse",
     "AnalysisResponse",
     "AnalysisResult",
     "LibraryApiMapping",
