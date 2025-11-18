@@ -1,8 +1,10 @@
+import { useParams } from 'react-router-dom';
 import AnalysisSidebar from '../components/AnalysisSidebar';
 import ChatPanel from '../components/ChatPanel';
 import AnalysisMain from '../components/AnalysisMain';
 
 export default function AnalysisPage() {
+  const { jobId } = useParams()
   return (
     <div className="h-screen flex flex-col bg-white">
       <header className="h-14 border-b border-gray-200 flex items-center justify-between px-4 bg-white">
@@ -20,7 +22,7 @@ export default function AnalysisPage() {
         <AnalysisSidebar />
 
         <main className="min-w-0 border-x border-gray-200 bg-white">
-          <AnalysisMain />
+          <AnalysisMain analysisId={jobId}/>
         </main>
 
         <ChatPanel />
