@@ -1,0 +1,663 @@
+[
+  {
+    "id": "case-001",
+    "cve_id": "CVE-2017-18342",
+    "package": "PyYAML",
+    "language": "Python",
+    "ecosystem": "pypi",
+    "version_range": "< 4.2b1",
+    "short_description": "Unsafe use of yaml.load on untrusted data can execute arbitrary Python objects.",
+    "expected_apis": [
+      "yaml.load",
+      "yaml.Loader",
+      "yaml.UnsafeLoader"
+    ]
+  },
+  {
+    "id": "case-002",
+    "cve_id": "CVE-2020-1747",
+    "package": "PyYAML",
+    "language": "Python",
+    "ecosystem": "pypi",
+    "version_range": "< 5.3.1",
+    "short_description": "yaml.full_load and FullLoader still deserialize arbitrary objects, enabling code execution on untrusted input.",
+    "expected_apis": [
+      "yaml.full_load",
+      "yaml.FullLoader",
+      "yaml.Loader"
+    ]
+  },
+  {
+    "id": "case-003",
+    "cve_id": "CVE-2020-14343",
+    "package": "PyYAML",
+    "language": "Python",
+    "ecosystem": "pypi",
+    "version_range": "< 5.4",
+    "short_description": "Incomplete fixes allow yaml.FullLoader to construct arbitrary Python objects when given crafted tags.",
+    "expected_apis": [
+      "yaml.full_load",
+      "yaml.FullLoader",
+      "yaml.Loader"
+    ]
+  },
+  {
+    "id": "case-004",
+    "cve_id": "CVE-2017-18342",
+    "package": "PyYAML",
+    "language": "Python",
+    "ecosystem": "pypi",
+    "version_range": "< 5.1",
+    "short_description": "Legacy code paths still call yaml.load without specifying SafeLoader, exposing RCE via custom Python objects.",
+    "expected_apis": [
+      "yaml.load",
+      "yaml.SafeLoader",
+      "yaml.Loader"
+    ]
+  },
+  {
+    "id": "case-005",
+    "cve_id": "CVE-2020-14343",
+    "package": "PyYAML",
+    "language": "Python",
+    "ecosystem": "pypi",
+    "version_range": "< 5.4",
+    "short_description": "Applications that pass user-controlled YAML into yaml.load with FullLoader remain vulnerable to gadget-based RCE.",
+    "expected_apis": [
+      "yaml.load",
+      "yaml.FullLoader",
+      "yaml.UnsafeLoader"
+    ]
+  },
+  {
+    "id": "case-006",
+    "cve_id": "CVE-2017-7525",
+    "package": "com.fasterxml.jackson.core:jackson-databind",
+    "language": "Java",
+    "ecosystem": "maven",
+    "version_range": "< 2.8.9",
+    "short_description": "Polymorphic deserialization with default typing enabled allows attacker-controlled classes to be instantiated.",
+    "expected_apis": [
+      "ObjectMapper.enableDefaultTyping",
+      "ObjectMapper.readValue",
+      "ObjectMapper.configure"
+    ]
+  },
+  {
+    "id": "case-007",
+    "cve_id": "CVE-2019-12384",
+    "package": "com.fasterxml.jackson.core:jackson-databind",
+    "language": "Java",
+    "ecosystem": "maven",
+    "version_range": "< 2.9.9.1",
+    "short_description": "Default typing combined with certain gadget types leads to remote code execution during JSON deserialization.",
+    "expected_apis": [
+      "ObjectMapper.readValue",
+      "ObjectMapper.enableDefaultTyping"
+    ]
+  },
+  {
+    "id": "case-008",
+    "cve_id": "CVE-2019-12814",
+    "package": "com.fasterxml.jackson.core:jackson-databind",
+    "language": "Java",
+    "ecosystem": "maven",
+    "version_range": "< 2.9.10",
+    "short_description": "A flawed blacklist in the polymorphic deserializer lets unsafe gadget classes bypass subtype checks.",
+    "expected_apis": [
+      "ObjectMapper.readValue",
+      "SubTypeValidator.validateSubType"
+    ]
+  },
+  {
+    "id": "case-009",
+    "cve_id": "CVE-2019-14379",
+    "package": "com.fasterxml.jackson.core:jackson-databind",
+    "language": "Java",
+    "ecosystem": "maven",
+    "version_range": "< 2.9.10.1",
+    "short_description": "Incomplete gadget blocking allows attacker-supplied types to trigger remote code execution in deserialization flows.",
+    "expected_apis": [
+      "ObjectMapper.readValue",
+      "ObjectMapper.activateDefaultTyping"
+    ]
+  },
+  {
+    "id": "case-010",
+    "cve_id": "CVE-2019-14540",
+    "package": "com.fasterxml.jackson.core:jackson-databind",
+    "language": "Java",
+    "ecosystem": "maven",
+    "version_range": "< 2.9.10.1",
+    "short_description": "Another unsafe gadget chain is reachable through polymorphic default typing, enabling code execution.",
+    "expected_apis": [
+      "ObjectMapper.readValue",
+      "BasicPolymorphicTypeValidator.builder"
+    ]
+  },
+  {
+    "id": "case-011",
+    "cve_id": "CVE-2020-8840",
+    "package": "com.fasterxml.jackson.core:jackson-databind",
+    "language": "Java",
+    "ecosystem": "maven",
+    "version_range": "< 2.9.10.4",
+    "short_description": "Additional deserialization gadgets are reachable when default typing is enabled on untrusted JSON payloads.",
+    "expected_apis": [
+      "ObjectMapper.readValue",
+      "ObjectMapper.enableDefaultTyping"
+    ]
+  },
+  {
+    "id": "case-012",
+    "cve_id": "CVE-2020-9547",
+    "package": "com.fasterxml.jackson.core:jackson-databind",
+    "language": "Java",
+    "ecosystem": "maven",
+    "version_range": "< 2.9.10.5",
+    "short_description": "Further refinement of the gadget denylist was required to prevent instantiation of attacker-controlled classes.",
+    "expected_apis": [
+      "ObjectMapper.readValue",
+      "ObjectMapper.registerSubtypes"
+    ]
+  },
+  {
+    "id": "case-013",
+    "cve_id": "CVE-2018-16487",
+    "package": "lodash",
+    "language": "JavaScript",
+    "ecosystem": "npm",
+    "version_range": "< 4.17.11",
+    "short_description": "Prototype pollution via deep merge functions allows modification of Object.prototype through crafted payloads.",
+    "expected_apis": [
+      "merge",
+      "mergeWith",
+      "defaultsDeep"
+    ]
+  },
+  {
+    "id": "case-014",
+    "cve_id": "CVE-2019-10744",
+    "package": "lodash",
+    "language": "JavaScript",
+    "ecosystem": "npm",
+    "version_range": "< 4.17.13",
+    "short_description": "Improper handling of paths in object helpers can allow prototype chain modification by crafted inputs.",
+    "expected_apis": [
+      "set",
+      "setWith",
+      "update",
+      "updateWith"
+    ]
+  },
+  {
+    "id": "case-015",
+    "cve_id": "CVE-2019-1010266",
+    "package": "lodash",
+    "language": "JavaScript",
+    "ecosystem": "npm",
+    "version_range": "< 4.17.11",
+    "short_description": "Date parsing with vulnerable regular expressions can cause excessive backtracking and CPU exhaustion.",
+    "expected_apis": [
+      "toDate",
+      "words"
+    ]
+  },
+  {
+    "id": "case-016",
+    "cve_id": "CVE-2020-8203",
+    "package": "lodash",
+    "language": "JavaScript",
+    "ecosystem": "npm",
+    "version_range": "< 4.17.19",
+    "short_description": "zipObjectDeep trusts key strings that can introduce arbitrary object paths and enable prototype pollution.",
+    "expected_apis": [
+      "zipObjectDeep"
+    ]
+  },
+  {
+    "id": "case-017",
+    "cve_id": "CVE-2020-28500",
+    "package": "lodash",
+    "language": "JavaScript",
+    "ecosystem": "npm",
+    "version_range": "< 4.17.21",
+    "short_description": "Regular expression processing inside numeric conversion can be abused to trigger ReDoS.",
+    "expected_apis": [
+      "toNumber",
+      "trim",
+      "trimEnd"
+    ]
+  },
+  {
+    "id": "case-018",
+    "cve_id": "CVE-2021-23337",
+    "package": "lodash",
+    "language": "JavaScript",
+    "ecosystem": "npm",
+    "version_range": "< 4.17.21",
+    "short_description": "Construction of compiled templates with attacker-controlled source can lead to arbitrary code execution.",
+    "expected_apis": [
+      "template"
+    ]
+  },
+  {
+    "id": "case-019",
+    "cve_id": "CVE-2020-8203",
+    "package": "lodash",
+    "language": "JavaScript",
+    "ecosystem": "npm",
+    "version_range": "< 4.17.19",
+    "short_description": "Passing untrusted property paths into zipObjectDeep allows writing into __proto__ and constructor prototypes.",
+    "expected_apis": [
+      "zipObjectDeep"
+    ]
+  },
+  {
+    "id": "case-020",
+    "cve_id": "CVE-2018-16487",
+    "package": "lodash",
+    "language": "JavaScript",
+    "ecosystem": "npm",
+    "version_range": "< 4.17.11",
+    "short_description": "Combining defaultsDeep with user-controlled objects may pollute critical prototypes reused across the app.",
+    "expected_apis": [
+      "defaultsDeep"
+    ]
+  },
+  {
+    "id": "case-021",
+    "cve_id": "CVE-2019-11358",
+    "package": "jquery",
+    "language": "JavaScript",
+    "ecosystem": "npm",
+    "version_range": "< 3.4.0",
+    "short_description": "Recursive jQuery.extend on untrusted objects enables prototype pollution through __proto__ and constructor.",
+    "expected_apis": [
+      "jQuery.extend",
+      "jQuery.fn.extend",
+      "$.extend"
+    ]
+  },
+  {
+    "id": "case-022",
+    "cve_id": "CVE-2020-11022",
+    "package": "jquery",
+    "language": "JavaScript",
+    "ecosystem": "npm",
+    "version_range": "< 3.5.0",
+    "short_description": "HTML-prefilter logic incorrectly handles certain tags, enabling cross-site scripting in older jQuery versions.",
+    "expected_apis": [
+      "jQuery.htmlPrefilter",
+      "jQuery.html"
+    ]
+  },
+  {
+    "id": "case-023",
+    "cve_id": "CVE-2020-11023",
+    "package": "jquery",
+    "language": "JavaScript",
+    "ecosystem": "npm",
+    "version_range": "< 3.5.0",
+    "short_description": "HTML handling in jQuery manipulation APIs can introduce XSS when attacker-controlled HTML is inserted.",
+    "expected_apis": [
+      "jQuery.html",
+      "jQuery.append",
+      "jQuery.prepend"
+    ]
+  },
+  {
+    "id": "case-024",
+    "cve_id": "CVE-2015-9251",
+    "package": "jquery",
+    "language": "JavaScript",
+    "ecosystem": "npm",
+    "version_range": "< 3.0.0",
+    "short_description": "Cross-domain Ajax requests mishandle CORS preflight behavior, allowing unintended cross-origin requests.",
+    "expected_apis": [
+      "jQuery.ajax",
+      "$.ajax"
+    ]
+  },
+  {
+    "id": "case-025",
+    "cve_id": "CVE-2020-11022",
+    "package": "jquery",
+    "language": "JavaScript",
+    "ecosystem": "npm",
+    "version_range": "< 3.5.0",
+    "short_description": "Use of jQuery.htmlPrefilter with attacker-controlled HTML can lead to script execution in the browser.",
+    "expected_apis": [
+      "jQuery.htmlPrefilter"
+    ]
+  },
+  {
+    "id": "case-026",
+    "cve_id": "CVE-2020-11023",
+    "package": "jquery",
+    "language": "JavaScript",
+    "ecosystem": "npm",
+    "version_range": "< 3.5.0",
+    "short_description": "Other DOM update helpers that delegate to jQuery.html also inherit the XSS risk for unsanitized markup.",
+    "expected_apis": [
+      "jQuery.replaceWith",
+      "jQuery.before",
+      "jQuery.after"
+    ]
+  },
+  {
+    "id": "case-027",
+    "cve_id": "CVE-2020-28458",
+    "package": "datatables.net",
+    "language": "JavaScript",
+    "ecosystem": "npm",
+    "version_range": "< 1.10.23",
+    "short_description": "Improper escaping of data in rendered table cells may allow HTML injection and XSS in DataTables.",
+    "expected_apis": [
+      "DataTable",
+      "column.render",
+      "columns.render"
+    ]
+  },
+  {
+    "id": "case-028",
+    "cve_id": "CVE-2021-44228",
+    "package": "org.apache.logging.log4j:log4j-core",
+    "language": "Java",
+    "ecosystem": "maven",
+    "version_range": "2.0-beta9 to 2.14.1",
+    "short_description": "JNDI lookups in log message patterns allow remote code execution when attacker-controlled data is logged.",
+    "expected_apis": [
+      "JndiLookup.lookup",
+      "Logger.error",
+      "Logger.info"
+    ]
+  },
+  {
+    "id": "case-029",
+    "cve_id": "CVE-2021-44228",
+    "package": "org.apache.logging.log4j:log4j-core",
+    "language": "Java",
+    "ecosystem": "maven",
+    "version_range": "2.0-beta9 to 2.14.1",
+    "short_description": "Use of ${jndi:...} patterns in configuration or log messages can resolve attacker-controlled LDAP URLs.",
+    "expected_apis": [
+      "JndiLookup.lookup",
+      "Interpolator.lookup"
+    ]
+  },
+  {
+    "id": "case-030",
+    "cve_id": "CVE-2021-45046",
+    "package": "org.apache.logging.log4j:log4j-core",
+    "language": "Java",
+    "ecosystem": "maven",
+    "version_range": "2.15.0",
+    "short_description": "Partial fixes for JNDI injection left some non-default configurations still exploitable for code execution or DoS.",
+    "expected_apis": [
+      "JndiLookup.lookup",
+      "PatternLayout"
+    ]
+  },
+  {
+    "id": "case-031",
+    "cve_id": "CVE-2019-11236",
+    "package": "urllib3",
+    "language": "Python",
+    "ecosystem": "pypi",
+    "version_range": "< 1.24.3",
+    "short_description": "CRLF injection in HTTP headers allows attackers to smuggle additional headers via newline characters in URLs.",
+    "expected_apis": [
+      "HTTPConnection.request",
+      "HTTPConnection.putrequest"
+    ]
+  },
+  {
+    "id": "case-032",
+    "cve_id": "CVE-2020-26137",
+    "package": "urllib3",
+    "language": "Python",
+    "ecosystem": "pypi",
+    "version_range": "< 1.25.10",
+    "short_description": "HTTP header injection in connection pool logic can be triggered by crafted authority components in URLs.",
+    "expected_apis": [
+      "HTTPConnectionPool.urlopen",
+      "HTTPConnection.putheader"
+    ]
+  },
+  {
+    "id": "case-033",
+    "cve_id": "CVE-2024-37891",
+    "package": "urllib3",
+    "language": "Python",
+    "ecosystem": "pypi",
+    "version_range": "< 1.26.19 || 2.0.0 - 2.2.2",
+    "short_description": "Improper handling of decompressed response bodies can lead to resource exhaustion and denial of service.",
+    "expected_apis": [
+      "HTTPResponse.read",
+      "HTTPResponse.stream"
+    ]
+  },
+  {
+    "id": "case-034",
+    "cve_id": "CVE-2019-11236",
+    "package": "urllib3",
+    "language": "Python",
+    "ecosystem": "pypi",
+    "version_range": "< 1.24.3",
+    "short_description": "URL building helpers that do not sanitize CRLF characters allow splitting of HTTP requests or responses.",
+    "expected_apis": [
+      "urllib3.request",
+      "HTTPConnection.putrequest"
+    ]
+  },
+  {
+    "id": "case-035",
+    "cve_id": "CVE-2018-18074",
+    "package": "requests",
+    "language": "Python",
+    "ecosystem": "pypi",
+    "version_range": "< 2.20.0",
+    "short_description": "Authorization header is leaked on redirect from HTTPS to HTTP, exposing credentials to intermediate hosts.",
+    "expected_apis": [
+      "requests.get",
+      "requests.request",
+      "Session.request"
+    ]
+  },
+  {
+    "id": "case-036",
+    "cve_id": "CVE-2018-18074",
+    "package": "requests",
+    "language": "Python",
+    "ecosystem": "pypi",
+    "version_range": "< 2.20.0",
+    "short_description": "Session-level authentication combined with redirect handling can send sensitive headers to downgraded schemes.",
+    "expected_apis": [
+      "Session.request",
+      "Session.send"
+    ]
+  },
+  {
+    "id": "case-037",
+    "cve_id": "CVE-2023-32681",
+    "package": "requests",
+    "language": "Python",
+    "ecosystem": "pypi",
+    "version_range": "< 2.31.0",
+    "short_description": "Improper parsing of URLs with whitespace can allow request smuggling or bypass of security filters.",
+    "expected_apis": [
+      "requests.get",
+      "requests.post"
+    ]
+  },
+  {
+    "id": "case-038",
+    "cve_id": "CVE-2023-32681",
+    "package": "requests",
+    "language": "Python",
+    "ecosystem": "pypi",
+    "version_range": "< 2.31.0",
+    "short_description": "Proxy-Authorization credentials may be forwarded to destination servers when following HTTPS redirects.",
+    "expected_apis": [
+      "requests.get",
+      "Session.request"
+    ]
+  },
+  {
+    "id": "case-039",
+    "cve_id": "CVE-2019-14234",
+    "package": "Django",
+    "language": "Python",
+    "ecosystem": "pypi",
+    "version_range": "2.1.x, 2.2.x < 2.2.5",
+    "short_description": "JSONField and KeyTransform do not correctly validate input keys, allowing SQL injections on some backends.",
+    "expected_apis": [
+      "JSONField",
+      "KeyTransform",
+      "QuerySet.filter"
+    ]
+  },
+  {
+    "id": "case-040",
+    "cve_id": "CVE-2019-19844",
+    "package": "Django",
+    "language": "Python",
+    "ecosystem": "pypi",
+    "version_range": "1.11.x, 2.2.x, 3.0.x",
+    "short_description": "Password reset view uses predictable URLs in some configurations, allowing user impersonation or account takeover.",
+    "expected_apis": [
+      "django.contrib.auth.views.PasswordResetConfirmView"
+    ]
+  },
+  {
+    "id": "case-041",
+    "cve_id": "CVE-2019-14232",
+    "package": "Django",
+    "language": "Python",
+    "ecosystem": "pypi",
+    "version_range": "1.11.x, 2.1.x, 2.2.x",
+    "short_description": "Utilities for truncating HTML do not escape unsafe inputs correctly, leading to potential XSS in templates.",
+    "expected_apis": [
+      "django.utils.text.Truncator.chars",
+      "django.utils.text.Truncator.words"
+    ]
+  },
+  {
+    "id": "case-042",
+    "cve_id": "CVE-2019-14233",
+    "package": "Django",
+    "language": "Python",
+    "ecosystem": "pypi",
+    "version_range": "1.11.x, 2.1.x, 2.2.x",
+    "short_description": "URLValidator mishandles certain newline and whitespace characters, which can be abused in header injection chains.",
+    "expected_apis": [
+      "django.core.validators.URLValidator"
+    ]
+  },
+  {
+    "id": "case-043",
+    "cve_id": "CVE-2017-18349",
+    "package": "com.alibaba:fastjson",
+    "language": "Java",
+    "ecosystem": "maven",
+    "version_range": "< 1.2.25",
+    "short_description": "Fastjson's parseObject deserializes attacker-controlled JSON into arbitrary Java types, enabling remote code execution.",
+    "expected_apis": [
+      "JSON.parseObject",
+      "JSON.parse",
+      "ParserConfig"
+    ]
+  },
+  {
+    "id": "case-044",
+    "cve_id": "CVE-2017-18349",
+    "package": "com.alibaba:fastjson",
+    "language": "Java",
+    "ecosystem": "maven",
+    "version_range": "< 1.2.25",
+    "short_description": "Using parseObject in web controllers on untrusted request bodies can load remote JNDI or RMI endpoints.",
+    "expected_apis": [
+      "JSON.parseObject",
+      "FastjsonEngine.fromString"
+    ]
+  },
+  {
+    "id": "case-045",
+    "cve_id": "CVE-2024-23052",
+    "package": "com.alibaba:fastjson",
+    "language": "Java",
+    "ecosystem": "maven",
+    "version_range": "<= 1.2.x (via bundled fastjson in WukongCRM)",
+    "short_description": "WukongCRM uses fastjson.parseObject on attacker-controlled JSON, enabling RCE in the application context.",
+    "expected_apis": [
+      "JSON.parseObject",
+      "parseObject"
+    ]
+  },
+  {
+    "id": "case-046",
+    "cve_id": "CVE-2017-5638",
+    "package": "org.apache.struts:struts2-core",
+    "language": "Java",
+    "ecosystem": "maven",
+    "version_range": "2.3.5 - 2.3.31, 2.5 - 2.5.10",
+    "short_description": "Incorrect error message handling in the Jakarta multipart parser allows OGNL expressions in Content-Type headers.",
+    "expected_apis": [
+      "org.apache.struts2.dispatcher.multipart.JakartaMultipartParser",
+      "org.apache.struts2.interceptor.StrutsPrepareAndExecuteFilter"
+    ]
+  },
+  {
+    "id": "case-047",
+    "cve_id": "CVE-2017-9805",
+    "package": "org.apache.struts:struts2-rest-plugin",
+    "language": "Java",
+    "ecosystem": "maven",
+    "version_range": "2.1.2 - 2.5.12",
+    "short_description": "REST plugin's XML deserialization with XStream can deserialize arbitrary classes from attacker-controlled XML.",
+    "expected_apis": [
+      "org.apache.struts2.rest.handler.XStreamHandler",
+      "com.thoughtworks.xstream.XStream"
+    ]
+  },
+  {
+    "id": "case-048",
+    "cve_id": "CVE-2018-11776",
+    "package": "org.apache.struts:struts2-core",
+    "language": "Java",
+    "ecosystem": "maven",
+    "version_range": "2.3 - 2.3.34, 2.5 - 2.5.16",
+    "short_description": "Improper namespace and action mapping validation lets attackers inject OGNL expressions via crafted URLs.",
+    "expected_apis": [
+      "org.apache.struts2.dispatcher.mapper.DefaultActionMapper",
+      "org.apache.struts2.dispatcher.Dispatcher"
+    ]
+  },
+  {
+    "id": "case-049",
+    "cve_id": "CVE-2017-12611",
+    "package": "org.apache.struts:struts2-core",
+    "language": "Java",
+    "ecosystem": "maven",
+    "version_range": "2.5 - 2.5.12",
+    "short_description": "Freemarker tags can be abused to execute OGNL expressions if templates incorporate untrusted input.",
+    "expected_apis": [
+      "org.apache.struts2.views.freemarker.FreemarkerResult",
+      "org.apache.struts2.views.freemarker.tags.StrutsModels"
+    ]
+  },
+  {
+    "id": "case-050",
+    "cve_id": "CVE-2021-3129",
+    "package": "facade/ignition",
+    "language": "PHP",
+    "ecosystem": "packagist",
+    "version_range": "<= 2.5.1",
+    "short_description": "Ignition's debug page in Laravel exposes a file system and command execution endpoint when enabled in production.",
+    "expected_apis": [
+      "Ignition\\ErrorPage\\ErrorPageHandler",
+      "Ignition\\Http\\Controllers\\ExecuteSolutionController"
+    ]
+  }
+]
