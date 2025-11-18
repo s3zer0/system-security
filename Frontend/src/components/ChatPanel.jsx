@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { useAnalysis } from '../context/AnalysisContext';
+import { getAiChatResponse } from '../api/client';
 
 export default function ChatPanel(){
 
     const { jobId } = useParams();
 
-    const [messages, setMessages] = useState([]);
-    const [input, setInput] = useState('');
+    const { updateChatData } = useAnalysis();
 
+    const [messages, setMessages] = useState([]);
     const [isLoadingHistory, setIsLoadingHistroy] = useState(false);
+    const [isAiThinking, setIsAiThinking] = useState(false);
+    const [input, setInput] = useState('');
 
     useEffect(() => {
         if (!jobId) {
@@ -26,20 +30,34 @@ export default function ChatPanel(){
     }, [jobId]);
 
     const handleSendChat = async () => {
-        if(!input.trim()) return;
+        if(!input.trim() || !jobId || isAiThinking) return;
         const userInput = input;
         setInput('');
 
         setMessages((prev) => [
             ...prev,
-            { from: 'user', text: userInput }
+            { from: 'user', text: userInput },
+            { from: 'agent', text: 'AI 에이전트가 분석 중입니다...'}
         ]);
+        setIsAiThinking(true);
 
-        const mockResponse = `"${jobId}"에 대해 "${userInput}"라고 질문하셨네요. (데모 응답)`;
-        setMessages((prev) => [
-            ...prev,
-            { from: 'agent', text: mockResponse }
-        ]);
+        try{
+            const response = await getAiChatResponse(jobId, userInput);
+
+            updateChatData(response.mainData);
+
+            setMessages((prev) => [
+                ...prev.slice(0, -1),
+                { from: 'agent', text: response.summary }
+            ]);
+        } catch (err){
+            console.error("AI 채팅 실패:", err);
+            setMessages((prev) => [
+                { from: 'agent', text: '죄송합니다. AI 에이전트 응답에 실패했습니다.' }
+            ]);
+        }finally{
+            setIsAiThinking(false);
+        }
     };
 
     return(
@@ -76,15 +94,16 @@ export default function ChatPanel(){
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     placeholder={jobId ? "예 : RCE 가능성만 필터링..." : "분석을 선택하세요"}
+                    disabled={!jobId || isLoadingHistory || isAiThinking}
                     className='flex-1 resize-none rounded-full border border-border bg-white px-3 py-2 text-sm h-10 outline-none'
                     rows={1}
                 />
                 <button
                     onClick={handleSendChat}
-                    disabled={!jobId || isLoadingHistory}
+                    disabled={!jobId || isLoadingHistory || isAiThinking}
                     className='p-2.5 rounded-full bg-primary text-white h-10 w-10 flex-shrink-0'
                 >
-                    <span className='text-lg leading-none'>⮞</span>
+                    {isAiThinking ? "..." : <span className='text-lg leading-none'>⮞</span>}
                 </button>
             </div>
         </aside>

@@ -1,37 +1,22 @@
 import React, { createContext, useContext, useState } from 'react';
 
-const MOCK_DATA = [
-  {
-    id: 'pyyaml-app.tar',
-    name: 'pyyaml-app.tar',
-    createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-    risk: 'CRITICAL'
-  },
-  {
-    id: 'node-api.zip',
-    name: 'node-api.zip',
-    createdAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
-    risk: 'LOW'
-  },
-  {
-    id: 'legacy-service.tar',
-    name: 'legacy-service.tar',
-    createdAt: new Date(Date.now() - 3 * 86400 * 1000).toISOString(),
-    risk: 'MEDIUM'
-  },
-];
-
 const AnalysisContext = createContext();
 
 
 export function AnalysisProvider({ children }) {
-  const [analyses, setAnalyses] = useState(MOCK_DATA);
+  const [analyses, setAnalyses] = useState([]);
+
+  const [chatMainData, setChatMainData] = useState(null);
 
   const addAnalysis = (newAnalysis) => {
     setAnalyses((prevAnalyses) => [newAnalysis, ...prevAnalyses]);
   };
 
-  const value = { analyses, addAnalysis, setAnalyses };
+  const updateChatData = (newData) => {
+    setChatMainData(newData);
+  }
+
+  const value = { analyses, addAnalysis, setAnalyses, chatMainData, updateChatData };
 
   return (
     <AnalysisContext.Provider value={value}>
