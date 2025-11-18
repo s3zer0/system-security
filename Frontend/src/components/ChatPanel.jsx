@@ -7,12 +7,16 @@ export default function ChatPanel(){
 
     const { jobId } = useParams();
 
-    const { updateChatData } = useAnalysis();
+    const { analyses, updateChatData } = useAnalysis();
 
     const [messages, setMessages] = useState([]);
     const [isLoadingHistory, setIsLoadingHistroy] = useState(false);
     const [isAiThinking, setIsAiThinking] = useState(false);
     const [input, setInput] = useState('');
+
+    const currentAnalysis = analyses.find(a => a.id === jobId);
+
+    const displayName = currentAnalysis ? currentAnalysis.name : "분석 선택 안됨";
 
     useEffect(() => {
         if (!jobId) {
@@ -23,11 +27,11 @@ export default function ChatPanel(){
         setIsLoadingHistroy(true);
         setTimeout(() => {
             setMessages([
-                { from: 'agent', text: `안녕하세요! "${jobId}" 분석에 대해 무엇이 궁금하신가요?`}
+                { from: 'agent', text: `안녕하세요! "${displayName}" 분석에 대해 무엇이 궁금하신가요?`}
             ]);
             setIsLoadingHistroy(false);
         }, 300);
-    }, [jobId]);
+    }, [jobId, displayName]);
 
     const handleSendChat = async () => {
         if(!input.trim() || !jobId || isAiThinking) return;
@@ -64,13 +68,13 @@ export default function ChatPanel(){
         <aside className='border-l border-border rounded-lg p-3 flex flex-col bg-gray-50 min-h-0'>
             <div className='text-sm font-medium text-text-main'>Ask the Security Agent</div>
             <div className='text-xs text-text-muted mb-1 truncate'>
-                컨텍스트: <code className='font-semibold'>{ jobId || "분석 선택 안됨" }</code>
+                컨텍스트: <code className='font-semibold'>{ displayName }</code>
             </div>
 
             <div className='flex-1 overflow-y-auto flex flex-col gap-1.5 text-sm py-2'>
                 {isLoadingHistory ? (
                     <div className='text-center text-xs text-text-muted p-4'>
-                        `{jobId}` 채팅 내역 로딩 중...
+                        `{displayName}` 채팅 내역 로딩 중...
                     </div>
                 ) : (
 
