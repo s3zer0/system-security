@@ -6,7 +6,7 @@ import { uploadImage, getAnalysesList } from "../api/client";
 
 function formatTimeAgo(isoTimestamp) {
     if (!isoTimestamp) return '날짜 정보 없음';
-    const timestamp = new Date(isoTimestamp).getTime();
+    const timestamp = (typeof isoTimestamp === 'number') ? isoTimestamp : new Date(isoTimestamp).getTime();
     const now = Date.now();
     const seconds = Math.floor((now - timestamp)/1000);
 
@@ -15,15 +15,6 @@ function formatTimeAgo(isoTimestamp) {
     if(seconds < 60 * 60 * 24) return `${Math.floor(seconds / 3600)}시간 전`;
 
     return `${Math.floor(seconds / 86400)}일 전`;
-}
-
-function calculateRisk(summary){
-    if(!summary) return 'N/A';
-    if(summary.critical >= 1) return 'CRITICAL';
-    if(summary.high >= 1) return 'HIGH';
-    if(summary.medium >= 1) return 'MEDIUM';
-    if(summary.low >= 1) return 'LOW';
-    return 'SAFE';
 }
 
 function RunItem({ analysis, isActive }){
@@ -35,7 +26,7 @@ function RunItem({ analysis, isActive }){
         >
             <div className="font-medium text-text-main">{analysis.name}</div>
             <div className="flex justify-between items-center text-xs text-text-muted mt-0.5">
-                <span>{formatTimeAgo(analysis.createdAt)}</span>
+                <span>{formatTimeAgo(analysis.createAt)}</span>
                 <RiskBadge level={analysis.risk}/>
             </div>
         </Link>
