@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
@@ -56,8 +57,8 @@ class AnalysisResult(BaseModel):
 class AnalysisMeta(BaseModel):
     analysis_id: str
     file_name: str
-    created_at: str
-    risk_level: str
+    created_at: datetime
+    risk_level: Literal["CRITICAL", "HIGH", "MEDIUM", "LOW"]
     image_path: Optional[str] = None
 
 
