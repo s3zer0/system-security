@@ -52,31 +52,28 @@ export default function AnalysisSidebar() {
     const [now, setNow] = useState(Date.now());
     const fileInputRef = useRef(null);
 
-    /*
+    
     useEffect(() =>{
         const fetchList = async () =>  {
             try{
                 const ListFromDB = await getAnalysesList();
                 const formattedList = ListFromDB.map(item => ({
-                    id: item.id,
-                    name: item.image_name,
-                    createAt: item.create_at,
-                    risk: item.status === 'completed'
-                            ? calculateRisk(item.summary)
-                            : item.status.toUpperCase()
+                    id: item.analysis_id,
+                    name: item.file_name,
+                    createAt: item.created_at,
+                    risk: item.risk_level
                 }));
 
                 setAnalyses(formattedList);
 
             }catch(err){
                 console.error("최근 목록 로딩 실패:", err);
-                setAnalyses([]);
             }
         };
 
         fetchList();
     }, [setAnalyses]);
-    */
+    
 
     useEffect(() => {
         const interval = setInterval(() =>{
@@ -96,38 +93,17 @@ export default function AnalysisSidebar() {
 
         setIsUploading(true);
         setIsDragging(false);
-        setTimeout(() => {
-            const uniqueId = `${file.name}-${Date.now()}`;
 
-            const fakeResponse = {
-                id: uniqueId,
-                status: "STARTED",
-            };
-
-            const newAnlaysis = {
-                id: fakeResponse.id,
-                name: file.name,
-                createdAt: new Date().toISOString(),
-                risk: fakeResponse.status.toUpperCase(),
-            };
-            addAnalysis(newAnlaysis);
-
-            navigate(`/analysis/${newAnlaysis.id}`);
-
-            setIsUploading(false);
-            if(fileInputRef.current){
-                fileInputRef.current.value = '';
-            }
-        }, 1000);
-        /*
         try{
             const response = await uploadImage(file, () => {});
+            console.log("[업로드 성공]", response)
+            const metaData = response.meta || response;
 
             const newAnalysis = {
-                id: response.id,
-                name: file.name,
-                createdAt: Date.now().toISOString(),
-                risk: response.status.toUpperCase(),
+                id: metaData.analysis_id || metaData.id || response.id,
+                name: metaData.file_name || metaData.name || file.name,
+                createdAt: metaData.created_at || metaData.createAt || new Date().toISOString(),
+                risk: (metaData.risk_level || metaData.level || 'NEW').toUpperCase(),
             };
             addAnalysis(newAnalysis);
 
@@ -141,7 +117,6 @@ export default function AnalysisSidebar() {
                 fileInputRef.current.value = '';
             }
         }
-        */
     };
 
     const handleFileSelect = (e) => {
@@ -195,14 +170,14 @@ export default function AnalysisSidebar() {
                 disabled={isUploading}
                 className={`
                     w-full text-left p-2.5 rounded-full border border-border bg-white font-medium
-                    haver:bg-gray-50 disabled:opacity-50 transition-colors
+                    hover:bg-gray-50 disabled:opacity-50 transition-colors
                     ${isDragging ? 'border-dashed border-2 border-blue-500 bg-blue-50' : ''}
                 `}
             >
                 {isUploading ? '분석 중...' : (isDragging ? '여기에 드롭하세요' : '+ 새 Docker 분석')}
             </button>
 
-            <div className="text-xs uppercase tracking-widset text-text-muted mt-1">
+            <div className="text-xs uppercase tracking-widest text-text-muted mt-1">
                 최근 분석
             </div>
 
