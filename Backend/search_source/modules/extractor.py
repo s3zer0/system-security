@@ -4,6 +4,7 @@
 Docker/OCI 컨테이너 이미지에서 소스 코드를 추출하는 기능을 제공합니다.
 """
 
+import sys
 import tarfile
 import json
 import os
@@ -48,7 +49,11 @@ class ImageExtractor:
 
         # tar 파일 추출
         with tarfile.open(self.image_tar_path, "r") as tar:
-            tar.extractall(path=self.temp_dir)
+            # Python 3.12+ 에서만 filter 파라미터 사용 (deprecation warning 방지)
+            if sys.version_info >= (3, 12):
+                tar.extractall(path=self.temp_dir, filter='data')
+            else:
+                tar.extractall(path=self.temp_dir)
 
         return self.temp_dir
 
@@ -153,7 +158,11 @@ class ImageExtractor:
                     continue
 
                 # 일반 파일 추출
-                layer_tarfile.extract(member, path=target_dir)
+                # Python 3.12+ 에서만 filter 파라미터 사용 (deprecation warning 방지)
+                if sys.version_info >= (3, 12):
+                    layer_tarfile.extract(member, path=target_dir, filter='data')
+                else:
+                    layer_tarfile.extract(member, path=target_dir)
 
     def extract_app_auto(self, include_filter: Optional[str] = None) -> bool:
         """

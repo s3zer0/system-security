@@ -719,7 +719,7 @@ def run_pipeline(config: PipelineConfig) -> Dict[str, Any]:
         else (db_dir / "output").resolve()
     )
     analysis_id = config.analysis_id or db_dir.name
-    created_at = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+    created_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
     # Update status to PROCESSING
     create_analysis_status(analysis_id, db_dir, status="PROCESSING")
