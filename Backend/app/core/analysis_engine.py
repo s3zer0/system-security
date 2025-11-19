@@ -254,6 +254,18 @@ def step_cve_api_mapper(
     shutil.copyfile(source_file, gpt5_output)
 
 
+def _write_skipped_priority_file(output_json: Path, reason: str) -> None:
+    """Write a placeholder JSON file when AI priority analysis is skipped."""
+    ensure_dir(output_json.parent)
+    skipped_data = {
+        "skipped": True,
+        "reason": reason,
+        "modules_by_priority": [],
+    }
+    write_json(output_json, skipped_data)
+    logger.info("Written skipped priority file: %s", output_json)
+
+
 def step_fetch_priority(
     ast_json: Path,
     gpt5_json: Path,
@@ -263,43 +275,81 @@ def step_fetch_priority(
     force: bool,
     enable_perplexity: bool,
     perplexity_api_key: Optional[str],
-) -> None:
-    """Evaluate patch priorities and emit fetch_priority.json."""
+) -> Optional[Dict[str, Any]]:
+    """
+    Evaluate patch priorities and emit fetch_priority.json.
 
+    Returns:
+        Dict containing priority data on success, None if API key is missing or API call fails.
+    """
+
+    # If output exists and we're not forcing, try to load it
     if output_json.exists() and not force:
         logger.info("Skipping fetch priority: %s already exists", output_json)
-        return
+        existing_data = _read_json_if_exists(output_json)
+        return existing_data if existing_data else {}
 
+    # Check for API key early - soft dependency
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        logger.warning(
+            "Skipping AI priority analysis: ANTHROPIC_API_KEY not set. "
+            "Pipeline will continue with scanner and AST data only."
+        )
+        _write_skipped_priority_file(
+            output_json, "ANTHROPIC_API_KEY not set - AI analysis disabled"
+        )
+        return None
+
+    # Wrap entire logic in try/except to handle API failures gracefully
     try:
         from fetch_priority.module import PatchPriorityEvaluator
     except ImportError as exc:
-        raise RuntimeError("Failed to import PatchPriorityEvaluator.") from exc
-
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise EnvironmentError(
-            "ANTHROPIC_API_KEY is required for fetch_priority. Set it in the environment."
+        logger.warning(
+            "Skipping AI priority analysis: Failed to import PatchPriorityEvaluator (%s). "
+            "Pipeline will continue with scanner and AST data only.",
+            exc,
         )
+        _write_skipped_priority_file(
+            output_json, f"Failed to import PatchPriorityEvaluator: {exc}"
+        )
+        return None
 
     if enable_perplexity and not perplexity_api_key:
         logger.warning(
             "Perplexity search requested but no API key supplied; set PERPLEXITY_API_KEY before running."
         )
 
-    ensure_dir(output_json.parent)
-    logger.info("Evaluating patch priorities  ->  %s", output_json)
-    evaluator = PatchPriorityEvaluator(
-        api_key=api_key,
-        perplexity_api_key=perplexity_api_key,
-        enable_perplexity=enable_perplexity,
-    )
-    evaluator.run_analysis(
-        ast_file=str(ast_json),
-        gpt5_results_file=str(gpt5_json),
-        lib2cve2api_file=str(mapping_json),
-        trivy_file=str(trivy_json),
-        output_file=str(output_json),
-    )
+    try:
+        ensure_dir(output_json.parent)
+        logger.info("Evaluating patch priorities  ->  %s", output_json)
+        evaluator = PatchPriorityEvaluator(
+            api_key=api_key,
+            perplexity_api_key=perplexity_api_key,
+            enable_perplexity=enable_perplexity,
+        )
+        evaluator.run_analysis(
+            ast_file=str(ast_json),
+            gpt5_results_file=str(gpt5_json),
+            lib2cve2api_file=str(mapping_json),
+            trivy_file=str(trivy_json),
+            output_file=str(output_json),
+        )
+
+        # Load and return the result
+        result_data = _read_json_if_exists(output_json)
+        return result_data if result_data else {}
+
+    except Exception as exc:
+        logger.error(
+            "AI priority analysis failed: %s: %s. Pipeline will continue with scanner and AST data only.",
+            type(exc).__name__,
+            str(exc),
+        )
+        _write_skipped_priority_file(
+            output_json, f"AI analysis failed: {type(exc).__name__}: {str(exc)}"
+        )
+        return None
 
 
 def _read_json_if_exists(path: Path) -> Optional[Any]:
@@ -740,7 +790,9 @@ def run_pipeline(config: PipelineConfig) -> Dict[str, Any]:
         gpt5_output=gpt5_output,
         force=config.force,
     )
-    step_fetch_priority(
+    # AI priority analysis - returns None on failure (missing key, API error)
+    # Pipeline continues gracefully; _build_pipeline_response will handle missing data
+    priority_data = step_fetch_priority(
         ast_json=ast_json,
         gpt5_json=gpt5_output,
         mapping_json=mapping_output,
@@ -750,6 +802,10 @@ def run_pipeline(config: PipelineConfig) -> Dict[str, Any]:
         enable_perplexity=enable_perplexity,
         perplexity_api_key=perplexity_api_key,
     )
+    if priority_data is None:
+        logger.info(
+            "AI priority analysis skipped or failed. Final report will include scanner/AST data only."
+        )
 
     response = _build_pipeline_response(
         analysis_id=analysis_id,
