@@ -8,6 +8,22 @@ from typing import List, Literal, Optional
 from pydantic import BaseModel, Field
 
 
+class AnalysisStatus(BaseModel):
+    """Status tracking for async analysis jobs."""
+    analysis_id: str
+    status: Literal["PENDING", "PROCESSING", "COMPLETED", "FAILED"]
+    created_at: datetime
+    updated_at: datetime
+    error_message: Optional[str] = None
+
+
+class AnalysisStartResponse(BaseModel):
+    """Response when analysis is queued (HTTP 202)."""
+    analysis_id: str
+    status: Literal["PENDING", "PROCESSING"] = "PENDING"
+    message: str = "Analysis has been queued and will be processed in the background"
+
+
 class VulnerabilitySummary(BaseModel):
     critical: int = 0
     high: int = 0
@@ -89,4 +105,6 @@ __all__ = [
     "AnalysisResponse",
     "AnalysisQARequest",
     "AnalysisQAResponse",
+    "AnalysisStatus",
+    "AnalysisStartResponse",
 ]

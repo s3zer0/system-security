@@ -4,20 +4,27 @@ from __future__ import annotations
 
 import json
 import logging
+import uuid
 from pathlib import Path
 from typing import Dict
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile
 from pydantic import ValidationError
 
-from app.core import run_security_analysis
-from app.core.analysis_engine import DEFAULT_DB_DIR
+from app.core.analysis_engine import (
+    DEFAULT_DB_DIR,
+    create_analysis_status,
+    get_analysis_status,
+    process_analysis_background,
+)
 from app.models import (
     AnalysisMeta,
     AnalysisQARequest,
     AnalysisQAResponse,
     AnalysisResponse,
     AnalysisResult,
+    AnalysisStartResponse,
+    AnalysisStatus,
 )
 from app.services.qa_service import run_qa
 
@@ -98,9 +105,17 @@ def _load_analysis_from_disk(analysis_id: str) -> AnalysisResponse:
     return AnalysisResponse(result=result, meta=meta)
 
 
-@router.post("", response_model=AnalysisResponse)
-async def run_analysis(file: UploadFile = File(...)) -> AnalysisResponse:
-    """Accepts an image archive, runs the pipeline, and returns structured results."""
+@router.post("", response_model=AnalysisStartResponse, status_code=202)
+async def run_analysis(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+) -> AnalysisStartResponse:
+    """
+    Accepts an image archive and queues it for asynchronous analysis.
+
+    Returns HTTP 202 Accepted with an analysis_id that can be used to check
+    the status and retrieve results via GET /analysis/{analysis_id}.
+    """
 
     if file is None or not file.filename:
         raise HTTPException(status_code=400, detail="file upload is required")
@@ -109,8 +124,16 @@ async def run_analysis(file: UploadFile = File(...)) -> AnalysisResponse:
     if content_type and content_type not in ALLOWED_CONTENT_TYPES:
         raise HTTPException(status_code=400, detail="unsupported content type")
 
+    # Generate unique analysis ID
+    analysis_id = uuid.uuid4().hex
+
+    # Create analysis directory
+    analysis_dir = DEFAULT_DB_DIR / analysis_id
+    analysis_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save uploaded file to the analysis directory
     safe_name = Path(file.filename).name
-    saved_path = UPLOADS_DIR / safe_name
+    saved_path = analysis_dir / safe_name
 
     try:
         await _save_upload(file, saved_path)
@@ -118,23 +141,81 @@ async def run_analysis(file: UploadFile = File(...)) -> AnalysisResponse:
         logger.exception("Failed to persist upload: %s", exc)
         raise HTTPException(status_code=500, detail="failed to store upload") from exc
 
+    # Create initial PENDING status record
+    create_analysis_status(analysis_id, analysis_dir, status="PENDING")
+
+    # Queue the background task
+    background_tasks.add_task(process_analysis_background, analysis_id, str(saved_path))
+
+    logger.info("Analysis %s queued for background processing", analysis_id)
+
+    return AnalysisStartResponse(
+        analysis_id=analysis_id,
+        status="PENDING",
+        message="Analysis has been queued and will be processed in the background",
+    )
+
+
+@router.get("/{analysis_id}/status", response_model=AnalysisStatus)
+async def get_analysis_status_endpoint(analysis_id: str) -> AnalysisStatus:
+    """
+    Check the current status of an analysis job.
+
+    Returns:
+        - PENDING: Analysis is queued but not yet started
+        - PROCESSING: Analysis is currently running
+        - COMPLETED: Analysis finished successfully (results available)
+        - FAILED: Analysis encountered an error (check error_message)
+    """
+    analysis_dir = DEFAULT_DB_DIR / analysis_id
+    if not analysis_dir.is_dir():
+        raise HTTPException(status_code=404, detail="analysis not found")
+
+    status_data = get_analysis_status(analysis_dir)
+    if not status_data:
+        raise HTTPException(
+            status_code=404,
+            detail="analysis status not found (may be from older version)",
+        )
+
     try:
-        payload = run_security_analysis(str(saved_path))
-    except Exception as exc:
-        logger.exception("Analysis pipeline failed: %s", exc)
-        raise HTTPException(status_code=500, detail="analysis failed") from exc
-
-    result = payload.get("result")
-    meta = payload.get("meta")
-    if not result or not meta:
-        raise HTTPException(status_code=500, detail="analysis returned unexpected payload")
-
-    return AnalysisResponse(result=result, meta=meta)
+        return AnalysisStatus(**status_data)
+    except ValidationError as exc:
+        logger.exception("Invalid status data for analysis %s", analysis_id)
+        raise HTTPException(
+            status_code=500,
+            detail=f"corrupted status data: {exc}",
+        ) from exc
 
 
 @router.get("/{analysis_id}", response_model=AnalysisResponse)
 async def get_analysis_detail(analysis_id: str) -> AnalysisResponse:
-    """Return the stored result/meta for a completed analysis run."""
+    """
+    Return the stored result/meta for a completed analysis run.
+
+    If the analysis is still in progress, returns HTTP 202 with a message
+    to check back later. If the analysis failed, returns HTTP 500 with
+    error details.
+    """
+    analysis_dir = DEFAULT_DB_DIR / analysis_id
+    if not analysis_dir.is_dir():
+        raise HTTPException(status_code=404, detail="analysis not found")
+
+    # Check status first
+    status_data = get_analysis_status(analysis_dir)
+    if status_data:
+        status = status_data.get("status")
+        if status == "PENDING" or status == "PROCESSING":
+            raise HTTPException(
+                status_code=202,
+                detail=f"analysis is {status.lower()}, check /analysis/{analysis_id}/status",
+            )
+        elif status == "FAILED":
+            error_msg = status_data.get("error_message", "unknown error")
+            raise HTTPException(
+                status_code=500,
+                detail=f"analysis failed: {error_msg}",
+            )
 
     return _load_analysis_from_disk(analysis_id)
 
@@ -158,6 +239,27 @@ async def qa_analysis(analysis_id: str, payload: AnalysisQARequest) -> AnalysisQ
         }
     """
 
+    # Guard clause: Check analysis status before attempting to load artifacts
+    analysis_dir = DEFAULT_DB_DIR / analysis_id
+    if not analysis_dir.is_dir():
+        raise HTTPException(status_code=404, detail="analysis not found")
+
+    status_data = get_analysis_status(analysis_dir)
+    if status_data:
+        status = status_data.get("status")
+        if status == "PENDING" or status == "PROCESSING":
+            raise HTTPException(
+                status_code=409,
+                detail="Analysis is still in progress. Please wait until it completes.",
+            )
+        elif status == "FAILED":
+            error_msg = status_data.get("error_message", "unknown error")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Analysis failed. Cannot perform QA. Error: {error_msg}",
+            )
+
+    # Load completed analysis artifacts
     analysis = _load_analysis_from_disk(analysis_id)
     meta = analysis.meta
     result = analysis.result

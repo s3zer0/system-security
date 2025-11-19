@@ -8,9 +8,9 @@ import re
 import shutil
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Tuple
 
 from dotenv import load_dotenv
 
@@ -523,6 +523,54 @@ def _build_meta_block(
     }
 
 
+def _get_status_file_path(analysis_dir: Path) -> Path:
+    """Return the path to the status.json file for a given analysis directory."""
+    return analysis_dir / "status.json"
+
+
+def create_analysis_status(
+    analysis_id: str,
+    analysis_dir: Path,
+    status: Literal["PENDING", "PROCESSING", "COMPLETED", "FAILED"] = "PENDING",
+    error_message: Optional[str] = None,
+) -> None:
+    """Create or update the status file for an analysis."""
+    now = datetime.now(timezone.utc)
+    status_file = _get_status_file_path(analysis_dir)
+
+    # Try to read existing status to preserve created_at
+    existing_status = None
+    if status_file.exists():
+        try:
+            existing_status = read_json(status_file)
+        except Exception:
+            pass
+
+    created_at = existing_status.get("created_at") if existing_status else now.isoformat()
+
+    status_data = {
+        "analysis_id": analysis_id,
+        "status": status,
+        "created_at": created_at,
+        "updated_at": now.isoformat(),
+        "error_message": error_message,
+    }
+
+    write_json(status_file, status_data)
+
+
+def get_analysis_status(analysis_dir: Path) -> Optional[Dict[str, Any]]:
+    """Read the current status of an analysis."""
+    status_file = _get_status_file_path(analysis_dir)
+    if not status_file.exists():
+        return None
+    try:
+        return read_json(status_file)
+    except Exception as exc:
+        logger.warning("Failed to read status file %s: %s", status_file, exc)
+        return None
+
+
 def _build_pipeline_response(
     *,
     analysis_id: str,
@@ -617,6 +665,9 @@ def run_pipeline(config: PipelineConfig) -> Dict[str, Any]:
     )
     analysis_id = config.analysis_id or db_dir.name
     created_at = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+
+    # Update status to PROCESSING
+    create_analysis_status(analysis_id, db_dir, status="PROCESSING")
 
     trivy_output = (db_dir / "trivy_analysis_result.json").resolve()
     mapping_output = (db_dir / "lib2cve2api.json").resolve()
@@ -714,6 +765,10 @@ def run_pipeline(config: PipelineConfig) -> Dict[str, Any]:
 
     write_json(db_dir / "Result.json", response["result"])
     write_json(db_dir / "meta.json", response["meta"])
+
+    # Update status to COMPLETED
+    create_analysis_status(analysis_id, db_dir, status="COMPLETED")
+
     return response
 
 
@@ -734,8 +789,53 @@ def run_security_analysis(image_path: str) -> Dict[str, Any]:
     return run_pipeline(config)
 
 
+def process_analysis_background(analysis_id: str, file_path: str) -> None:
+    """
+    Background task wrapper for running security analysis asynchronously.
+
+    This function:
+    - Executes the analysis pipeline
+    - Updates status to COMPLETED on success
+    - Updates status to FAILED on error and logs the exception
+
+    Args:
+        analysis_id: The unique identifier for this analysis
+        file_path: Path to the uploaded image archive
+    """
+    analysis_dir = DEFAULT_DB_DIR / analysis_id
+
+    try:
+        logger.info("Starting background analysis for %s", analysis_id)
+
+        # Run the analysis pipeline
+        config = PipelineConfig(
+            image_path=Path(file_path).resolve(),
+            db_dir=analysis_dir,
+            analysis_id=analysis_id,
+        )
+        run_pipeline(config)
+
+        logger.info("Background analysis completed successfully for %s", analysis_id)
+
+    except Exception as exc:
+        # Log the error
+        logger.exception("Background analysis failed for %s: %s", analysis_id, exc)
+
+        # Update status to FAILED with error message
+        error_message = f"{type(exc).__name__}: {str(exc)}"
+        create_analysis_status(
+            analysis_id=analysis_id,
+            analysis_dir=analysis_dir,
+            status="FAILED",
+            error_message=error_message,
+        )
+
+
 __all__ = [
     "PipelineConfig",
     "run_pipeline",
     "run_security_analysis",
+    "process_analysis_background",
+    "create_analysis_status",
+    "get_analysis_status",
 ]
