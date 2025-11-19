@@ -15,6 +15,14 @@ from typing import Any, Dict, List, Literal, Optional, Tuple
 from dotenv import load_dotenv
 
 from common import ensure_dir, read_json, setup_logging, write_json
+from .exceptions import (
+    AnalysisError,
+    SourceExtractionError,
+    ScannerError,
+    ParserError,
+    ASTAnalysisError,
+    EnrichmentError,
+)
 from .services import (
     SourceExtractionService,
     ScannerService,
@@ -378,82 +386,154 @@ class AnalysisEngine:
                     "Input image %s not found; proceeding with original path.", image_path
                 )
 
-        # Step 1: Extract sources
-        self.source_extraction.extract_sources(
-            image_tar=image_path,
-            sources_dir=sources_dir,
-            app_path=config.app_path,
-            include_filter=config.include_filter,
-            auto_detect=config.app_path is None,
-            force=config.force,
-        )
+        # CRITICAL STEPS: Fail-fast strategy
+        # These steps are essential; if they fail, abort the entire pipeline
 
-        # Step 2: Run Trivy scan
-        self.scanner.scan_vulnerabilities(
-            image_tar=image_path,
-            trivy_output=trivy_output,
-            full_scan=config.full_scan,
-            enhance=config.enhance_trivy,
-            force=config.force,
-        )
+        try:
+            # Step 1: Extract sources (CRITICAL)
+            logger.info("[Pipeline Step 1/6] Extracting application sources...")
+            self.source_extraction.extract_sources(
+                image_tar=image_path,
+                sources_dir=sources_dir,
+                app_path=config.app_path,
+                include_filter=config.include_filter,
+                auto_detect=config.app_path is None,
+                force=config.force,
+            )
+        except SourceExtractionError as e:
+            logger.error("CRITICAL: Source extraction failed: %s", e)
+            create_analysis_status(
+                analysis_id, db_dir, status="FAILED",
+                error_message=f"Source extraction failed: {str(e)}"
+            )
+            raise  # Abort pipeline
 
-        # Step 3: Build library CVE API mapping
-        self.parser.build_library_cve_api_mapping(
-            trivy_output=trivy_output,
-            mapping_output=mapping_output,
-            force=config.force,
-        )
+        try:
+            # Step 2: Run Trivy scan (CRITICAL)
+            logger.info("[Pipeline Step 2/6] Running Trivy vulnerability scan...")
+            self.scanner.scan_vulnerabilities(
+                image_tar=image_path,
+                trivy_output=trivy_output,
+                full_scan=config.full_scan,
+                enhance=config.enhance_trivy,
+                force=config.force,
+            )
+        except ScannerError as e:
+            logger.error("CRITICAL: Vulnerability scanning failed: %s", e)
+            create_analysis_status(
+                analysis_id, db_dir, status="FAILED",
+                error_message=f"Vulnerability scanning failed: {str(e)}"
+            )
+            raise  # Abort pipeline
 
-        # Step 4: Run AST analysis
-        ast_json, ast_security_json = self.ast_analysis.analyze_ast(
-            source_dir=sources_dir,
-            output_prefix=ast_output_prefix,
-            trivy_output=trivy_output if config.run_security_analysis else None,
-            skip_graph=not config.emit_graph,
-            run_security=config.run_security_analysis,
-            force=config.force,
-        )
+        try:
+            # Step 3: Build library CVE API mapping (CRITICAL)
+            logger.info("[Pipeline Step 3/6] Building CVE/API mappings...")
+            self.parser.build_library_cve_api_mapping(
+                trivy_output=trivy_output,
+                mapping_output=mapping_output,
+                force=config.force,
+            )
+        except ParserError as e:
+            logger.error("CRITICAL: CVE/API mapping failed: %s", e)
+            create_analysis_status(
+                analysis_id, db_dir, status="FAILED",
+                error_message=f"CVE/API mapping failed: {str(e)}"
+            )
+            raise  # Abort pipeline
 
-        # Step 5: Run CVE API mapper
-        self.parser.run_cve_api_mapper(
-            trivy_output=trivy_output,
-            mapping_output=mapping_output,
-            results_dir=results_dir,
-            raw_dir=raw_dir,
-            gpt5_output=gpt5_output,
-            force=config.force,
-        )
+        try:
+            # Step 4: Run AST analysis (CRITICAL)
+            logger.info("[Pipeline Step 4/6] Analyzing AST and call graphs...")
+            ast_json, ast_security_json = self.ast_analysis.analyze_ast(
+                source_dir=sources_dir,
+                output_prefix=ast_output_prefix,
+                trivy_output=trivy_output if config.run_security_analysis else None,
+                skip_graph=not config.emit_graph,
+                run_security=config.run_security_analysis,
+                force=config.force,
+            )
+        except ASTAnalysisError as e:
+            logger.error("CRITICAL: AST analysis failed: %s", e)
+            create_analysis_status(
+                analysis_id, db_dir, status="FAILED",
+                error_message=f"AST analysis failed: {str(e)}"
+            )
+            raise  # Abort pipeline
 
+        try:
+            # Step 5: Run CVE API mapper (CRITICAL)
+            logger.info("[Pipeline Step 5/6] Running advanced CVE API mapper...")
+            self.parser.run_cve_api_mapper(
+                trivy_output=trivy_output,
+                mapping_output=mapping_output,
+                results_dir=results_dir,
+                raw_dir=raw_dir,
+                gpt5_output=gpt5_output,
+                force=config.force,
+            )
+        except ParserError as e:
+            logger.error("CRITICAL: CVE API mapping failed: %s", e)
+            create_analysis_status(
+                analysis_id, db_dir, status="FAILED",
+                error_message=f"CVE API mapping failed: {str(e)}"
+            )
+            raise  # Abort pipeline
+
+        # NON-CRITICAL STEP: Fail-safe strategy
         # Step 6: Evaluate patch priorities (AI-powered, may fail gracefully)
+        logger.info("[Pipeline Step 6/6] Evaluating patch priorities (optional)...")
         priority_data = None
-        if self.enrichment:
-            priority_data = self.enrichment.evaluate_patch_priorities(
-                ast_json=ast_json,
-                gpt5_json=gpt5_output,
-                mapping_json=mapping_output,
-                trivy_json=trivy_output,
-                output_json=fetch_priority_output,
-                force=config.force,
-            )
-        else:
-            # Create enrichment service on-the-fly if not injected
-            enrichment_service = EnrichmentService(
-                perplexity_api_key=perplexity_api_key,
-                enable_perplexity=enable_perplexity,
-            )
-            priority_data = enrichment_service.evaluate_patch_priorities(
-                ast_json=ast_json,
-                gpt5_json=gpt5_output,
-                mapping_json=mapping_output,
-                trivy_json=trivy_output,
-                output_json=fetch_priority_output,
-                force=config.force,
-            )
+        enrichment_failed = False
 
-        if priority_data is None:
-            logger.info(
-                "AI priority analysis skipped or failed. "
-                "Final report will include scanner/AST data only."
+        try:
+            if self.enrichment:
+                priority_data = self.enrichment.evaluate_patch_priorities(
+                    ast_json=ast_json,
+                    gpt5_json=gpt5_output,
+                    mapping_json=mapping_output,
+                    trivy_json=trivy_output,
+                    output_json=fetch_priority_output,
+                    force=config.force,
+                )
+            else:
+                # Create enrichment service on-the-fly if not injected
+                enrichment_service = EnrichmentService(
+                    perplexity_api_key=perplexity_api_key,
+                    enable_perplexity=enable_perplexity,
+                )
+                priority_data = enrichment_service.evaluate_patch_priorities(
+                    ast_json=ast_json,
+                    gpt5_json=gpt5_output,
+                    mapping_json=mapping_output,
+                    trivy_json=trivy_output,
+                    output_json=fetch_priority_output,
+                    force=config.force,
+                )
+
+            if priority_data is None:
+                enrichment_failed = True
+                logger.warning(
+                    "NON-CRITICAL: AI priority analysis was skipped. "
+                    "Continuing with scanner/AST data only."
+                )
+            else:
+                logger.info("AI priority analysis completed successfully")
+
+        except EnrichmentError as e:
+            # EnrichmentError is NON-CRITICAL - log and continue
+            enrichment_failed = True
+            logger.warning(
+                "NON-CRITICAL: AI priority analysis failed: %s. "
+                "Continuing with scanner/AST data only.", e
+            )
+        except Exception as e:
+            # Catch any unexpected errors from enrichment
+            enrichment_failed = True
+            logger.warning(
+                "NON-CRITICAL: Unexpected error during enrichment: %s: %s. "
+                "Continuing with scanner/AST data only.",
+                type(e).__name__, str(e)
             )
 
         # Build and save final response

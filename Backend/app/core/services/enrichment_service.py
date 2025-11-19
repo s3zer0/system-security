@@ -9,6 +9,8 @@ from typing import Any, Dict, Optional
 
 from common import ensure_dir, read_json, write_json
 
+from ..exceptions import EnrichmentError, wrap_exception
+
 logger = logging.getLogger("pipeline.enrichment")
 
 
@@ -47,6 +49,9 @@ class EnrichmentService:
         """
         Evaluate patch priorities and emit fetch_priority.json.
 
+        This is a NON-CRITICAL operation. Failures are logged and None is returned,
+        allowing the pipeline to continue gracefully.
+
         Args:
             ast_json: Path to AST analysis results
             gpt5_json: Path to GPT-5 CVE-API mapping results
@@ -56,7 +61,11 @@ class EnrichmentService:
             force: Force re-evaluation even if results exist
 
         Returns:
-            Dict containing priority data on success, None if API key is missing or API call fails.
+            Dict containing priority data on success, None if enrichment is skipped or fails.
+
+        Raises:
+            EnrichmentError: Only raised if explicitly requested via force parameter,
+                           otherwise errors are caught and logged.
         """
         # If output exists and we're not forcing, try to load it
         if output_json.exists() and not force:
@@ -77,25 +86,42 @@ class EnrichmentService:
 
         # Wrap entire logic in try/except to handle API failures gracefully
         try:
-            from fetch_priority.module import PatchPriorityEvaluator
-        except ImportError as exc:
-            logger.warning(
-                "Skipping AI priority analysis: Failed to import PatchPriorityEvaluator (%s). "
-                "Pipeline will continue with scanner and AST data only.",
-                exc,
-            )
-            self._write_skipped_priority_file(
-                output_json, f"Failed to import PatchPriorityEvaluator: {exc}"
-            )
-            return None
+            # Validate input files exist
+            missing_files = []
+            for name, path in [
+                ("AST", ast_json),
+                ("GPT-5 results", gpt5_json),
+                ("Library mapping", mapping_json),
+                ("Trivy results", trivy_json),
+            ]:
+                if not path.exists():
+                    missing_files.append(f"{name}: {path}")
 
-        if self.enable_perplexity and not self.perplexity_api_key:
-            logger.warning(
-                "Perplexity search requested but no API key supplied; "
-                "set PERPLEXITY_API_KEY before running."
-            )
+            if missing_files:
+                error_msg = f"Required input files missing: {', '.join(missing_files)}"
+                logger.warning("%s. Skipping enrichment.", error_msg)
+                self._write_skipped_priority_file(output_json, error_msg)
+                return None
 
-        try:
+            try:
+                from fetch_priority.module import PatchPriorityEvaluator
+            except ImportError as exc:
+                logger.warning(
+                    "Skipping AI priority analysis: Failed to import PatchPriorityEvaluator (%s). "
+                    "Pipeline will continue with scanner and AST data only.",
+                    exc,
+                )
+                self._write_skipped_priority_file(
+                    output_json, f"Failed to import PatchPriorityEvaluator: {exc}"
+                )
+                return None
+
+            if self.enable_perplexity and not self.perplexity_api_key:
+                logger.warning(
+                    "Perplexity search requested but no API key supplied; "
+                    "set PERPLEXITY_API_KEY before running."
+                )
+
             ensure_dir(output_json.parent)
             logger.info("Evaluating patch priorities -> %s", output_json)
 
@@ -112,11 +138,28 @@ class EnrichmentService:
                 output_file=str(output_json),
             )
 
+            # Verify output was created
+            if not output_json.exists():
+                logger.warning(
+                    "Priority evaluation completed but output file was not created: %s",
+                    output_json
+                )
+                self._write_skipped_priority_file(
+                    output_json, "Evaluation completed but no output produced"
+                )
+                return None
+
             # Load and return the result
             result_data = self._read_json_if_exists(output_json)
-            return result_data if result_data else {}
+            if result_data:
+                logger.info("Successfully completed priority evaluation")
+                return result_data
+
+            logger.warning("Priority evaluation file exists but is empty")
+            return {}
 
         except Exception as exc:
+            # EnrichmentError is NON-CRITICAL - log and continue
             logger.error(
                 "AI priority analysis failed: %s: %s. "
                 "Pipeline will continue with scanner and AST data only.",
