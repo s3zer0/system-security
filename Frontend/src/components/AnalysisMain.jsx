@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import TabButton from './TabButton';
+import RiskBadge from './RiskBadge';
 
 const AnalysisMain = ({ analysisId }) => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -64,10 +65,10 @@ const AnalysisMain = ({ analysisId }) => {
           })) || [],
 
           severitySummary: [
-            { severity: 'Critical', count: result.vulnerabilities_summary?.critical ?? 0, description: '즉시 조치 필요' },
-            { severity: 'High', count: result.vulnerabilities_summary?.high ?? 0, description: '높은 위험도' },
-            { severity: 'Medium', count: result.vulnerabilities_summary?.medium ?? 0, description: '권장 조치' },
-            { severity: 'Low', count: result.vulnerabilities_summary?.low ?? 0, description: '낮은 위험도' }
+            { severity: 'CRITICAL', count: result.vulnerabilities_summary?.critical ?? 0, description: '즉시 조치 필요' },
+            { severity: 'HIGH', count: result.vulnerabilities_summary?.high ?? 0, description: '높은 위험도' },
+            { severity: 'MEDIUM', count: result.vulnerabilities_summary?.medium ?? 0, description: '권장 조치' },
+            { severity: 'LOW', count: result.vulnerabilities_summary?.low ?? 0, description: '낮은 위험도' }
           ].filter(s => s.count > 0),
 
           // ▼▼▼ [핵심 수정] 평평한(Flat) 구조에 맞게 단순 map으로 변경 ▼▼▼
@@ -190,14 +191,7 @@ const AnalysisMain = ({ analysisId }) => {
                       <td className="px-2 py-2">{vuln.package}</td>
                       <td className="px-2 py-2">{vuln.version}</td>
                       <td className="px-2 py-2">
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                          vuln.severity === 'Critical' || vuln.severity === 'CRITICAL' ? 'bg-red-100 text-red-700' :
-                          vuln.severity === 'High' || vuln.severity === 'HIGH' ? 'bg-orange-100 text-orange-700' :
-                          vuln.severity === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-gray-100 text-gray-700'
-                        }`}>
-                          {vuln.severity}
-                        </span>
+                          <RiskBadge level={vuln.severity} />
                       </td>
                       <td className="px-2 py-2">{vuln.directCall}</td>
                     </tr>
@@ -233,14 +227,7 @@ const AnalysisMain = ({ analysisId }) => {
                 {analysisData.severitySummary.map((item, idx) => (
                   <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50">
                     <td className="px-2 py-2">
-                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                        item.severity === 'Critical' ? 'bg-red-100 text-red-700' :
-                        item.severity === 'High' ? 'bg-orange-100 text-orange-700' :
-                        item.severity === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        {item.severity}
-                      </span>
+                      <RiskBadge level={item.severity} />
                     </td>
                     <td className="px-2 py-2">{item.count}</td>
                     <td className="px-2 py-2">{item.description}</td>
@@ -270,14 +257,7 @@ const AnalysisMain = ({ analysisId }) => {
                       <td className="px-2 py-2">{vuln.package}</td>
                       <td className="px-2 py-2">{vuln.version}</td>
                       <td className="px-2 py-2">
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                          vuln.severity === 'Critical' || vuln.severity === 'CRITICAL' ? 'bg-red-100 text-red-700' :
-                          vuln.severity === 'High' || vuln.severity === 'HIGH' ? 'bg-orange-100 text-orange-700' :
-                          vuln.severity === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-gray-100 text-gray-700'
-                        }`}>
-                          {vuln.severity}
-                        </span>
+                        <RiskBadge level={vuln.severity} />
                       </td>
                       <td className="px-2 py-2">{vuln.directCall}</td>
                     </tr>
@@ -361,14 +341,7 @@ const AnalysisMain = ({ analysisId }) => {
                         <td className="px-2 py-2">{patch.version}</td>
                         <td className="px-2 py-2 max-w-[150px] truncate" title={patch.cves}>{patch.cves}</td>
                         <td className="px-2 py-2">
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                            patch.urgency === 'Critical' ? 'bg-red-100 text-red-700' :
-                            patch.urgency === 'High' ? 'bg-orange-100 text-orange-700' :
-                            patch.urgency === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-gray-100 text-gray-700'
-                          }`}>
-                            {patch.urgency}
-                          </span>
+                          <RiskBadge level={patch.urgency} />
                         </td>
                         <td className="px-2 py-2">{patch.score}</td>
                       </tr>

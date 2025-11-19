@@ -15,11 +15,25 @@ export default {
         'primary-soft': '#dbeafe',
         'primary-text': '#1d4ed8',
 
-        'risk-CRITICAL-text': '#d32f2f',
-        'risk-HIGH-text': '#fb8c00',
-        'risk-MEDIUM-text': '#fbc02d',
-        'risk-LOW-text': '#388e3c',
-        'risk-SAFE-text': '#615656'
+        'risk-CRITICAL-text': '#ac0202',
+        'risk-HIGH-text': '#bd1c00',
+        'risk-MEDIUM-text': '#cd5311',
+        'risk-LOW-text': '#137333',
+        'risk-INFO-text': '#195396',
+        'risk-NA-text' : '#000000',
+
+        'risk-CRITICAL-bg': '#bd000040',
+        'risk-HIGH-bg': '#ff590040',
+        'risk-MEDIUM-bg': '#ebb20040',
+        'risk-LOW-bg': '#13733340',
+        'risk-INFO-bg': '#0071a240',
+        'risk-NA-bg': '#00000040',
+
+        'risk-IMMEDIATE-text': '#ac0202',
+        'risk-PLANNED-text': '#195396', 
+
+        'risk-IMMEDIATE-bg': '#bd000040',
+        'risk-PLANNED-bg': '#0071a240',
       },
       borderRadius:{
         'lg': '8px',
