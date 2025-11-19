@@ -56,6 +56,7 @@ class PipelineConfig:
     enable_perplexity: bool = False
     perplexity_api_key: Optional[str] = None
     analysis_id: Optional[str] = None
+    original_filename: Optional[str] = None
 
 
 def path_exists_and_non_empty(path: Path) -> bool:
@@ -513,10 +514,12 @@ def _build_meta_block(
     created_at: str,
     image_path: Path,
     risk_level: str,
+    original_filename: Optional[str] = None,
 ) -> Dict[str, Any]:
     return {
         "analysis_id": analysis_id,
         "file_name": image_path.name,
+        "original_filename": original_filename or image_path.name,
         "image_path": str(image_path),
         "created_at": created_at,
         "risk_level": risk_level,
@@ -587,6 +590,7 @@ def _build_pipeline_response(
     ast_output_prefix: Path,
     cve_results_dir: Path,
     cve_raw_dir: Path,
+    original_filename: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Assemble structured result/meta payloads from pipeline artefacts."""
 
@@ -608,6 +612,7 @@ def _build_pipeline_response(
         created_at=created_at,
         image_path=image_path,
         risk_level=vuln_summary.get("overall_risk", "LOW"),
+        original_filename=original_filename,
     )
 
     result_block = {
@@ -761,6 +766,7 @@ def run_pipeline(config: PipelineConfig) -> Dict[str, Any]:
         ast_output_prefix=ast_output_prefix,
         cve_results_dir=results_dir,
         cve_raw_dir=raw_dir,
+        original_filename=config.original_filename,
     )
 
     write_json(db_dir / "Result.json", response["result"])
@@ -789,7 +795,11 @@ def run_security_analysis(image_path: str) -> Dict[str, Any]:
     return run_pipeline(config)
 
 
-def process_analysis_background(analysis_id: str, file_path: str) -> None:
+def process_analysis_background(
+    analysis_id: str,
+    file_path: str,
+    original_filename: Optional[str] = None,
+) -> None:
     """
     Background task wrapper for running security analysis asynchronously.
 
@@ -801,6 +811,7 @@ def process_analysis_background(analysis_id: str, file_path: str) -> None:
     Args:
         analysis_id: The unique identifier for this analysis
         file_path: Path to the uploaded image archive
+        original_filename: The original filename from the user upload
     """
     analysis_dir = DEFAULT_DB_DIR / analysis_id
 
@@ -812,6 +823,7 @@ def process_analysis_background(analysis_id: str, file_path: str) -> None:
             image_path=Path(file_path).resolve(),
             db_dir=analysis_dir,
             analysis_id=analysis_id,
+            original_filename=original_filename,
         )
         run_pipeline(config)
 

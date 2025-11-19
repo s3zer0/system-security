@@ -8,7 +8,7 @@ import uuid
 from pathlib import Path
 from typing import Dict
 
-from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, File, HTTPException, Request, UploadFile
 from pydantic import ValidationError
 
 from app.core.analysis_engine import (
@@ -32,6 +32,7 @@ from app.services.qa_service import run_qa
 logger = logging.getLogger("analysis.router")
 BASE_DIR = Path(__file__).resolve().parents[2]
 UPLOADS_DIR = BASE_DIR / "DB" / "uploads"
+MAX_FILE_SIZE = 500 * 1024 * 1024  # 500MB in bytes
 ALLOWED_CONTENT_TYPES = {
     "application/x-tar",
     "application/gzip",
@@ -50,15 +51,54 @@ async def ping() -> Dict[str, str]:
 
 
 async def _save_upload(upload: UploadFile, destination: Path) -> None:
+    """
+    Save uploaded file to destination with strict size enforcement.
+
+    Raises:
+        HTTPException(413): If file exceeds MAX_FILE_SIZE during write.
+    """
     destination.parent.mkdir(parents=True, exist_ok=True)
+    bytes_written = 0
+    file_handle = None
+
     try:
-        with destination.open("wb") as buffer:
-            while True:
-                chunk = await upload.read(1024 * 1024)
-                if not chunk:
-                    break
-                buffer.write(chunk)
+        file_handle = destination.open("wb")
+        while True:
+            chunk = await upload.read(1024 * 1024)  # Read 1MB chunks
+            if not chunk:
+                break
+
+            # Check if writing this chunk would exceed the limit
+            bytes_written += len(chunk)
+            if bytes_written > MAX_FILE_SIZE:
+                # Close file handle
+                file_handle.close()
+                file_handle = None
+
+                # Delete the partially written file
+                try:
+                    destination.unlink()
+                except Exception as cleanup_exc:
+                    logger.warning("Failed to cleanup oversized file %s: %s", destination, cleanup_exc)
+
+                # Raise HTTP 413
+                size_mb = bytes_written / (1024 * 1024)
+                raise HTTPException(
+                    status_code=413,
+                    detail=f"File too large ({size_mb:.1f}MB). Maximum allowed size is 500MB.",
+                )
+
+            file_handle.write(chunk)
+
     finally:
+        # Ensure file handle is closed
+        if file_handle is not None:
+            try:
+                file_handle.close()
+            except Exception:
+                pass
+
+        # Always close the upload stream
         await upload.close()
 
 
@@ -107,6 +147,7 @@ def _load_analysis_from_disk(analysis_id: str) -> AnalysisResponse:
 
 @router.post("", response_model=AnalysisStartResponse, status_code=202)
 async def run_analysis(
+    request: Request,
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
 ) -> AnalysisStartResponse:
@@ -115,6 +156,8 @@ async def run_analysis(
 
     Returns HTTP 202 Accepted with an analysis_id that can be used to check
     the status and retrieve results via GET /analysis/{analysis_id}.
+
+    File size limit: 500MB
     """
 
     if file is None or not file.filename:
@@ -124,6 +167,27 @@ async def run_analysis(
     if content_type and content_type not in ALLOWED_CONTENT_TYPES:
         raise HTTPException(status_code=400, detail="unsupported content type")
 
+    # Fast-fail optimization: Check Content-Length header if present
+    # Note: This is NOT the security enforcement (clients can lie/omit this header).
+    # The actual size limit is enforced byte-by-byte during file write in _save_upload()
+    content_length_header = request.headers.get("content-length")
+
+    if content_length_header:
+        try:
+            content_length = int(content_length_header)
+            if content_length > MAX_FILE_SIZE:
+                size_mb = content_length / (1024 * 1024)
+                raise HTTPException(
+                    status_code=413,
+                    detail=f"File too large ({size_mb:.1f}MB). Maximum allowed size is 500MB.",
+                )
+        except ValueError:
+            # Invalid Content-Length header, log and continue
+            logger.warning("Invalid Content-Length header: %s", content_length_header)
+
+    # Store original filename
+    original_filename = Path(file.filename).name
+
     # Generate unique analysis ID
     analysis_id = uuid.uuid4().hex
 
@@ -131,12 +195,16 @@ async def run_analysis(
     analysis_dir = DEFAULT_DB_DIR / analysis_id
     analysis_dir.mkdir(parents=True, exist_ok=True)
 
-    # Save uploaded file to the analysis directory
-    safe_name = Path(file.filename).name
-    saved_path = analysis_dir / safe_name
+    # Generate UUID-based filename while preserving extension
+    file_extension = Path(original_filename).suffix or ".tar"
+    unique_filename = f"{uuid.uuid4().hex}{file_extension}"
+    saved_path = analysis_dir / unique_filename
 
     try:
         await _save_upload(file, saved_path)
+    except HTTPException:
+        # Let FastAPI handle HTTPExceptions directly (e.g., 413 from size limit)
+        raise
     except Exception as exc:
         logger.exception("Failed to persist upload: %s", exc)
         raise HTTPException(status_code=500, detail="failed to store upload") from exc
@@ -144,10 +212,20 @@ async def run_analysis(
     # Create initial PENDING status record
     create_analysis_status(analysis_id, analysis_dir, status="PENDING")
 
-    # Queue the background task
-    background_tasks.add_task(process_analysis_background, analysis_id, str(saved_path))
+    # Queue the background task with original filename
+    background_tasks.add_task(
+        process_analysis_background,
+        analysis_id,
+        str(saved_path),
+        original_filename,
+    )
 
-    logger.info("Analysis %s queued for background processing", analysis_id)
+    logger.info(
+        "Analysis %s queued for background processing (original: %s, stored: %s)",
+        analysis_id,
+        original_filename,
+        unique_filename,
+    )
 
     return AnalysisStartResponse(
         analysis_id=analysis_id,

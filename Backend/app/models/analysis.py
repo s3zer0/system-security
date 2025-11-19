@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class AnalysisStatus(BaseModel):
@@ -73,9 +73,17 @@ class AnalysisResult(BaseModel):
 class AnalysisMeta(BaseModel):
     analysis_id: str
     file_name: str
+    original_filename: Optional[str] = None
     created_at: datetime
     risk_level: Literal["CRITICAL", "HIGH", "MEDIUM", "LOW"]
     image_path: Optional[str] = None
+
+    @model_validator(mode="after")
+    def set_default_original_filename(self) -> "AnalysisMeta":
+        """Fallback to file_name if original_filename is missing (backward compatibility)."""
+        if self.original_filename is None:
+            self.original_filename = self.file_name
+        return self
 
 
 class AnalysisResponse(BaseModel):
