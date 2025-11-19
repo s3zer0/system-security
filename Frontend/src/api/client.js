@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = '/api'; 
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -11,13 +11,9 @@ const apiClient = axios.create({
 
 /**
  * 1. Docker 이미지 업로드
- * @param {File} file - 업로드할 .tar 파일
- * @param {Function} onProgress - 업로드 진행률 콜백 (0-100)
- * @returns {Promise<{ id: string, status: string }>}
  */
 export const uploadImage = async (file, onProgress) => {
-
-    return new Promise((resolve, reject) =>{
+    return new Promise((resolve, reject) => {
         const formData = new FormData();
         formData.append('file', file); // 백엔드에서 받을 key 이름
 
@@ -25,9 +21,9 @@ export const uploadImage = async (file, onProgress) => {
         
         xhr.timeout = 600000;
 
-        xhr.upload.onprogress = (event) =>{
-            if(event.lengthComputable){
-                const percentCompleted = Math.round((event.loaded * 100)/ event.total);
+        xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+                const percentCompleted = Math.round((event.loaded * 100) / event.total);
                 onProgress(percentCompleted);
             }
         };
@@ -44,7 +40,7 @@ export const uploadImage = async (file, onProgress) => {
             }
         };
 
-        xhr.onerror = () =>{
+        xhr.onerror = () => {
             reject(new Error('Network error during upload.'));
         };
 
@@ -59,8 +55,6 @@ export const uploadImage = async (file, onProgress) => {
 
 /**
  * 2. 분석 진행 상황 조회
- * @param {string} jobId
- * @returns {Promise<object>} 진행 상태 객체
  */
 export const getAnalysisStatus = async (jobId) => {
   try {
@@ -74,8 +68,6 @@ export const getAnalysisStatus = async (jobId) => {
 
 /**
  * 3. 분석 결과 요약 조회
- * @param {string} jobId
- * @returns {Promise<object>} 요약 데이터 객체
  */
 export const getAnalysisSummary = async (jobId) => {
   try {
@@ -88,8 +80,20 @@ export const getAnalysisSummary = async (jobId) => {
 };
 
 /**
- * 4. 이전 분석 목록 조회
- * @returns {Promise<Array>} 분석 목록 배열
+ * 4. 상세 보고서 조회
+ */
+export const getAnalysisReport = async (jobId) => {
+  try {
+    const response = await apiClient.get(`/analysis/${jobId}/report`);
+    return response.data;
+  } catch (error) {
+    console.error('보고서 조회 실패:', error);
+    throw error;
+  }
+};
+
+/**
+ * 5. 이전 분석 목록 조회 (수정됨)
  */
 export const getAnalysesList = async () => {
   try {
@@ -114,3 +118,5 @@ export const getAiChatResponse = async (jobId, question) => {
     throw error;
   }
 };
+
+export default apiClient;

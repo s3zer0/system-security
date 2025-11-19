@@ -35,9 +35,8 @@ export default function AnalysisPage() {
 
       <div className="flex-1 grid grid-cols-[260px_minmax(0,1fr)_320px] overflow-hidden bg-white">
         <AnalysisSidebar />
-
         <main className="min-w-0 border-x border-gray-200 bg-white overflow-y-auto">
-          <AnalysisMain />
+          <AnalysisMain analysisId={jobId}/>
         </main>
 
         <ChatPanel />
