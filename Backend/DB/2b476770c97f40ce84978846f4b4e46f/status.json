@@ -1,0 +1,7 @@
+{
+  "analysis_id": "2b476770c97f40ce84978846f4b4e46f",
+  "status": "FAILED",
+  "created_at": "2025-11-20T15:28:51.967172+00:00",
+  "updated_at": "2025-11-20T15:28:53.699672+00:00",
+  "error_message": "SourceExtractionError: Unexpected error during source extraction: SecurityException (caused by: SecurityException: [SECURITY] Malicious symlink detected! Member 'etc/alternatives/awk' links to outside target directory. Target: C:\\Users\\View\\AppData\\Local\\Temp\\tmp__zqdin_\\merged_fs, Link points to: C:\\usr\\bin\\mawk)"
+}

@@ -41,22 +41,87 @@ const UploadPanel = () => {
     
     setUploading(true);
     setError(null);
+    setProgress(0);
 
-    // [데모용 임시 로직: Progress Bar만 시뮬레이션하고 페이지 이동]
-    let currentProgress = 0;
-    const interval = setInterval(() => {
-        currentProgress += 10;
-        setProgress(currentProgress);
-        if (currentProgress >= 100) {
-            clearInterval(interval);
-            setTimeout(() => {
-                setUploading(false);
-                // FRONTEND_GUIDE 4.3.4에 따라 analysis 페이지로 이동
-                navigate('/analysis/mock-job-id-1234');
-            }, 500);
+    try {
+      // FormData 생성
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // XMLHttpRequest를 사용하여 업로드 progress 추적
+      const xhr = new XMLHttpRequest();
+
+      // Progress 이벤트 핸들러
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const percentComplete = Math.round((e.loaded / e.total) * 100);
+          setProgress(percentComplete);
         }
-    }, 150);
-    // [데모용 임시 로직 끝]
+      });
+
+      // 업로드 완료 핸들러
+      xhr.addEventListener('load', () => {
+        console.log('Upload response status:', xhr.status);
+        console.log('Upload response text:', xhr.responseText);
+        
+        if (xhr.status === 200 || xhr.status === 201 || xhr.status === 202) {
+          try {
+            const response = JSON.parse(xhr.responseText);
+            console.log('Parsed response:', response);
+            
+            // 백엔드 AnalysisResponse 구조: { meta: { analysis_id, ... }, result: { ... } }
+            const analysisId = response.meta?.analysis_id || response.analysis_id || response.id;
+            
+            console.log('Extracted analysis_id:', analysisId);
+            
+            if (analysisId) {
+              setTimeout(() => {
+                setUploading(false);
+                navigate(`/analysis/${analysisId}`);
+              }, 500);
+            } else {
+              console.error('No analysis_id found in response:', response);
+              setError('⚠️ 분석 ID를 받지 못했습니다. 응답 구조를 확인해주세요.');
+              setUploading(false);
+            }
+          } catch (parseError) {
+            console.error('Response parsing error:', parseError);
+            console.error('Raw response:', xhr.responseText);
+            setError(`⚠️ 서버 응답 처리 중 오류가 발생했습니다: ${parseError.message}`);
+            setUploading(false);
+          }
+        } else {
+          console.error('Upload failed with status:', xhr.status);
+          console.error('Response:', xhr.responseText);
+          setError(`⚠️ 업로드 실패: HTTP ${xhr.status} - ${xhr.statusText || '알 수 없는 오류'}`);
+          setUploading(false);
+        }
+      });
+
+      // 에러 핸들러
+      xhr.addEventListener('error', () => {
+        setError('⚠️ 네트워크 오류가 발생했습니다.');
+        setUploading(false);
+        setProgress(0);
+      });
+
+      // 업로드 중단 핸들러
+      xhr.addEventListener('abort', () => {
+        setError('⚠️ 업로드가 취소되었습니다.');
+        setUploading(false);
+        setProgress(0);
+      });
+
+      // 업로드 시작 - Vite 프록시를 통해 백엔드로 전달됨
+      xhr.open('POST', '/analysis');
+      xhr.send(formData);
+
+    } catch (err) {
+      console.error('Upload error:', err);
+      setError('⚠️ 업로드 중 오류가 발생했습니다: ' + err.message);
+      setUploading(false);
+      setProgress(0);
+    }
   };
 
   return (
