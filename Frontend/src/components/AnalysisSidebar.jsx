@@ -19,14 +19,14 @@ function formatTimeAgo(timestamp) {
 function RunItem({ analysis, isActive }){
     return (
         <Link
-            to={`/analysis/${analysis.id}`}
+            to={`/analysis/${analysis.analysis_id}`}
             className={`block p-2.5 rounded-xl cursor-pointer hover:bg-gray-100
                         ${isActive ? 'bg-primary-soft border border-primary' : 'border-transparent'}`}
         >
-            <div className="font-medium text-text-main">{analysis.name}</div>
+            <div className="font-medium text-text-main">{analysis.original_filename || analysis.file_name}</div>
             <div className="flex justify-between items-center text-xs text-text-muted mt-0.5">
-                <span>{formatTimeAgo(analysis.meta)}</span>
-                <RiskBadge level={analysis.risk}/>
+                <span>{formatTimeAgo(analysis.created_at)}</span>
+                <RiskBadge level={analysis.risk_level}/>
             </div>
         </Link>
     );
@@ -79,14 +79,15 @@ export default function AnalysisSidebar() {
             const response = await uploadImage(file, () => {});
 
             const newAnalysis = {
-                id: response.id,
-                name: file.name,
-                meta: Date.now(),
-                risk: response.risk || 'Info',
+                analysis_id: response.analysis_id,
+                original_filename: file.name,
+                file_name: file.name,
+                created_at: Date.now(),
+                risk_level: response.risk_level || 'Info',
             };
             addAnalysis(newAnalysis);
 
-            navigate(`/analysis/${newAnalysis.id}`);
+            navigate(`/analysis/${newAnalysis.analysis_id}`);
         }catch(err){
             alert('업로드에 실패했습니다: ' + err.message);
             console.error('[Upload Error] 업로드 실패:', err);
@@ -160,9 +161,9 @@ export default function AnalysisSidebar() {
 
             {analyses && analyses.map((analysis) => (
                 <RunItem
-                    key={analysis.id}
+                    key={analysis.analysis_id}
                     analysis={analysis}
-                    isActive={jobId === analysis.id}
+                    isActive={jobId === analysis.analysis_id}
                 />
             ))}
         </aside>

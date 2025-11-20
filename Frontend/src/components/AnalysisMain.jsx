@@ -1,10 +1,104 @@
 import { useState } from 'react';
 import TabButton from './TabButton';
 
+// Helper function to transform backend data to frontend format
+const transformData = (backendData) => {
+  if (!backendData || !backendData.meta || !backendData.result) {
+    return null;
+  }
+
+  const { meta, result } = backendData;
+  const summary = result.vulnerabilities_summary || {};
+  const vulnerabilities = result.vulnerabilities || [];
+  const patchPriority = result.patch_priority || [];
+  const logs = result.logs || [];
+
+  // Transform vulnerabilities array
+  const transformedVulnerabilities = vulnerabilities.map((vuln) => ({
+    cve: vuln.cve_id,
+    package: vuln.package,
+    version: vuln.version || 'N/A',
+    severity: vuln.severity,
+    directCall: vuln.direct_call ? 'Yes' : 'No',
+    evidence: vuln.call_evidence || 'N/A'
+  }));
+
+  // Transform patch priority array
+  const transformedPatchPriority = patchPriority.map((patch) => ({
+    id: patch.set_no,
+    description: patch.note,
+    packages: patch.packages || []
+  }));
+
+  // Transform logs array (backend returns array of strings)
+  const transformedLogs = logs.map((logMessage, index) => ({
+    timestamp: `Log ${index + 1}`,
+    message: logMessage
+  }));
+
+  // Build summary with vulnerabilities_summary data
+  const transformedSummary = {
+    riskLevel: summary.overall_risk || 'Unknown',
+    criticalCount: summary.critical || 0,
+    highCount: summary.high || 0,
+    mediumCount: summary.medium || 0,
+    lowCount: summary.low || 0,
+    patchSets: transformedPatchPriority.length,
+    patchTargets: transformedPatchPriority.length > 0
+      ? transformedPatchPriority.map(p => p.packages.join(', ')).join('; ')
+      : 'N/A',
+    callPaths: transformedVulnerabilities.filter(v => v.directCall === 'Yes').length
+  };
+
+  // Build severity summary for vulns tab
+  const severitySummary = [
+    {
+      severity: 'Critical',
+      count: summary.critical || 0,
+      description: 'RCE 가능성 및 인증 우회 등 즉시 조치가 필요한 취약점'
+    },
+    {
+      severity: 'High',
+      count: summary.high || 0,
+      description: '네트워크 노출 시 악용 가능성이 높은 취약점'
+    },
+    {
+      severity: 'Medium',
+      count: summary.medium || 0,
+      description: '구버전 라이브러리, 정보 노출 등 장기적으로 패치가 필요한 이슈'
+    },
+    {
+      severity: 'Low',
+      count: summary.low || 0,
+      description: '낮은 우선순위 취약점'
+    }
+  ];
+
+  // Build highlights from critical/high vulnerabilities
+  const highlights = transformedVulnerabilities
+    .filter(v => v.severity === 'Critical' || v.severity === 'High')
+    .slice(0, 5)
+    .map(v => `${v.package} (${v.cve}) - ${v.severity} severity${v.directCall === 'Yes' ? ' - Direct call detected' : ''}`);
+
+  return {
+    title: meta.original_filename || meta.file_name || 'Analysis',
+    imageTag: meta.analysis_id || 'N/A',
+    tags: [], // Backend doesn't provide tags in new schema
+    summary: transformedSummary,
+    highlights: highlights.length > 0 ? highlights : ['No critical vulnerabilities detected'],
+    vulnerabilities: transformedVulnerabilities,
+    severitySummary,
+    libraryMappings: [], // Not available in new schema, could be derived from vulnerabilities if needed
+    patchPriority: transformedPatchPriority,
+    logs: transformedLogs
+  };
+};
+
 const AnalysisMain = ({ data }) => {
   const [activeTab, setActiveTab] = useState('overview');
 
-  const analysisData = data || {
+  // Transform backend data or use default fallback
+  const analysisData = data ? transformData(data) : {
     title: 'Python 기반 이미지 분석 요약',
     imageTag: 'pyyaml-app:2025-10-01',
     tags: ['Python', 'Ubuntu 22.04'],
@@ -198,13 +292,19 @@ const AnalysisMain = ({ data }) => {
               어떤 라이브러리가 어떤 API를 통해 취약점과 연결되는지 정리한 뷰입니다.
             </div>
 
-            <ul className="text-xs text-gray-900 ml-4 leading-relaxed space-y-1">
-              {analysisData.libraryMappings.map((mapping, idx) => (
-                <li key={idx}>
-                  {mapping.library} {mapping.version} · <code className="bg-gray-100 px-1 py-0.5 rounded text-blue-700">{mapping.api}</code> · {mapping.cve}
-                </li>
-              ))}
-            </ul>
+            {analysisData.libraryMappings && analysisData.libraryMappings.length > 0 ? (
+              <ul className="text-xs text-gray-900 ml-4 leading-relaxed space-y-1">
+                {analysisData.libraryMappings.map((mapping, idx) => (
+                  <li key={idx}>
+                    {mapping.library} {mapping.version} · <code className="bg-gray-100 px-1 py-0.5 rounded text-blue-700">{mapping.api}</code> · {mapping.cve}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-xs text-gray-600 ml-4">
+                Library mapping data not available in current schema.
+              </div>
+            )}
           </div>
         );
 
@@ -220,6 +320,9 @@ const AnalysisMain = ({ data }) => {
               {analysisData.patchPriority.map((patch) => (
                 <li key={patch.id}>
                   [세트 #{patch.id}] {patch.description}
+                  {patch.packages && patch.packages.length > 0 && (
+                    <span className="text-gray-600"> - {patch.packages.join(', ')}</span>
+                  )}
                 </li>
               ))}
             </ul>
@@ -256,7 +359,7 @@ const AnalysisMain = ({ data }) => {
           <div className="text-lg font-semibold text-gray-900">{analysisData.title}</div>
           <div className="text-xs text-gray-600 mt-1 flex gap-2 flex-wrap items-center">
             <span>이미지 태그: <code className="bg-gray-100 px-1 py-0.5 rounded text-blue-700">{analysisData.imageTag}</code></span>
-            {analysisData.tags.map((tag, idx) => (
+            {analysisData.tags && analysisData.tags.map((tag, idx) => (
               <span key={idx} className="px-1.5 py-0.5 rounded-full border border-gray-200 text-[10px] text-gray-600 bg-gray-50">{tag}</span>
             ))}
           </div>

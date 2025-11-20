@@ -74,77 +74,50 @@ def _is_valid_api_string(api_call: Any) -> bool:
 
 def _normalize_package_name(package_name: str) -> set[str]:
     """
-    Generate all possible variations of a package name for matching.
-
-    This handles various naming conventions used in Python packaging:
-    - Dotted names (e.g., ruamel.yaml -> ruamel)
-    - Hyphenated names (e.g., opencv-python -> opencv)
-    - Underscored names (e.g., some_package -> some-package)
-    - python- prefix (e.g., python-yaml -> yaml)
-
-    Args:
-        package_name: The package name to normalize
-
-    Returns:
-        Set of all possible normalized variations
-
-    Examples:
-        >>> _normalize_package_name("ruamel.yaml")
-        {'ruamel.yaml', 'ruamel', 'yaml'}
-        >>> _normalize_package_name("opencv-python")
-        {'opencv-python', 'opencv', 'python'}
-        >>> _normalize_package_name("some_package")
-        {'some_package', 'some-package', 'some', 'package'}
+    Normalize package name to match import names.
+    Strategies:
+    1. Exact match (lowercased)
+    2. Remove 'python-' prefix
+    3. Namespace packages (dots): 'ruamel.yaml' -> 'ruamel'
+    4. Standardize underscores: 'my_package' -> 'my-package'
+    5. Hyphenated names (First & Last):
+       - 'google-cloud-storage' -> 'google' (First)
+       - 'apache-airflow' -> 'airflow' (Last)
+       - Avoid middle parts to reduce false positives.
     """
     if not package_name:
         return set()
 
-    variants = set()
-    name_lower = package_name.lower().strip()
+    normalized = package_name.lower()
+    variants = {normalized}
 
-    if not name_lower:
-        return set()
+    # Strategy 2: Handle python- prefix
+    if normalized.startswith("python-"):
+        no_prefix = normalized[7:]
+        variants.add(no_prefix)
+        # Prefix 제거된 버전으로도 아래 로직들이 동작하도록 추가
+        normalized = no_prefix
 
-    # Add the original lowercased name
-    variants.add(name_lower)
+    # Strategy 3: Handle delimiters (dots) - Namespace packages
+    if "." in normalized:
+        variants.add(normalized.split(".")[0])
 
-    # Handle python- prefix
-    if name_lower.startswith("python-"):
-        without_prefix = name_lower[7:]  # Remove "python-"
-        if without_prefix:
-            variants.add(without_prefix)
+    # Strategy 4: Handle underscores (Standardization)
+    if "_" in normalized:
+        variants.add(normalized.replace("_", "-"))
 
-    # Split by dot and add all parts
-    if "." in name_lower:
-        parts = name_lower.split(".")
-        for part in parts:
-            if part:  # Guard against empty strings
-                variants.add(part)
-
-    # Split by hyphen and add all parts (except python- which we already handled)
-    if "-" in name_lower and not name_lower.startswith("python-"):
-        parts = name_lower.split("-")
-        for part in parts:
-            if part:  # Guard against empty strings
-                variants.add(part)
-
-    # Split by underscore and add all parts
-    if "_" in name_lower:
-        parts = name_lower.split("_")
-        for part in parts:
-            if part:  # Guard against empty strings
-                variants.add(part)
-
-        # Also add hyphenated version (common convention: underscore <-> hyphen)
-        hyphenated = name_lower.replace("_", "-")
-        variants.add(hyphenated)
-
-        # Add parts of the hyphenated version too
-        if "-" in hyphenated:
-            hyphen_parts = hyphenated.split("-")
-            for part in hyphen_parts:
-                if part:
-                    variants.add(part)
+    # Strategy 5: Handle hyphens (First & Last segment strategy)
+    # This balances catching namespace packages (google-cloud -> google)
+    # and vendor packages (apache-airflow -> airflow)
+    if "-" in normalized:
+        parts = normalized.split("-")
+        # First part (e.g., 'google' from 'google-cloud-storage')
+        if parts[0]:
+            variants.add(parts[0])
+        # Last part (e.g., 'airflow' from 'apache-airflow')
+        # Only if different from first part
+        if len(parts) > 1 and parts[-1]:
+            variants.add(parts[-1])
 
     return variants
 
@@ -300,7 +273,14 @@ def _extract_used_modules(ast_data: Optional[Dict[str, Any]]) -> Dict[str, List[
             # Handle both string format and dict format
             if isinstance(item, dict):
                 api_call = item.get("name") or item.get("api")
-                location = item.get("file") or item.get("location") or file_context
+                # Priority order: relative_path, file_path, file, location, fallback
+                location = (
+                    item.get("relative_path")
+                    or item.get("file_path")
+                    or item.get("file")
+                    or item.get("location")
+                    or file_context
+                )
             elif _is_valid_api_string(item):
                 api_call = item
                 location = file_context
@@ -332,7 +312,14 @@ def _extract_used_modules(ast_data: Optional[Dict[str, Any]]) -> Dict[str, List[
             # Handle both string format and dict format
             if isinstance(item, dict):
                 api_call = item.get("name") or item.get("api")
-                location = item.get("file") or item.get("location") or file_context
+                # Priority order: relative_path, file_path, file, location, fallback
+                location = (
+                    item.get("relative_path")
+                    or item.get("file_path")
+                    or item.get("file")
+                    or item.get("location")
+                    or file_context
+                )
             elif _is_valid_api_string(item):
                 api_call = item
                 location = file_context

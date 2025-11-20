@@ -32,5 +32,5 @@ async def health() -> Dict[str, str]:
     return {"status": "ok"}
 
 
-app.include_router(analyses_router)
+app.include_router(analyses_router, prefix="/api")
 app.include_router(analysis_router)
