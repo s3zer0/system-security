@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAnalysis } from '../context/AnalysisContext';
 import TabButton from './TabButton';
 import RiskBadge from './RiskBadge';
 
@@ -10,9 +11,62 @@ import RiskBadge from './RiskBadge';
 const transformData = (backendData) => {
   const { result, meta } = backendData;
 
+  const getRiskScore = (severityString) => {
+    if(!severityString) return 0;
+
+    const normalized = String(severityString).trim().toUpperCase();
+
+    const map = {
+      'CRITICAL': 5,
+      'HIGH': 4,
+      'MEDIUM': 3,
+      'LOW': 2,
+      'UNKNOWN': 1,'INFO': 0
+    };
+
+    return map[normalized] || 0;
+  }
+
+  const sortedVulnerabilities = (result.vulnerabilities || [])
+    .map(v => ({
+        cve: v.cve_id || 'N/A',
+        package: v.package || 'Unknown',
+        version: v.version || 'N/A',
+        severity: (v.severity ? String(v.severity).trim().toUpperCase() : 'UNKNOWN'),
+        directCall: v.direct_call ? '예' : '아니요',
+        evidence: v.call_evidence || 'N/A',
+        title: v.description ? v.description.substring(0, 50) + '...' : ''
+    }))
+    .sort((a, b) => {
+      const scoreA = getRiskScore(a.severity);
+      const scoreB = getRiskScore(b.severity);
+
+      if(scoreB !== scoreA){
+        return scoreB - scoreA;
+      }
+
+      return a.package.localeCompare(b.package);
+    });
+
+  const formattedLogs = Array.isArray(result.logs)
+    ? result.logs.map((log) => {
+        const level = (log.level || (typeof log === 'string' ? 'INFO' : 'INFO')).toUpperCase();
+        let styleClass = 'text-gray-600';
+        if (level === 'ERROR' || level === 'CRITICAL') styleClass = 'text-red-600 font-medium';
+        else if (level === 'WARN') styleClass = 'text-orange-500';
+
+        return {
+          timestamp: log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString(),
+          level: level,
+          message: log.message || log,
+          styleClass: styleClass
+        };
+      })
+  : [];
+
   return {
     title: `${result.language || 'Unknown'} 기반 이미지 분석 요약`,
-    imageTag: meta.analysis_id?.substring(0, 8) || 'unknown',
+    imageTag: meta.original_filename || meta.file_name || meta.analysis_id || 'unknown',
     tags: [result.language || 'Unknown', meta.created_at ? new Date(meta.created_at).toLocaleDateString() : ''],
 
     summary: {
@@ -27,19 +81,11 @@ const transformData = (backendData) => {
     },
 
     highlights: result.vulnerabilities
-      ?.filter(v => ['CRITICAL', 'HIGH'].includes((v.severity || '').toUpperCase()))
+      ?.filter(v => ['CRITICAL', 'HIGH'].includes(v.severity))
       .slice(0, 5)
-      .map(v => `${v.package} ${v.version} (${v.cve_id})`) || [],
+      .map(v => `${v.package} ${v.version} (${v.cve})`) || [],
 
-    vulnerabilities: result.vulnerabilities?.map(v => ({
-      cve: v.cve_id || 'N/A',
-      package: v.package || 'Unknown',
-      version: v.version || 'N/A',
-      severity: (v.severity || 'Unknown').toUpperCase(),
-      directCall: v.direct_call ? '예' : '아니요',
-      evidence: v.call_evidence || 'N/A',
-      title: v.description ? v.description.substring(0, 50) + '...' : ''
-    })) || [],
+    vulnerabilities: sortedVulnerabilities,
 
     severitySummary: [
       { severity: 'Critical', count: result.vulnerabilities_summary?.critical ?? 0, description: '즉시 조치 필요' },
@@ -90,8 +136,13 @@ const AnalysisMain = ({ analysisId }) => {
   const [analysisData, setAnalysisData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedLib, setSelectedLib] = useState(null);
+  const { setAnalyses } = useAnalysis();
 
   useEffect(() => {
+    let isMounted = true;
+    let pollingTimer = null;
+
     const fetchAnalysisData = async () => {
       if (!analysisId) {
         setLoading(false);
@@ -99,33 +150,71 @@ const AnalysisMain = ({ analysisId }) => {
       }
 
       try {
-        setLoading(true);
         const response = await fetch(`/api/analysis/${analysisId}`);
-
+        
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") === -1) {
           throw new Error("서버 응답이 JSON이 아닙니다. (Proxy 설정을 확인하세요)");
         }
-
+        
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-
+        
         const data = await response.json();
+        
+        if (data && data.result) {
+            if(isMounted) {
+                const transformed = transformData(data);
+                setAnalysisData(transformed);
+                setLoading(false);
+                
+                let newRisk = data.result.vulnerabilities_summary?.overall_risk;
+                if (!newRisk) {
+                    const crit = data.result.vulnerabilities_summary?.critical || 0;
+                    if (crit > 0) newRisk = 'CRITICAL';
+                    else newRisk = 'LOW';
+                }
+                const finalRisk = String(newRisk).toUpperCase();
+                const finalName = data.meta.original_filename || data.meta.file_name || 'Unknown';
 
-        // Transform backend data to frontend format
-        const transformedData = transformData(data);
-        setAnalysisData(transformedData);
+                setAnalyses(prev => prev.map(item => {
+                    if (String(item.analysis_id || item.id) === String(analysisId)) {
+                        return {
+                            ...item,
+                            risk_level: finalRisk,
+                            risk: finalRisk,
+                            original_filename: finalName,
+                            name: finalName,
+                            file_name: finalName,
+                            status: 'Done'
+                        };
+                    }
+                    return item;
+                }));
+            }
+          } else {
+          if(isMounted) {
+              console.log("분석 중... 3초 후 재요청");
+              pollingTimer = setTimeout(fetchAnalysisData, 3000);
+          }
+        }
       } catch (err) {
         console.error('Analysis data fetch error:', err);
-        setError(err.message || '분석 데이터를 불러오는데 실패했습니다.');
-      } finally {
-        setLoading(false);
+        if(isMounted){
+          setError(err.message || '분석 데이터를 불러오는데 실패했습니다.');
+          setLoading(false);
+        }
       }
     };
-
+    setLoading(true);
     fetchAnalysisData();
-  }, [analysisId]);
+
+    return () => {
+      isMounted = false;
+      if (pollingTimer) clearTimeout(pollingTimer);
+    };
+  }, [analysisId, setAnalyses]);
 
   if (loading) {
     return (
@@ -339,7 +428,7 @@ const AnalysisMain = ({ analysisId }) => {
             <ul className="text-xs text-gray-900 ml-4 leading-relaxed space-y-1">
               {analysisData.patchPriority.map((patch) => (
                 <li key={patch.id}>
-                  [세트 #{patch.id}] {patch.description}
+                  [#{patch.id}] {patch.description}
                   {patch.packages && patch.packages.length > 0 && (
                     <span className="text-gray-600"> - {patch.packages.join(', ')}</span>
                   )}

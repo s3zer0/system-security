@@ -18,6 +18,10 @@ function formatTimeAgo(isoTimestamp) {
 }
 
 function RunItem({ analysis, isActive }){
+    const displayRisk = analysis.risk_level || analysis.risk || 'UNKNOWN';
+    const displayName = analysis.original_filename || analysis.file_name || analysis.name || "이름 없음";
+    const currentId = analysis.analysis_id || analysis.id;
+
     return (
         <Link
             to={`/analysis/${analysis.analysis_id}`}
@@ -43,6 +47,9 @@ export default function AnalysisSidebar() {
     const [now, setNow] = useState(Date.now());
     const fileInputRef = useRef(null);
 
+    const isAnalyzing =analyses.some(item =>
+        (item.risk_level === 'Analayzing' || item.risk === 'Analyzing')
+    );
     
     useEffect(() =>{
         const fetchList = async () =>  {
@@ -103,6 +110,10 @@ export default function AnalysisSidebar() {
                 file_name: file.name,
                 created_at: Date.now(),
                 risk_level: response.risk_level || 'Info',
+
+                id: response.analysis_id,
+                name: file.name,
+                risk: 'Analyzing'
             };
             addAnalysis(newAnalysis);
 
@@ -166,27 +177,42 @@ export default function AnalysisSidebar() {
 
             <button
                 onClick={() => fileInputRef.current.click()}
-                disabled={isUploading}
+                disabled={isUploading || isAnalyzing}
                 className={`
                     w-full text-left p-2.5 rounded-full border border-border bg-white font-medium
                     hover:bg-gray-50 disabled:opacity-50 transition-colors
                     ${isDragging ? 'border-dashed border-2 border-blue-500 bg-blue-50' : ''}
                 `}
             >
-                {isUploading ? '분석 중...' : (isDragging ? '여기에 드롭하세요' : '+ 새 Docker 분석')}
+                {isUploading ?(
+                    <span className="flex items-center gap-2 justify-center">
+                        <span className="animate-spin"></span> 업로드 중...
+                    </span>
+                ) : isAnalyzing ? (
+                    <span className="flex items-center gap-2 justify-center">
+                        <span className="animate-spin"></span> 분석 진행 중...
+                    </span>
+                ) : (
+                    isDragging ? '여기에 드롭하세요' : '+ 새 Docker 분석'
+                )}
             </button>
 
             <div className="text-xs uppercase tracking-widest text-text-muted mt-1">
                 최근 분석
             </div>
 
-            {analyses && analyses.filter(analysis => analysis.analysis_id).map((analysis) => (
-                <RunItem
-                    key={analysis.analysis_id}
-                    analysis={analysis}
-                    isActive={jobId === analysis.analysis_id}
-                />
-            ))}
+            {analyses && analyses.filter(analysis => analysis.analysis_id || analysis.id)
+            .map((analysis) => {
+                const currentId = analysis.analysis_id || analysis.id;
+                const isActive = String(currentId) === String(jobId);
+                return(
+                    <RunItem
+                        key={analysis.analysis_id}
+                        analysis={analysis}
+                        isActive={jobId === analysis.analysis_id}
+                    />
+                );
+            })}
         </aside>
     );
 }
