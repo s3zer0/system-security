@@ -186,9 +186,9 @@ const AnalysisMain = ({ analysisId }) => {
                       <td className="px-2 py-2">{vuln.version}</td>
                       <td className="px-2 py-2">
                         <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${vuln.severity === 'Critical' || vuln.severity === 'CRITICAL' ? 'bg-red-100 text-red-700' :
-                            vuln.severity === 'High' || vuln.severity === 'HIGH' ? 'bg-orange-100 text-orange-700' :
-                              vuln.severity === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                                'bg-gray-100 text-gray-700'
+                          vuln.severity === 'High' || vuln.severity === 'HIGH' ? 'bg-orange-100 text-orange-700' :
+                            vuln.severity === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-gray-100 text-gray-700'
                           }`}>
                           {vuln.severity}
                         </span>
@@ -228,9 +228,9 @@ const AnalysisMain = ({ analysisId }) => {
                   <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50">
                     <td className="px-2 py-2">
                       <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${item.severity === 'Critical' ? 'bg-red-100 text-red-700' :
-                          item.severity === 'High' ? 'bg-orange-100 text-orange-700' :
-                            item.severity === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-gray-100 text-gray-700'
+                        item.severity === 'High' ? 'bg-orange-100 text-orange-700' :
+                          item.severity === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-gray-100 text-gray-700'
                         }`}>
                         {item.severity}
                       </span>
@@ -264,9 +264,9 @@ const AnalysisMain = ({ analysisId }) => {
                       <td className="px-2 py-2">{vuln.version}</td>
                       <td className="px-2 py-2">
                         <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${vuln.severity === 'Critical' || vuln.severity === 'CRITICAL' ? 'bg-red-100 text-red-700' :
-                            vuln.severity === 'High' || vuln.severity === 'HIGH' ? 'bg-orange-100 text-orange-700' :
-                              vuln.severity === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                                'bg-gray-100 text-gray-700'
+                          vuln.severity === 'High' || vuln.severity === 'HIGH' ? 'bg-orange-100 text-orange-700' :
+                            vuln.severity === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-gray-100 text-gray-700'
                           }`}>
                           {vuln.severity}
                         </span>
@@ -288,21 +288,6 @@ const AnalysisMain = ({ analysisId }) => {
               어떤 라이브러리가 어떤 API를 통해 취약점과 연결되는지 정리한 뷰입니다.
             </div>
 
-<<<<<<< HEAD
-        {
-          analysisData.libraryMappings && analysisData.libraryMappings.length > 0 ? (
-            <ul className="text-xs text-gray-900 ml-4 leading-relaxed space-y-1">
-              {analysisData.libraryMappings.map((mapping, idx) => (
-                <li key={idx}>
-                  {mapping.library} {mapping.version} · <code className="bg-gray-100 px-1 py-0.5 rounded text-blue-700">{mapping.api}</code> · {mapping.cve}
-                </li>
-              ))}
-            </ul>
-          ) : (
-          <div className="text-xs text-gray-600 ml-4">
-            Library mapping data not available in current schema.
-          </div>
-=======
             {analysisData.libraryMappings.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-xs border-collapse">
@@ -335,31 +320,29 @@ const AnalysisMain = ({ analysisId }) => {
               </div>
             ) : (
               <div className="text-[11px] text-gray-600">라이브러리-API 매핑 데이터가 없습니다.</div>
->>>>>>> origin/main
-        )
-        }
+            )}
           </div >
         );
 
       case 'patch':
-return (
-  <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs max-h-[350px] overflow-auto">
-    <div className="text-[13px] font-medium mb-1.5 text-gray-900">Patch Priority</div>
-    <div className="text-[11px] text-gray-600 mb-2">
-      "지금 당장 해야 할 패치"를 세트 단위로 묶어 우선순위를 부여합니다.
-    </div>
+        return (
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs max-h-[350px] overflow-auto">
+            <div className="text-[13px] font-medium mb-1.5 text-gray-900">Patch Priority</div>
+            <div className="text-[11px] text-gray-600 mb-2">
+              "지금 당장 해야 할 패치"를 세트 단위로 묶어 우선순위를 부여합니다.
+            </div>
 
 <<<<<<< HEAD
-<ul className="text-xs text-gray-900 ml-4 leading-relaxed space-y-1">
-  {analysisData.patchPriority.map((patch) => (
-    <li key={patch.id}>
-      [세트 #{patch.id}] {patch.description}
-      {patch.packages && patch.packages.length > 0 && (
-        <span className="text-gray-600"> - {patch.packages.join(', ')}</span>
-      )}
-    </li>
-  ))}
-</ul>
+        <ul className="text-xs text-gray-900 ml-4 leading-relaxed space-y-1">
+          {analysisData.patchPriority.map((patch) => (
+            <li key={patch.id}>
+              [세트 #{patch.id}] {patch.description}
+              {patch.packages && patch.packages.length > 0 && (
+                <span className="text-gray-600"> - {patch.packages.join(', ')}</span>
+              )}
+            </li>
+          ))}
+        </ul>
 =======
             {analysisData.patchPriority.length > 0 ? (
               <div className="overflow-x-auto">
@@ -443,8 +426,8 @@ return (
           <div className="rounded-xl border border-gray-200 bg-gray-50 p-2.5">
             <div className="text-[11px] text-gray-600 mb-1">전체 리스크</div>
             <div className={`text-[15px] font-semibold ${analysisData.summary.riskLevel === 'CRITICAL' ? 'text-red-600' :
-                analysisData.summary.riskLevel === 'HIGH' ? 'text-orange-600' :
-                  'text-gray-900'
+              analysisData.summary.riskLevel === 'HIGH' ? 'text-orange-600' :
+                'text-gray-900'
               }`}>
               {analysisData.summary.riskLevel}
             </div>
