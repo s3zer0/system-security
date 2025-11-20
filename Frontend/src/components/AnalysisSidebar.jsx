@@ -4,16 +4,17 @@ import { useAnalysis } from '../context/AnalysisContext';
 import RiskBadge from './RiskBadge';
 import { uploadImage, getAnalysesList } from "../api/client";
 
-function formatTimeAgo(timestamp) {
+function formatTimeAgo(isoTimestamp) {
+    if (!isoTimestamp) return '날짜 정보 없음';
+    const timestamp = (typeof isoTimestamp === 'number') ? isoTimestamp : new Date(isoTimestamp).getTime();
     const now = Date.now();
     const seconds = Math.floor((now - timestamp)/1000);
 
     if(seconds < 60) return '방금 전';
     if(seconds < 60 * 60) return `${Math.floor(seconds / 60)}분 전`;
     if(seconds < 60 * 60 * 24) return `${Math.floor(seconds / 3600)}시간 전`;
-    if(seconds < 60 * 60 * 24 * 30) return `${Math.floor(seconds / 86400)}일 전`;
 
-    return new Date(timestamp).toLocaleDateString('ko-KR');
+    return `${Math.floor(seconds / 86400)}일 전`;
 }
 
 function RunItem({ analysis, isActive }){
@@ -42,19 +43,28 @@ export default function AnalysisSidebar() {
     const [now, setNow] = useState(Date.now());
     const fileInputRef = useRef(null);
 
+    
     useEffect(() =>{
         const fetchList = async () =>  {
             try{
                 const ListFromDB = await getAnalysesList();
-                setAnalyses(ListFromDB);
+                const formattedList = ListFromDB.map(item => ({
+                    id: item.analysis_id,
+                    name: item.file_name,
+                    createAt: item.created_at,
+                    risk: item.risk_level
+                }));
+
+                setAnalyses(formattedList);
+
             }catch(err){
                 console.error("최근 목록 로딩 실패:", err);
-                setAnalyses([]);
             }
         };
 
         fetchList();
     }, [setAnalyses]);
+    
 
     useEffect(() => {
         const interval = setInterval(() =>{
@@ -77,6 +87,8 @@ export default function AnalysisSidebar() {
 
         try{
             const response = await uploadImage(file, () => {});
+            console.log("[업로드 성공]", response)
+            const metaData = response.meta || response;
 
             const newAnalysis = {
                 analysis_id: response.analysis_id,
@@ -99,7 +111,7 @@ export default function AnalysisSidebar() {
         }
     };
 
-    const handleFileSelect = async (e) => {
+    const handleFileSelect = (e) => {
         const file = e.target.files[0];
         handleFileUpload(file);      
     };
@@ -127,6 +139,8 @@ export default function AnalysisSidebar() {
         }
     }
 
+    console.log('[sidebar 랜더링 ] 현재 analayes 배열:',analyses);
+
     return(
         <aside
             className="border-r border-border p-3 flex flex-col gap-3 bg-gray-50 text-sm"
@@ -148,18 +162,18 @@ export default function AnalysisSidebar() {
                 disabled={isUploading}
                 className={`
                     w-full text-left p-2.5 rounded-full border border-border bg-white font-medium
-                    haver:bg-gray-50 disabled:opacity-50 transition-colors
+                    hover:bg-gray-50 disabled:opacity-50 transition-colors
                     ${isDragging ? 'border-dashed border-2 border-blue-500 bg-blue-50' : ''}
                 `}
             >
                 {isUploading ? '분석 중...' : (isDragging ? '여기에 드롭하세요' : '+ 새 Docker 분석')}
             </button>
 
-            <div className="text-xs uppercase tracking-widset text-text-muted mt-1">
+            <div className="text-xs uppercase tracking-widest text-text-muted mt-1">
                 최근 분석
             </div>
 
-            {analyses && analyses.map((analysis) => (
+            {analyses && analyses.filter(analysis => analysis.id).map((analysis) => (
                 <RunItem
                     key={analysis.analysis_id}
                     analysis={analysis}
