@@ -59,7 +59,7 @@ const LandingPage = () => {
         </main>
         
         <footer className="landing-footer border-t border-gray-200 p-3 text-xs text-gray-500 bg-gray-50 text-center font-normal">
-          © 2025 System-Security · 내부 PoC 용 UI 시안
+          © 2025 System-Security · 4조
         </footer>
 
       </div>

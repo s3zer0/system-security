@@ -1,8 +1,8 @@
-// src/components/UploadPanel.jsx (최종 API 통합 코드)
+// src/components/UploadPanel.jsx (Pills UI 삭제 완료)
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { uploadImage } from '../api/client'; 
+import { uploadImage } from '../api/client';
 
 const UploadPanel = () => {
     const navigate = useNavigate();
@@ -19,7 +19,7 @@ const UploadPanel = () => {
         return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
     };
 
-    // 파일 유효성 검사 및 상태 설정
+    // 파일 유효성 검사 및 상태 설정 (드롭/클릭 공통 로직)
     const processFile = (selectedFile) => {
         if (selectedFile) {
             if (!selectedFile.name.endsWith('.tar') && !selectedFile.name.endsWith('.zip')) {
@@ -68,7 +68,7 @@ const UploadPanel = () => {
         try {
             const result = await uploadImage(file, setProgress); 
             
-            // ⚠️ 수정 완료: result.analysis_id를 확인하여 Job ID를 사용
+            // Job ID 확인 로직
             if (result && result.analysis_id) {
                 // 성공 시, 반환된 analysis_id로 페이지 이동
                 navigate(`/analysis/${result.analysis_id}`);
@@ -88,6 +88,7 @@ const UploadPanel = () => {
     };
 
     return (
+        // 최상위 div: 닫는 괄호(</div>)가 파일 끝에 올바르게 배치됨
         <div className="landing-upload-panel w-full rounded-xl border border-gray-300 bg-white p-5 shadow-xl shadow-blue-500/10">
             <div className="landing-upload-title text-base font-semibold text-gray-900 font-medium">빠른 시작</div>
             <div className="landing-upload-sub text-xs text-gray-500 mb-3 font-normal">
@@ -167,11 +168,8 @@ const UploadPanel = () => {
                 최근에 돌린 분석 불러오기 (샘플)
             </button>
 
-            {/* Pills */}
-            <div className="landing-pill-row flex flex-wrap gap-2 mt-3 text-xs">
-                <span className="pill border border-gray-300 px-2 py-1 rounded-full text-gray-600 bg-white font-normal">Trivy 스캔 결과 요약</span>
-                <span className="pill border border-gray-300 px-2 py-1 rounded-full text-gray-600 bg-white font-normal">라이브러리 &amp; API 매핑</span>
-            </div>
+            {/* Pills UI는 완전히 삭제되었습니다. */}
+
         </div>
     );
 };

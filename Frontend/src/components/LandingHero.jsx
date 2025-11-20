@@ -1,5 +1,3 @@
-// src/components/LandingHero.jsx (최종 확인 버전)
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
