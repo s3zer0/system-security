@@ -40,6 +40,88 @@ if not logging.getLogger().handlers:
     setup_logging(level=logging.INFO, fmt="[%(levelname)s] %(message)s")
 
 
+# Module-level constants for package name aliasing
+# Maps import names to their PyPI package names
+IMPORT_TO_PACKAGE_ALIASES: Dict[str, List[str]] = {
+    "yaml": ["pyyaml"],
+    "pil": ["pillow"],
+    "cv2": ["opencv-python", "opencv-python-headless"],
+    "sklearn": ["scikit-learn"],
+    "bs4": ["beautifulsoup4"],
+}
+
+
+def _is_valid_api_string(api_call: Any) -> bool:
+    """
+    Validate that an API call string is valid for processing.
+
+    Args:
+        api_call: The API call to validate
+
+    Returns:
+        True if the API call is a non-empty string, False otherwise
+    """
+    # Check if it's a string type
+    if not isinstance(api_call, str):
+        return False
+
+    # Check if it's not empty or whitespace-only
+    if not api_call or not api_call.strip():
+        return False
+
+    return True
+
+
+def _normalize_package_name(package_name: str) -> set[str]:
+    """
+    Normalize package name to match import names.
+    Strategies:
+    1. Exact match (lowercased)
+    2. Remove 'python-' prefix
+    3. Namespace packages (dots): 'ruamel.yaml' -> 'ruamel'
+    4. Standardize underscores: 'my_package' -> 'my-package'
+    5. Hyphenated names (First & Last):
+       - 'google-cloud-storage' -> 'google' (First)
+       - 'apache-airflow' -> 'airflow' (Last)
+       - Avoid middle parts to reduce false positives.
+    """
+    if not package_name:
+        return set()
+
+    normalized = package_name.lower()
+    variants = {normalized}
+
+    # Strategy 2: Handle python- prefix
+    if normalized.startswith("python-"):
+        no_prefix = normalized[7:]
+        variants.add(no_prefix)
+        # Prefix 제거된 버전으로도 아래 로직들이 동작하도록 추가
+        normalized = no_prefix
+
+    # Strategy 3: Handle delimiters (dots) - Namespace packages
+    if "." in normalized:
+        variants.add(normalized.split(".")[0])
+
+    # Strategy 4: Handle underscores (Standardization)
+    if "_" in normalized:
+        variants.add(normalized.replace("_", "-"))
+
+    # Strategy 5: Handle hyphens (First & Last segment strategy)
+    # This balances catching namespace packages (google-cloud -> google)
+    # and vendor packages (apache-airflow -> airflow)
+    if "-" in normalized:
+        parts = normalized.split("-")
+        # First part (e.g., 'google' from 'google-cloud-storage')
+        if parts[0]:
+            variants.add(parts[0])
+        # Last part (e.g., 'airflow' from 'apache-airflow')
+        # Only if different from first part
+        if len(parts) > 1 and parts[-1]:
+            variants.add(parts[-1])
+
+    return variants
+
+
 @dataclass
 class PipelineConfig:
     """Configuration shared by the CLI and FastAPI entrypoints."""
@@ -144,19 +226,202 @@ def _build_overview(summary: Dict[str, Any], language: str) -> str:
     )
 
 
-def _build_vulnerabilities(trivy_data: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _extract_used_modules(ast_data: Optional[Dict[str, Any]]) -> Dict[str, List[str]]:
+    """
+    Extract module names and their usage locations from AST analysis output.
+
+    Parses the AST visualizer output and extracts all module names that are
+    imported or used in the codebase, along with WHERE they are used (file paths).
+    This enables Call Evidence tracking for reachability analysis.
+
+    Args:
+        ast_data: AST analysis result containing external/internal/unused API lists
+                  Can optionally include file path information in the structure
+
+    Returns:
+        Dictionary mapping module names to list of file paths where they're used
+        Example: {"yaml": ["app.py", "utils.py"], "pyyaml": ["app.py"]}
+
+    Examples:
+        >>> ast_data = {"external": ["yaml.load", "flask.app.route"]}
+        >>> _extract_used_modules(ast_data)
+        {'yaml': ['Unknown location'], 'pyyaml': ['Unknown location'],
+         'flask': ['Unknown location']}
+    """
+    if not ast_data:
+        return {}
+
+    # Use a dict to track module -> list of file paths
+    module_locations: Dict[str, List[str]] = {}
+
+    def _add_module_location(module_name: str, location: str) -> None:
+        """Helper to add a module and its location."""
+        if module_name not in module_locations:
+            module_locations[module_name] = []
+        if location not in module_locations[module_name]:
+            module_locations[module_name].append(location)
+
+    # Try to extract file path information if available in AST data
+    # The AST visualizer may provide this in various formats
+    default_location = "Unknown location"
+    file_context = ast_data.get("file_path") or ast_data.get("source_file") or default_location
+
+    # Extract from external APIs (most relevant for dependencies)
+    external_apis = ast_data.get("external", [])
+    if isinstance(external_apis, list):
+        for item in external_apis:
+            # Handle both string format and dict format
+            if isinstance(item, dict):
+                api_call = item.get("name") or item.get("api")
+                # Priority order: relative_path, file_path, file, location, fallback
+                location = (
+                    item.get("relative_path")
+                    or item.get("file_path")
+                    or item.get("file")
+                    or item.get("location")
+                    or file_context
+                )
+            elif _is_valid_api_string(item):
+                api_call = item
+                location = file_context
+            else:
+                continue
+
+            if not _is_valid_api_string(api_call):
+                continue
+
+            # Extract the root module name (e.g., "yaml.load" -> "yaml")
+            parts = api_call.split(".")
+
+            # Guard: Ensure we have parts and the first part is non-empty
+            if not parts or not parts[0]:
+                continue
+
+            module_name = parts[0].lower()
+            _add_module_location(module_name, location)
+
+            # Add package name aliases using the constant
+            if module_name in IMPORT_TO_PACKAGE_ALIASES:
+                for alias in IMPORT_TO_PACKAGE_ALIASES[module_name]:
+                    _add_module_location(alias, location)
+
+    # Also check internal APIs for completeness
+    internal_apis = ast_data.get("internal", [])
+    if isinstance(internal_apis, list):
+        for item in internal_apis:
+            # Handle both string format and dict format
+            if isinstance(item, dict):
+                api_call = item.get("name") or item.get("api")
+                # Priority order: relative_path, file_path, file, location, fallback
+                location = (
+                    item.get("relative_path")
+                    or item.get("file_path")
+                    or item.get("file")
+                    or item.get("location")
+                    or file_context
+                )
+            elif _is_valid_api_string(item):
+                api_call = item
+                location = file_context
+            else:
+                continue
+
+            if not _is_valid_api_string(api_call):
+                continue
+
+            parts = api_call.split(".")
+
+            # Guard: Ensure we have parts and the first part is non-empty
+            if not parts or not parts[0]:
+                continue
+
+            original_name = parts[0]
+            module_name = original_name.lower()
+
+            # Guard: Skip if original_name is somehow empty after validation
+            if not original_name:
+                continue
+
+            # Only add if it looks like an imported module (capitalized or common patterns)
+            if original_name[0].isupper() or module_name in ("os", "sys", "json", "re"):
+                _add_module_location(module_name, location)
+
+                # Add aliases for known packages
+                if module_name in IMPORT_TO_PACKAGE_ALIASES:
+                    for alias in IMPORT_TO_PACKAGE_ALIASES[module_name]:
+                        _add_module_location(alias, location)
+
+    return module_locations
+
+
+def _build_vulnerabilities(
+    trivy_data: Optional[Dict[str, Any]],
+    used_modules: Optional[Dict[str, List[str]]] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Build vulnerability list from Trivy results with reachability analysis and call evidence.
+
+    Args:
+        trivy_data: Trivy scan results containing vulnerability information
+        used_modules: Dictionary mapping module names to file paths where they're used
+                      (from AST analysis via _extract_used_modules)
+
+    Returns:
+        List of vulnerability dictionaries with reachability information and call evidence
+
+    Examples:
+        >>> trivy_data = {"vulnerabilities": [{"id": "CVE-1", "package_name": "ruamel.yaml"}]}
+        >>> used_modules = {"ruamel": ["app.py", "utils.py"]}
+        >>> vulns = _build_vulnerabilities(trivy_data, used_modules)
+        >>> vulns[0]["direct_call"]
+        True
+        >>> "app.py" in vulns[0]["call_example"]
+        True
+    """
     if not trivy_data:
         return []
+
+    if used_modules is None:
+        used_modules = {}
 
     vulns: List[Dict[str, Any]] = []
     for item in trivy_data.get("vulnerabilities", []) or []:
         cve_id = item.get("id") or item.get("VulnerabilityID")
         if not cve_id:
             continue
+
+        # Extract package name
+        package_name = item.get("package_name") or item.get("PkgName") or "unknown"
+
+        # Generate all possible normalized variations of this package name
+        package_variants = _normalize_package_name(package_name)
+
+        # Determine if this vulnerability is directly reachable
+        # Check if ANY variant of the package name is in used_modules
+        direct_call = False
+        matched_locations: List[str] = []
+
+        for variant in package_variants:
+            if variant in used_modules:
+                direct_call = True
+                # Collect all file locations for this variant
+                matched_locations.extend(used_modules[variant])
+
+        # Build call evidence string
+        call_evidence = None
+        if direct_call and matched_locations:
+            # Remove duplicates and limit to top 3 locations
+            unique_locations = list(dict.fromkeys(matched_locations))[:3]
+            if unique_locations:
+                call_evidence = f"Imported in: {', '.join(unique_locations)}"
+                # Add ellipsis if there are more locations
+                if len(matched_locations) > 3:
+                    call_evidence += f" (and {len(matched_locations) - 3} more)"
+
         vulns.append(
             {
                 "cve_id": cve_id,
-                "package": item.get("package_name") or item.get("PkgName") or "unknown",
+                "package": package_name,
                 "version": item.get("installed_version")
                 or item.get("InstalledVersion")
                 or "unknown",
@@ -164,8 +429,8 @@ def _build_vulnerabilities(trivy_data: Optional[Dict[str, Any]]) -> List[Dict[st
                 "description": item.get("description")
                 or item.get("Description")
                 or "N/A",
-                "direct_call": False,  # TODO: integrate AST usage info
-                "call_example": None,
+                "direct_call": direct_call,
+                "call_example": call_evidence,
             }
         )
 
@@ -634,11 +899,27 @@ def _build_pipeline_response(
 
     trivy_data = _read_json_if_exists(trivy_output) or {}
     mapping_data = _read_json_if_exists(mapping_output) or {}
+    ast_data = _read_json_if_exists(ast_json)
     ast_security_data = (
         _read_json_if_exists(ast_security_json) if ast_security_json else None
     )
     gpt5_data = _read_json_if_exists(gpt5_json)
     fetch_priority_data = _read_json_if_exists(fetch_priority_json) or {}
+
+    # Phase 2: Reachability Analysis with Call Evidence
+    # Extract modules actually used in the codebase from AST analysis
+    used_modules = _extract_used_modules(ast_data)
+    logger.info(
+        "Reachability analysis: Found %d used modules from AST analysis",
+        len(used_modules)
+    )
+    if used_modules:
+        # Log module names and sample locations
+        logger.debug("Used modules with locations:")
+        for module, locations in sorted(used_modules.items())[:10]:  # Show first 10
+            loc_preview = locations[0] if locations else "No location"
+            logger.debug("  %s: %s%s", module, loc_preview,
+                        f" (+{len(locations)-1} more)" if len(locations) > 1 else "")
 
     language = _infer_primary_language(sources_dir)
     vuln_summary = _build_vulnerability_summary(trivy_data)
@@ -657,7 +938,7 @@ def _build_pipeline_response(
         "language": language,
         "overview": overview_text,
         "vulnerabilities_summary": vuln_summary,
-        "vulnerabilities": _build_vulnerabilities(trivy_data),
+        "vulnerabilities": _build_vulnerabilities(trivy_data, used_modules),
         "libraries_and_apis": _build_library_api_mappings(mapping_data),
         "patch_priority": patch_priority,
         "logs": [],
@@ -666,7 +947,7 @@ def _build_pipeline_response(
     raw_reports = {
         "trivy": trivy_data,
         "library_cve_api_mapping": mapping_data,
-        "ast_analysis": _read_json_if_exists(ast_json),
+        "ast_analysis": ast_data,
         "ast_security_analysis": ast_security_data,
         "cve_api_mapper": gpt5_data,
         "fetch_priority": fetch_priority_data,

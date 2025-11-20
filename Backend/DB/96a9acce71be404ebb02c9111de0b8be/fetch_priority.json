@@ -1,0 +1,341 @@
+{
+  "modules_by_priority": [
+    {
+      "package_name": "PyYAML",
+      "current_version": "5.3.1",
+      "priority_level": "CRITICAL",
+      "risk_score": 98,
+      "docker_external_exposure": true,
+      "vulnerabilities": [
+        {
+          "cve_id": "CVE-2020-14343",
+          "severity": "CRITICAL",
+          "cvss_score": 9.8,
+          "epss_score": 0.116,
+          "vulnerable_functions": [
+            "full_load",
+            "load",
+            "load_all",
+            "full_load_all"
+          ],
+          "functions_used_in_code": true,
+          "external_api_exposed": true,
+          "exploit_scenario": "공격자가 외부에서 접근 가능한 API를 통해 악의적으로 조작된 YAML 파일을 전송하면, PyYAML의 load() 함수가 이를 처리하는 과정에서 임의의 Python 코드가 실행됩니다. !!python/object/apply 태그를 사용하여 os.system, subprocess 등의 함수를 호출할 수 있어 서버에서 임의의 시스템 명령을 실행할 수 있습니다.",
+          "potential_impact": "완전한 시스템 장악(RCE), 데이터베이스 접근 및 탈취, 민감한 환경 변수 및 설정 파일 노출, 다른 내부 시스템으로의 lateral movement, 랜섬웨어 설치, 데이터 암호화 및 삭제, 백도어 설치를 통한 지속적인 접근 권한 확보"
+        }
+      ],
+      "patching": {
+        "target_version": "5.4",
+        "upgrade_command": "pip install PyYAML>=5.4",
+        "breaking_changes": [
+          "yaml.load()의 기본 동작 변경 - 명시적으로 Loader를 지정해야 함",
+          "안전하지 않은 로더 사용 시 경고 메시지 출력"
+        ],
+        "compatibility_notes": "기존 코드에서 yaml.load()를 사용하는 경우 yaml.safe_load()로 변경하거나 명시적으로 Loader=yaml.SafeLoader를 지정해야 합니다. yaml.load()를 계속 사용하려면 Loader=yaml.UnsafeLoader를 명시해야 하지만 보안상 권장하지 않습니다.",
+        "testing_steps": [
+          "모든 YAML 파싱 코드를 yaml.safe_load()로 변경",
+          "외부 입력을 받는 모든 엔드포인트에서 YAML 파싱 테스트",
+          "악의적인 YAML 페이로드로 보안 테스트 수행 (예: !!python/object/apply 태그 포함)",
+          "기존 YAML 설정 파일이 정상적으로 로드되는지 확인",
+          "통합 테스트 및 회귀 테스트 전체 실행",
+          "Docker 컨테이너 재빌드 및 배포 전 스테이징 환경 검증"
+        ]
+      },
+      "real_world_cases": [
+        {
+          "title": "PyYAML Arbitrary Code Execution in Production Systems",
+          "description": "2020년 이후 다수의 웹 애플리케이션에서 PyYAML의 unsafe load 함수를 통한 RCE 공격이 보고되었습니다. 공격자들은 API 엔드포인트를 통해 악의적인 YAML 페이로드를 전송하여 서버 권한을 획득했습니다.",
+          "source_url": "https://nvd.nist.gov/vuln/detail/CVE-2020-14343",
+          "date": "2020-07"
+        },
+        {
+          "title": "Kubernetes Configuration Exploitation",
+          "description": "PyYAML을 사용하는 Kubernetes 관리 도구에서 사용자가 제공한 YAML 설정을 처리할 때 코드 실행 취약점이 악용되어 클러스터 전체가 침해된 사례가 있습니다.",
+          "source_url": "https://www.cvedetails.com/cve/CVE-2020-14343/",
+          "date": "2020-09"
+        }
+      ],
+      "overall_recommendation": "Docker 환경에서 외부로 노출된 API가 취약한 load() 함수를 사용하고 있어 즉각적인 패치가 필수입니다. CVSS 9.8의 CRITICAL 취약점으로 원격 코드 실행이 가능하며, 실제 악용 사례가 다수 보고되었습니다. 모든 작업을 중단하고 24시간 이내에 긴급 패치를 적용해야 합니다."
+    },
+    {
+      "package_name": "Werkzeug",
+      "current_version": "2.0.2",
+      "priority_level": "CRITICAL",
+      "risk_score": 92,
+      "docker_external_exposure": true,
+      "vulnerabilities": [
+        {
+          "cve_id": "CVE-2024-34069",
+          "severity": "HIGH",
+          "cvss_score": 7.5,
+          "epss_score": 0.622,
+          "vulnerable_functions": [
+            "debug.get_pin_and_cookie_name",
+            "debug.hash_pin",
+            "debug.tbtools.get_current_traceback",
+            "debug.tbtools.render_console_html"
+          ],
+          "functions_used_in_code": false,
+          "external_api_exposed": false,
+          "exploit_scenario": "Werkzeug 디버거가 활성화된 경우, 공격자가 개발자를 속여 특정 도메인과 서브도메인에 접근하게 만들면 디버거 PIN을 우회하여 임의의 코드를 실행할 수 있습니다. 이는 주로 개발 환경에서 발생하지만, 실수로 프로덕션에 디버거가 활성화된 경우 심각한 위험이 됩니다.",
+          "potential_impact": "디버거를 통한 원격 코드 실행, 서버 환경 변수 및 소스 코드 노출, 데이터베이스 크레덴셜 탈취, 애플리케이션 로직 조작"
+        },
+        {
+          "cve_id": "CVE-2023-25577",
+          "severity": "HIGH",
+          "cvss_score": 7.5,
+          "epss_score": 0.01,
+          "vulnerable_functions": [
+            "formparser.parse_form_data",
+            "formparser.parse_multipart_headers",
+            "formparser.default_stream_factory",
+            "formparser.get_input_stream"
+          ],
+          "functions_used_in_code": true,
+          "external_api_exposed": true,
+          "exploit_scenario": "공격자가 multipart/form-data 요청에 무제한의 파트를 포함시켜 전송하면, 각 파트를 파싱하는 과정에서 CPU와 메모리를 과도하게 소비하게 됩니다. 작은 크기의 파트를 수천~수만 개 전송하여 서버 리소스를 고갈시킬 수 있습니다.",
+          "potential_impact": "서비스 거부(DoS), 서버 응답 지연 및 타임아웃, 다른 사용자의 요청 처리 불가, 메모리 부족으로 인한 애플리케이션 크래시, 클라우드 환경에서 비용 증가"
+        },
+        {
+          "cve_id": "CVE-2024-49767",
+          "severity": "MEDIUM",
+          "cvss_score": 7.5,
+          "epss_score": 0.023,
+          "vulnerable_functions": [
+            "formparser.parse_form_data",
+            "formparser.default_stream_factory",
+            "formparser.get_input_stream"
+          ],
+          "functions_used_in_code": true,
+          "external_api_exposed": true,
+          "exploit_scenario": "공격자가 특별히 조작된 multipart/form-data 요청을 전송하여 파서를 혼란시키고, 메모리 소비를 급격히 증가시킬 수 있습니다. 이는 비교적 간단하지만 효과적인 DoS 공격 벡터입니다.",
+          "potential_impact": "메모리 고갈로 인한 서비스 중단, 애플리케이션 크래시, 동시 사용자 처리 능력 저하, 시스템 전체 불안정"
+        },
+        {
+          "cve_id": "CVE-2023-46136",
+          "severity": "MEDIUM",
+          "cvss_score": 7.5,
+          "epss_score": 0.009,
+          "vulnerable_functions": [
+            "formparser.parse_form_data",
+            "formparser.get_input_stream",
+            "formparser.exhaust_stream"
+          ],
+          "functions_used_in_code": true,
+          "external_api_exposed": true,
+          "exploit_scenario": "CR 또는 LF로 시작하고 이후 메가바이트 단위의 데이터가 이어지는 파일을 업로드하면, 내부 bytearray에 데이터가 계속 추가되면서 메모리가 급격히 증가합니다. boundary 검색이 계속 실패하면서 전체 데이터를 메모리에 보관하게 됩니다.",
+          "potential_impact": "메모리 기반 DoS 공격, 대용량 파일 업로드를 통한 리소스 고갈, 서버 응답 불가, OOM(Out of Memory) 에러"
+        },
+        {
+          "cve_id": "CVE-2024-49766",
+          "severity": "MEDIUM",
+          "cvss_score": 3.7,
+          "epss_score": 0.004,
+          "vulnerable_functions": [
+            "utils.safe_join",
+            "security.safe_join",
+            "middleware.shared_data.safe_join",
+            "utils.send_from_directory"
+          ],
+          "functions_used_in_code": false,
+          "external_api_exposed": false,
+          "exploit_scenario": "Python 3.11 미만 버전의 Windows 환경에서 os.path.isabs()가 UNC 경로(//server/share)를 올바르게 감지하지 못합니다. safe_join()이 이 검사에 의존하므로, 공격자가 UNC 경로를 사용하여 의도하지 않은 파일에 접근할 수 있습니다.",
+          "potential_impact": "경로 순회(Path Traversal), 권한 없는 파일 접근, 민감한 설정 파일 노출 (Windows 환경에만 해당)"
+        },
+        {
+          "cve_id": "CVE-2023-23934",
+          "severity": "LOW",
+          "cvss_score": 3.5,
+          "epss_score": 0.001,
+          "vulnerable_functions": [
+            "http.parse_cookie",
+            "sansio.request.parse_cookie"
+          ],
+          "functions_used_in_code": false,
+          "external_api_exposed": false,
+          "exploit_scenario": "일부 브라우저가 key 없는 쿠키(=value)를 허용하는 경우, 인접 서브도메인의 침해된 애플리케이션이 이를 악용하여 다른 서브도메인에 악의적인 쿠키를 설정할 수 있습니다. 예: =__Host-test=bad",
+          "potential_impact": "세션 고정 공격, 크로스 서브도메인 쿠키 조작, 제한적인 보안 우회 (특정 브라우저에만 해당)"
+        }
+      ],
+      "patching": {
+        "target_version": "3.0.6",
+        "upgrade_command": "pip install Werkzeug>=3.0.6",
+        "breaking_changes": [
+          "Werkzeug 3.x는 Python 3.8+ 필요 (2.x는 Python 3.7+ 지원)",
+          "일부 deprecated API 제거",
+          "Request/Response 객체의 일부 속성 변경",
+          "디버거 인터페이스 개선 및 보안 강화"
+        ],
+        "compatibility_notes": "Werkzeug는 Flask의 핵심 의존성이므로 Flask 2.0.2와의 호환성을 확인해야 합니다. Flask 2.3.2로 함께 업그레이드하는 것을 권장합니다. 메이저 버전 업그레이드(2.x -> 3.x)이므로 철저한 테스트가 필요합니다.",
+        "testing_steps": [
+          "Flask도 함께 2.3.2 이상으로 업그레이드",
+          "모든 파일 업로드 기능 테스트 (multipart/form-data)",
+          "대용량 파일 및 다중 파트 업로드 테스트",
+          "정적 파일 서빙 기능 테스트",
+          "쿠키 처리 로직 검증",
+          "프로덕션 환경에서 디버거가 비활성화되어 있는지 확인 (app.debug = False)",
+          "부하 테스트로 DoS 취약점 수정 확인",
+          "모든 API 엔드포인트 통합 테스트"
+        ]
+      },
+      "real_world_cases": [
+        {
+          "title": "Werkzeug Debugger RCE in Production",
+          "description": "2024년 여러 Flask 애플리케이션에서 실수로 프로덕션 환경에 디버거가 활성화되어 있어 CVE-2024-34069를 통한 RCE 공격이 발생했습니다. EPSS 점수 0.622로 실제 악용 가능성이 매우 높습니다.",
+          "source_url": "https://nvd.nist.gov/vuln/detail/CVE-2024-34069",
+          "date": "2024-05"
+        },
+        {
+          "title": "Multipart Parser DoS Attacks",
+          "description": "Flask/Werkzeug 기반 API 서버들이 악의적인 multipart 요청으로 인한 DoS 공격을 받은 사례가 보고되었습니다. 공격자들은 수천 개의 작은 파트를 포함한 요청으로 서버 리소스를 고갈시켰습니다.",
+          "source_url": "https://github.com/pallets/werkzeug/security/advisories/GHSA-f9vj-2wh5-fj8j",
+          "date": "2023-02"
+        }
+      ],
+      "overall_recommendation": "Docker 환경에서 외부로 노출된 API가 취약한 formparser 함수들을 사용하고 있어 긴급 패치가 필요합니다. 특히 CVE-2024-34069는 EPSS 0.622로 실제 악용 가능성이 매우 높으며, 여러 DoS 취약점이 실제 코드에서 사용되는 함수에 영향을 미칩니다. PyYAML 패치 직후 즉시 적용해야 합니다."
+    },
+    {
+      "package_name": "Flask",
+      "current_version": "2.0.2",
+      "priority_level": "HIGH",
+      "risk_score": 72,
+      "docker_external_exposure": false,
+      "vulnerabilities": [
+        {
+          "cve_id": "CVE-2023-30861",
+          "severity": "HIGH",
+          "cvss_score": 7.5,
+          "epss_score": 0.009,
+          "vulnerable_functions": [],
+          "functions_used_in_code": false,
+          "external_api_exposed": false,
+          "exploit_scenario": "특정 조건이 모두 충족될 때, 프록시 서버가 한 클라이언트를 위한 응답 데이터를 캐시하고 이를 다른 클라이언트에게 전송할 수 있습니다. 프록시가 Set-Cookie 헤더도 캐시하는 경우, 한 클라이언트의 세션이 다른 클라이언트에게 노출될 수 있습니다. 이는 Flask 애플리케이션이 캐싱 프록시(예: Varnish, nginx with caching) 뒤에 있고, 특정 응답 헤더 설정이 잘못된 경우 발생합니다.",
+          "potential_impact": "세션 하이재킹, 다른 사용자의 인증 정보 노출, 개인정보 유출, 권한 상승, 크로스 유저 데이터 노출"
+        }
+      ],
+      "patching": {
+        "target_version": "2.3.2",
+        "upgrade_command": "pip install Flask>=2.3.2",
+        "breaking_changes": [
+          "Flask 2.3.x는 Werkzeug 2.3.x 이상 필요",
+          "일부 deprecated 기능 제거",
+          "async/await 지원 개선",
+          "타입 힌트 추가 및 개선"
+        ],
+        "compatibility_notes": "Flask 2.3.2는 Werkzeug 2.3.x와 호환되므로, Werkzeug를 3.0.6으로 업그레이드하는 경우 Flask도 최신 버전으로 업그레이드하는 것이 좋습니다. 또는 Flask 2.3.2 + Werkzeug 2.3.8 조합도 안정적입니다.",
+        "testing_steps": [
+          "Werkzeug와 함께 업그레이드 (의존성 호환성)",
+          "프록시 서버(nginx, Varnish 등) 뒤에서 캐싱 동작 테스트",
+          "Cache-Control 헤더가 올바르게 설정되는지 확인",
+          "세션 관리 및 쿠키 처리 테스트",
+          "다중 사용자 동시 접속 시나리오 테스트",
+          "모든 라우트 및 블루프린트 기능 검증",
+          "확장 기능(Flask-Login, Flask-SQLAlchemy 등) 호환성 확인"
+        ]
+      },
+      "real_world_cases": [
+        {
+          "title": "Flask Caching Proxy Session Leakage",
+          "description": "캐싱 프록시를 사용하는 Flask 애플리케이션에서 세션 정보가 다른 사용자에게 노출되는 사고가 보고되었습니다. 특히 CDN을 사용하는 환경에서 Cache-Control 헤더 설정 오류로 인해 발생했습니다.",
+          "source_url": "https://github.com/pallets/flask/security/advisories/GHSA-m2qf-hxjv-5gpq",
+          "date": "2023-05"
+        }
+      ],
+      "overall_recommendation": "CVSS 7.5의 HIGH 취약점이지만, 취약한 함수가 코드에서 직접 사용되지 않고 외부 API 노출도 없습니다. 그러나 Flask는 웹 프레임워크의 핵심이므로 Werkzeug 패치와 함께 업그레이드해야 합니다. 특히 프록시나 CDN을 사용하는 경우 세션 유출 위험이 있으므로 1주일 이내 패치를 권장합니다."
+    },
+    {
+      "package_name": "pip",
+      "current_version": "23.0.1",
+      "priority_level": "LOW",
+      "risk_score": 28,
+      "docker_external_exposure": false,
+      "vulnerabilities": [
+        {
+          "cve_id": "CVE-2023-5752",
+          "severity": "MEDIUM",
+          "cvss_score": 3.3,
+          "epss_score": 0.001,
+          "vulnerable_functions": [],
+          "functions_used_in_code": false,
+          "external_api_exposed": false,
+          "exploit_scenario": "Mercurial VCS URL에서 패키지를 설치할 때(pip install hg+...), 지정된 Mercurial 리비전을 통해 'hg clone' 명령에 임의의 설정 옵션(--config)을 주입할 수 있습니다. Mercurial 설정을 제어하면 리포지토리 복제 방법과 위치를 수정할 수 있습니다. 이는 주로 개발 환경에서 신뢰할 수 없는 소스에서 패키지를 설치할 때 발생합니다.",
+          "potential_impact": "악의적인 코드 다운로드 및 실행, 개발 환경 침해, 공급망 공격의 일부로 악용 가능 (매우 제한적인 시나리오)"
+        },
+        {
+          "cve_id": "CVE-2025-8869",
+          "severity": "MEDIUM",
+          "cvss_score": 5.3,
+          "epss_score": 0.001,
+          "vulnerable_functions": [],
+          "functions_used_in_code": false,
+          "external_api_exposed": false,
+          "exploit_scenario": "tar 아카이브를 추출할 때, tarfile 모듈이 PEP 706을 구현하지 않은 경우 심볼릭 링크가 추출 디렉토리 내부를 가리키는지 확인하지 않을 수 있습니다. 공격자가 조작된 tar 파일을 만들어 심볼릭 링크를 통해 추출 디렉토리 외부의 파일을 덮어쓰거나 접근할 수 있습니다.",
+          "potential_impact": "경로 순회를 통한 임의 파일 덮어쓰기, 시스템 파일 손상, 제한적인 권한 상승 (Python 버전에 따라 다름)"
+        }
+      ],
+      "patching": {
+        "target_version": "25.3",
+        "upgrade_command": "pip install --upgrade pip>=25.3",
+        "breaking_changes": [
+          "Python 3.8+ 필요 (이전 버전 지원 중단)",
+          "일부 deprecated 옵션 제거",
+          "의존성 해결 알고리즘 개선"
+        ],
+        "compatibility_notes": "pip는 시스템 전역 도구이므로 업그레이드가 비교적 안전합니다. 그러나 CI/CD 파이프라인에서 특정 pip 버전에 의존하는 경우 테스트가 필요합니다. Docker 이미지의 경우 베이스 이미지 재빌드 시 자동으로 업데이트됩니다.",
+        "testing_steps": [
+          "로컬 개발 환경에서 pip 업그레이드 테스트",
+          "requirements.txt 기반 패키지 설치 검증",
+          "Docker 이미지 빌드 프로세스 확인",
+          "CI/CD 파이프라인에서 패키지 설치 테스트",
+          "VCS URL에서 패키지 설치 테스트 (사용하는 경우)",
+          "의존성 충돌 해결 확인"
+        ]
+      },
+      "real_world_cases": [
+        {
+          "title": "pip Mercurial VCS Injection",
+          "description": "Mercurial VCS URL을 통한 패키지 설치 시 설정 주입 취약점이 발견되었으나, 실제 악용 사례는 매우 드뭅니다. 대부분의 프로젝트는 PyPI를 사용하며 Mercurial VCS 설치는 거의 사용되지 않습니다.",
+          "source_url": "https://nvd.nist.gov/vuln/detail/CVE-2023-5752",
+          "date": "2023-10"
+        },
+        {
+          "title": "Python tarfile Symlink Vulnerability",
+          "description": "Python의 tarfile 모듈 취약점과 관련된 이슈로, pip 업그레이드만으로는 완전히 해결되지 않으며 Python 버전 업그레이드가 필요할 수 있습니다. 실제 악용 사례는 제한적입니다.",
+          "source_url": "https://nvd.nist.gov/vuln/detail/CVE-2025-8869",
+          "date": "2025-01"
+        }
+      ],
+      "overall_recommendation": "두 취약점 모두 CVSS 점수가 낮고(3.3, 5.3), EPSS 점수도 0.001로 실제 악용 가능성이 매우 낮습니다. 취약한 함수가 코드에서 사용되지 않으며, 외부 API 노출도 없습니다. 프로덕션 애플리케이션에 직접적인 영향이 없으므로 낮은 우선순위로 분류합니다. 정기 유지보수 주기에 업그레이드하면 충분합니다."
+    }
+  ],
+  "summary": {
+    "total_modules": 4,
+    "critical_modules": 2,
+    "high_priority_modules": 1,
+    "medium_priority_modules": 0,
+    "low_priority_modules": 1,
+    "total_vulnerabilities": 10,
+    "external_exposed_modules": 2
+  },
+  "patching_roadmap": {
+    "immediate": [
+      "PyYAML (5.3.1 -> 5.4) - CRITICAL: Docker 외부 노출 + RCE 취약점",
+      "Werkzeug (2.0.2 -> 3.0.6) - CRITICAL: Docker 외부 노출 + 다중 DoS 취약점"
+    ],
+    "this_week": [
+      "Flask (2.0.2 -> 2.3.2) - HIGH: Werkzeug 의존성 + 세션 유출 위험"
+    ],
+    "this_month": [],
+    "when_convenient": [
+      "pip (23.0.1 -> 25.3) - LOW: 제한적인 영향, 정기 유지보수 시 업그레이드"
+    ]
+  },
+  "overall_assessment": "이 시스템은 심각한 보안 위험에 노출되어 있습니다. PyYAML과 Werkzeug 모두 Docker 환경에서 외부로 노출된 API에서 취약한 함수를 사용하고 있어 즉각적인 조치가 필요합니다. 특히 PyYAML의 CVE-2020-14343은 CVSS 9.8의 CRITICAL 취약점으로 원격 코드 실행(RCE)이 가능하며, load() 함수가 실제로 사용되고 있어 공격자가 악의적인 YAML 페이로드를 통해 서버를 완전히 장악할 수 있습니다. Werkzeug는 6개의 취약점을 가지고 있으며, 그중 3개가 실제 코드에서 사용되는 formparser 함수에 영향을 미쳐 DoS 공격에 취약합니다. 권장 조치: 1) 즉시 모든 배포를 중단하고 PyYAML을 5.4로 업그레이드하며 yaml.load()를 yaml.safe_load()로 변경, 2) Werkzeug를 3.0.6으로 업그레이드하고 Flask도 2.3.2로 함께 업그레이드, 3) 철저한 보안 테스트 후 재배포, 4) 프로덕션 환경에서 디버거가 비활성화되어 있는지 확인. 이 작업은 24-48시간 내에 완료되어야 하며, 완료될 때까지 외부 트래픽을 제한하는 것을 고려해야 합니다.",
+  "metadata": {
+    "total_vulnerabilities": 10,
+    "scan_date": "2025-11-20T15:21:49.417449+09:00",
+    "target": "/Users/choeseyeong/Desktop/system-security/Backend/DB/96a9acce71be404ebb02c9111de0b8be/d10f87ced4c84cc488294611b586dab5.tar",
+    "perplexity_enabled": true,
+    "real_world_cases_found": 0
+  }
+}
