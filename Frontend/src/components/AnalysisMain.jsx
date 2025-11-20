@@ -374,68 +374,116 @@ const AnalysisMain = ({ analysisId }) => {
           </div>
         );
 
-      case 'libs':
-        return (
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs max-h-[350px] overflow-auto">
-            <div className="text-[13px] font-medium mb-1.5 text-gray-900">Libraries &amp; APIs</div>
-            <div className="text-[11px] text-gray-600 mb-2">
-              어떤 라이브러리가 어떤 API를 통해 취약점과 연결되는지 정리한 뷰입니다.
-            </div>
+        case 'libs':
+        // 1. 데이터 준비
+        const uniqueLibraries = Array.from(
+            new Set(analysisData.libraryMappings.map(item => item.library))
+        ).sort();
 
-            {analysisData.libraryMappings.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="text-left px-2 py-2 text-[11px] text-gray-600 font-medium">라이브러리</th>
-                      <th className="text-left px-2 py-2 text-[11px] text-gray-600 font-medium">버전</th>
-                      <th className="text-left px-2 py-2 text-[11px] text-gray-600 font-medium">API</th>
-                      <th className="text-left px-2 py-2 text-[11px] text-gray-600 font-medium">CVE</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {analysisData.libraryMappings.slice(0, 20).map((mapping, idx) => (
-                      <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50">
-                        <td className="px-2 py-2">{mapping.library}</td>
-                        <td className="px-2 py-2">{mapping.version}</td>
-                        <td className="px-2 py-2">
-                          <code className="bg-gray-100 px-1 py-0.5 rounded text-blue-700">{mapping.api}</code>
-                        </td>
-                        <td className="px-2 py-2 max-w-[150px] truncate" title={mapping.cve}>{mapping.cve}</td>
-                      </tr>
+        const filteredMappings = selectedLib 
+            ? analysisData.libraryMappings.filter(m => m.library === selectedLib)
+            : analysisData.libraryMappings;
+
+        // CVE 줄바꿈 렌더링 함수
+        const renderCveList = (cveString) => {
+            if (!cveString || cveString === '-') return '-';
+            const cves = cveString.split(',').map(s => s.trim());
+            const chunkSize = 3;
+            const chunks = [];
+            for (let i = 0; i < cves.length; i += chunkSize) {
+                chunks.push(cves.slice(i, i + chunkSize));
+            }
+            return (
+                <div className="flex flex-col gap-1">
+                    {chunks.map((chunk, i) => (
+                        <div key={i} className="whitespace-nowrap">
+                            {chunk.join(', ')}
+                            {i < chunks.length - 1 ? ',' : ''}
+                        </div>
                     ))}
-                  </tbody>
-                </table>
-                {analysisData.libraryMappings.length > 20 && (
-                  <div className="text-[11px] text-gray-600 mt-2 text-center">
-                    ...외 {analysisData.libraryMappings.length - 20}개 매핑
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-[11px] text-gray-600">라이브러리-API 매핑 데이터가 없습니다.</div>
-            )}
-          </div >
-        );
+                </div>
+            );
+        };
 
-      case 'patch':
         return (
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs max-h-[350px] overflow-auto">
-            <div className="text-[13px] font-medium mb-1.5 text-gray-900">Patch Priority</div>
-            <div className="text-[11px] text-gray-600 mb-2">
-              "지금 당장 해야 할 패치"를 세트 단위로 묶어 우선순위를 부여합니다.
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs max-h-[350px] flex flex-col h-full">
+            
+            {/* 1. 상단: 라이브러리 선택 버튼 */}
+            <div className="mb-3 flex-shrink-0">
+                <div className="text-[11px] text-gray-500 mb-1.5 font-medium">
+                    라이브러리 선택 ({uniqueLibraries.length}개):
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                    <button
+                        onClick={() => setSelectedLib(null)}
+                        className={`px-2.5 py-1 rounded border text-[11px] transition-all
+                            ${!selectedLib 
+                                ? 'bg-gray-800 text-white border-gray-800 font-medium shadow-sm' 
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}
+                    >
+                        ALL
+                    </button>
+
+                    {uniqueLibraries.map((lib) => (
+                        <button
+                            key={lib}
+                            onClick={() => setSelectedLib(lib)}
+                            className={`px-2.5 py-1 rounded border text-[11px] transition-all
+                                ${selectedLib === lib 
+                                    ? 'bg-blue-600 text-white border-blue-600 font-medium shadow-sm' 
+                                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600'}`}
+                        >
+                            {lib}
+                        </button>
+                    ))}
+                </div>
             </div>
-            <ul className="text-xs text-gray-900 ml-4 leading-relaxed space-y-1">
-              {analysisData.patchPriority.map((patch) => (
-                <li key={patch.id}>
-                  [#{patch.id}] {patch.description}
-                  {patch.packages && patch.packages.length > 0 && (
-                    <span className="text-gray-600"> - {patch.packages.join(', ')}</span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div >
+
+            {/* 2. 헤더 (스크롤 안됨, 버튼 바로 아래 고정) */}
+            <div className="bg-gray-100 border-y border-gray-200 flex-shrink-0 pr-2">
+                <table className="w-full text-xs table-fixed">
+                    <thead>
+                        <tr>
+                            <th className="text-left px-2 py-2 font-medium text-gray-600 w-[20%]">라이브러리</th>
+                            <th className="text-left px-2 py-2 font-medium text-gray-600 w-[15%]">버전</th>
+                            <th className="text-left px-2 py-2 font-medium text-gray-600 w-[30%]">사용된 API</th>
+                            <th className="text-left px-2 py-2 font-medium text-gray-600 w-[35%]">관련 CVE</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+
+            {/* 3. 바디 (여기만 스크롤 됨) */}
+            <div className="flex-1 overflow-y-auto bg-white">
+                {filteredMappings.length > 0 ? (
+                    <table className="w-full text-xs table-fixed">
+                        <tbody>
+                            {filteredMappings.map((mapping, idx) => (
+                                <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
+                                    {/* 위 헤더와 같은 width(%)를 주어 열을 맞춤 */}
+                                    <td className={`px-2 py-2 align-top font-medium w-[20%] ${selectedLib === mapping.library ? 'text-blue-700' : 'text-gray-800'}`}>
+                                        {mapping.library}
+                                    </td>
+                                    <td className="px-2 py-2 align-top text-gray-600 w-[15%]">{mapping.version}</td>
+                                    <td className="px-2 py-2 align-top w-[30%]">
+                                        <code className="bg-white border border-gray-200 px-1.5 py-0.5 rounded text-blue-600 font-mono text-[10px] break-all inline-block">
+                                            {mapping.api}
+                                        </code>
+                                    </td>
+                                    <td className="px-2 py-2 align-top text-red-500 text-[11px] leading-relaxed w-[35%]">
+                                        {renderCveList(mapping.cve)}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                ) : (
+                    <div className="text-center py-8 text-gray-400">
+                        데이터가 없습니다.
+                    </div>
+                )}
+            </div>
+          </div>
         );
 
       case 'logs':
