@@ -1,13 +1,13 @@
-// src/components/UploadPanel.jsx (Pills UI 삭제 완료)
+// src/components/UploadPanel.jsx (충돌 해결 완료 및 최종 버전)
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { uploadImage } from '../api/client';
+import { uploadImage } from '../api/client'; 
 
 const UploadPanel = () => {
     const navigate = useNavigate();
     
-    // State 설정
+    // State 설정 (드래그 상태 및 API 관련 상태 포함)
     const [file, setFile] = useState(null); 
     const [uploading, setUploading] = useState(false); 
     const [progress, setProgress] = useState(0); 
@@ -22,6 +22,7 @@ const UploadPanel = () => {
     // 파일 유효성 검사 및 상태 설정 (드롭/클릭 공통 로직)
     const processFile = (selectedFile) => {
         if (selectedFile) {
+            // 파일 유효성 검사
             if (!selectedFile.name.endsWith('.tar') && !selectedFile.name.endsWith('.zip')) {
                 setError("⚠️ Docker 이미지는 .tar 또는 .zip 형식만 지원합니다.");
                 setFile(null);
@@ -39,7 +40,7 @@ const UploadPanel = () => {
         processFile(event.target.files[0]);
     };
 
-    // 드래그 앤 드롭 이벤트 핸들러
+    // 드래그 앤 드롭 이벤트 핸들러 (유지)
     const handleDragOver = (e) => { e.preventDefault(); };
     const handleDragEnter = (e) => {
         e.preventDefault();
@@ -55,7 +56,7 @@ const UploadPanel = () => {
         }
     };
 
-    // 🚀 API 호출 및 로직 통합
+    // 🚀 API 호출 및 로직 통합 (데모 로직 제거, API 로직 유지)
     const handleUploadStart = async () => {
         if (!file) {
             setError("⚠️ 업로드할 파일을 선택해주세요.");
@@ -68,19 +69,16 @@ const UploadPanel = () => {
         try {
             const result = await uploadImage(file, setProgress); 
             
-            // Job ID 확인 로직
+            // Job ID 확인 및 페이지 이동
             if (result && result.analysis_id) {
-                // 성공 시, 반환된 analysis_id로 페이지 이동
                 navigate(`/analysis/${result.analysis_id}`);
             } else {
-                 // 응답 형식이 잘못된 경우 처리
                 setError("분석 시작 실패: 서버 응답에 Job ID가 없습니다.");
                 setUploading(false);
             }
 
         } catch (e) {
             console.error("Upload Error:", e);
-            // 에러 메시지 업데이트 및 상태 초기화
             setError(`업로드 실패: ${e.message}`);
             setUploading(false);
             setProgress(0);
@@ -88,7 +86,7 @@ const UploadPanel = () => {
     };
 
     return (
-        // 최상위 div: 닫는 괄호(</div>)가 파일 끝에 올바르게 배치됨
+        // 최신 스타일: w-full, font-medium/normal 적용
         <div className="landing-upload-panel w-full rounded-xl border border-gray-300 bg-white p-5 shadow-xl shadow-blue-500/10">
             <div className="landing-upload-title text-base font-semibold text-gray-900 font-medium">빠른 시작</div>
             <div className="landing-upload-sub text-xs text-gray-500 mb-3 font-normal">
