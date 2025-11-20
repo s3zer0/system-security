@@ -8,7 +8,7 @@ from common import read_json, write_json
 from common.models import VulnerabilityContext
 from dotenv import load_dotenv
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 import requests
 
 # Anthropic API 사용
@@ -570,7 +570,7 @@ class PatchPriorityEvaluator:
         if not target_path:
             return
         payload: Dict[str, Any] = {
-            'timestamp': datetime.utcnow().isoformat(timespec='seconds'),
+            'timestamp': datetime.now(timezone.utc).isoformat(timespec='seconds'),
             'raw_text': raw_text,
             'cleaned_text': cleaned_text,
         }

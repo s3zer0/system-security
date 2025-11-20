@@ -9,7 +9,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import analysis_router, analyses_router
 
-
 app = FastAPI(title="System Security API", version="0.1.0")
 
 allowed_origins = [
@@ -25,12 +24,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.get("/health")
 async def health() -> Dict[str, str]:
-    """Simple health check endpoint for orchestration environments."""
+    """Simple health check endpoint."""
     return {"status": "ok"}
 
+app.include_router(analyses_router, tags=["analyses"])
+app.include_router(analyses_router, prefix="/api", tags=["analyses"])
 
-app.include_router(analyses_router)
 app.include_router(analysis_router)
+app.include_router(analysis_router, prefix="/api")
