@@ -332,144 +332,102 @@ const AnalysisMain = ({ analysisId }) => {
               "지금 당장 해야 할 패치"를 세트 단위로 묶어 우선순위를 부여합니다.
             </div>
 
-<<<<<<< HEAD
-        <ul className="text-xs text-gray-900 ml-4 leading-relaxed space-y-1">
-          {analysisData.patchPriority.map((patch) => (
-            <li key={patch.id}>
-              [세트 #{patch.id}] {patch.description}
-              {patch.packages && patch.packages.length > 0 && (
-                <span className="text-gray-600"> - {patch.packages.join(', ')}</span>
-              )}
-            </li>
-          ))}
-        </ul>
-=======
-            {analysisData.patchPriority.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="text-left px-2 py-2 text-[11px] text-gray-600 font-medium">세트</th>
-                      <th className="text-left px-2 py-2 text-[11px] text-gray-600 font-medium">라이브러리</th>
-                      <th className="text-left px-2 py-2 text-[11px] text-gray-600 font-medium">버전</th>
-                      <th className="text-left px-2 py-2 text-[11px] text-gray-600 font-medium">CVEs</th>
-                      <th className="text-left px-2 py-2 text-[11px] text-gray-600 font-medium">우선순위</th>
-                      <th className="text-left px-2 py-2 text-[11px] text-gray-600 font-medium">점수</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {analysisData.patchPriority.map((patch) => (
-                      <tr key={patch.id} className="border-b border-gray-200 hover:bg-gray-50">
-                        <td className="px-2 py-2">#{patch.setNo}</td>
-                        <td className="px-2 py-2">{patch.library}</td>
-                        <td className="px-2 py-2">{patch.version}</td>
-                        <td className="px-2 py-2 max-w-[150px] truncate" title={patch.cves}>{patch.cves}</td>
-                        <td className="px-2 py-2">
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                            patch.urgency === 'Critical' ? 'bg-red-100 text-red-700' :
-                            patch.urgency === 'High' ? 'bg-orange-100 text-orange-700' :
-                            patch.urgency === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-gray-100 text-gray-700'
-                          }`}>
-                            {patch.urgency}
-                          </span>
-                        </td>
-                        <td className="px-2 py-2">{patch.score}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-[11px] text-gray-600">패치 우선순위 데이터가 없습니다.</div>
-            )}
->>>>>>> origin/main
+            <ul className="text-xs text-gray-900 ml-4 leading-relaxed space-y-1">
+              {analysisData.patchPriority.map((patch) => (
+                <li key={patch.id}>
+                  [세트 #{patch.id}] {patch.description}
+                  {patch.packages && patch.packages.length > 0 && (
+                    <span className="text-gray-600"> - {patch.packages.join(', ')}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
           </div >
         );
 
       case 'logs':
-return (
-  <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs max-h-[350px] overflow-auto">
-    <div className="text-[13px] font-medium mb-1.5 text-gray-900">Logs</div>
-    <div className="text-[11px] text-gray-600 mb-2">
-      분석 파이프라인 실행 로그를 시간 순서대로 정리한 영역입니다.
-    </div>
+        return (
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs max-h-[350px] overflow-auto">
+            <div className="text-[13px] font-medium mb-1.5 text-gray-900">Logs</div>
+            <div className="text-[11px] text-gray-600 mb-2">
+              분석 파이프라인 실행 로그를 시간 순서대로 정리한 영역입니다.
+            </div>
 
-    <ul className="text-xs text-gray-900 ml-4 leading-relaxed space-y-1">
-      {analysisData.logs.map((log, idx) => (
-        <li key={idx}>
-          [{log.timestamp}] {log.message}
-        </li>
-      ))}
-    </ul>
-  </div>
-);
+            <ul className="text-xs text-gray-900 ml-4 leading-relaxed space-y-1">
+              {analysisData.logs.map((log, idx) => (
+                <li key={idx}>
+                  [{log.timestamp}] {log.message}
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
 
       default:
-return null;
+        return null;
     }
   };
 
-return (
-  <main className="p-4 flex flex-col gap-4 bg-white overflow-y-auto">
-    <div className="flex justify-between items-start gap-4">
-      <div>
-        <div className="text-lg font-semibold text-gray-900">{analysisData.title}</div>
-        <div className="text-xs text-gray-600 mt-1 flex gap-2 flex-wrap items-center">
-          <span>이미지 태그: <code className="bg-gray-100 px-1 py-0.5 rounded text-blue-700">{analysisData.imageTag}</code></span>
-          {analysisData.tags && analysisData.tags.map((tag, idx) => (
-            <span key={idx} className="px-1.5 py-0.5 rounded-full border border-gray-200 text-[10px] text-gray-600 bg-gray-50">{tag}</span>
+  return (
+    <main className="p-4 flex flex-col gap-4 bg-white overflow-y-auto">
+      <div className="flex justify-between items-start gap-4">
+        <div>
+          <div className="text-lg font-semibold text-gray-900">{analysisData.title}</div>
+          <div className="text-xs text-gray-600 mt-1 flex gap-2 flex-wrap items-center">
+            <span>이미지 태그: <code className="bg-gray-100 px-1 py-0.5 rounded text-blue-700">{analysisData.imageTag}</code></span>
+            {analysisData.tags && analysisData.tags.map((tag, idx) => (
+              <span key={idx} className="px-1.5 py-0.5 rounded-full border border-gray-200 text-[10px] text-gray-600 bg-gray-50">{tag}</span>
+            ))}
+          </div>
+
+          <div className="mt-3 grid grid-cols-3 gap-2.5 text-xs">
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-2.5">
+              <div className="text-[11px] text-gray-600 mb-1">전체 리스크</div>
+              <div className={`text-[15px] font-semibold ${analysisData.summary.riskLevel === 'CRITICAL' ? 'text-red-600' :
+                analysisData.summary.riskLevel === 'HIGH' ? 'text-orange-600' :
+                  'text-gray-900'
+                }`}>
+                {analysisData.summary.riskLevel}
+              </div>
+              <div className="text-[11px] text-gray-600 mt-0.5">
+                Critical {analysisData.summary.criticalCount} · High {analysisData.summary.highCount} · Medium {analysisData.summary.mediumCount}
+                {analysisData.summary.lowCount > 0 && ` · Low ${analysisData.summary.lowCount}`}
+              </div>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-2.5">
+              <div className="text-[11px] text-gray-600 mb-1">패치 우선순위 세트</div>
+              <div className="text-[15px] font-semibold text-gray-900">{analysisData.summary.patchSets}개</div>
+              <div className="text-[11px] text-gray-600 mt-0.5">{analysisData.summary.patchTargets}</div>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-2.5">
+              <div className="text-[11px] text-gray-600 mb-1">직접 호출 경로</div>
+              <div className="text-[15px] font-semibold text-gray-900">{analysisData.summary.callPaths}개</div>
+              <div className="text-[11px] text-gray-600 mt-0.5">RCE로 이어질 수 있는 코드 경로</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-2 flex flex-col gap-2">
+        <div className="inline-flex gap-1.5 p-0.5 rounded-full bg-gray-100 self-start">
+          {tabs.map((tab) => (
+            <TabButton
+              key={tab.id}
+              label={tab.label}
+              isActive={activeTab === tab.id}
+              onClick={() => setActiveTab(tab.id)}
+            />
           ))}
         </div>
 
-        <div className="mt-3 grid grid-cols-3 gap-2.5 text-xs">
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-2.5">
-            <div className="text-[11px] text-gray-600 mb-1">전체 리스크</div>
-            <div className={`text-[15px] font-semibold ${analysisData.summary.riskLevel === 'CRITICAL' ? 'text-red-600' :
-              analysisData.summary.riskLevel === 'HIGH' ? 'text-orange-600' :
-                'text-gray-900'
-              }`}>
-              {analysisData.summary.riskLevel}
-            </div>
-            <div className="text-[11px] text-gray-600 mt-0.5">
-              Critical {analysisData.summary.criticalCount} · High {analysisData.summary.highCount} · Medium {analysisData.summary.mediumCount}
-              {analysisData.summary.lowCount > 0 && ` · Low ${analysisData.summary.lowCount}`}
-            </div>
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-2.5">
-            <div className="text-[11px] text-gray-600 mb-1">패치 우선순위 세트</div>
-            <div className="text-[15px] font-semibold text-gray-900">{analysisData.summary.patchSets}개</div>
-            <div className="text-[11px] text-gray-600 mt-0.5">{analysisData.summary.patchTargets}</div>
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-2.5">
-            <div className="text-[11px] text-gray-600 mb-1">직접 호출 경로</div>
-            <div className="text-[15px] font-semibold text-gray-900">{analysisData.summary.callPaths}개</div>
-            <div className="text-[11px] text-gray-600 mt-0.5">RCE로 이어질 수 있는 코드 경로</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div className="mt-2 flex flex-col gap-2">
-      <div className="inline-flex gap-1.5 p-0.5 rounded-full bg-gray-100 self-start">
-        {tabs.map((tab) => (
-          <TabButton
-            key={tab.id}
-            label={tab.label}
-            isActive={activeTab === tab.id}
-            onClick={() => setActiveTab(tab.id)}
-          />
-        ))}
+        {renderTabContent()}
       </div>
 
-      {renderTabContent()}
-    </div>
-
-    <div className="text-[11px] text-gray-600 mt-1">
-      * Analysis ID: {analysisId}
-    </div>
-  </main>
-);
+      <div className="text-[11px] text-gray-600 mt-1">
+        * Analysis ID: {analysisId}
+      </div>
+    </main>
+  );
 };
 
 export default AnalysisMain;
