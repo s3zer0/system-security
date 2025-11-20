@@ -2,6 +2,89 @@ import { useState, useEffect } from 'react';
 import TabButton from './TabButton';
 import RiskBadge from './RiskBadge';
 
+/**
+ * Transform backend API response to frontend component state format
+ * @param {Object} backendData - Response from /api/analysis/:id with {meta, result} structure
+ * @returns {Object} Transformed data for component state
+ */
+const transformData = (backendData) => {
+  const { result, meta } = backendData;
+
+  return {
+    title: `${result.language || 'Unknown'} 기반 이미지 분석 요약`,
+    imageTag: meta.analysis_id?.substring(0, 8) || 'unknown',
+    tags: [result.language || 'Unknown', meta.created_at ? new Date(meta.created_at).toLocaleDateString() : ''],
+
+    summary: {
+      riskLevel: result.vulnerabilities_summary?.overall_risk || 'UNKNOWN',
+      criticalCount: result.vulnerabilities_summary?.critical ?? 0,
+      highCount: result.vulnerabilities_summary?.high ?? 0,
+      mediumCount: result.vulnerabilities_summary?.medium ?? 0,
+      lowCount: result.vulnerabilities_summary?.low ?? 0,
+      patchSets: result.patch_priority?.length || 0,
+      patchTargets: result.patch_priority?.slice(0, 3).map(p => p.package).join(', ') || 'N/A',
+      callPaths: result.vulnerabilities?.filter(v => v.direct_call).length || 0
+    },
+
+    highlights: result.vulnerabilities
+      ?.filter(v => ['CRITICAL', 'HIGH'].includes((v.severity || '').toUpperCase()))
+      .slice(0, 5)
+      .map(v => `${v.package} ${v.version} (${v.cve_id})`) || [],
+
+    vulnerabilities: result.vulnerabilities?.map(v => ({
+      cve: v.cve_id || 'N/A',
+      package: v.package || 'Unknown',
+      version: v.version || 'N/A',
+      severity: (v.severity || 'Unknown').toUpperCase(),
+      directCall: v.direct_call ? '예' : '아니요',
+      evidence: v.call_evidence || 'N/A',
+      title: v.description ? v.description.substring(0, 50) + '...' : ''
+    })) || [],
+
+    severitySummary: [
+      { severity: 'Critical', count: result.vulnerabilities_summary?.critical ?? 0, description: '즉시 조치 필요' },
+      { severity: 'High', count: result.vulnerabilities_summary?.high ?? 0, description: '높은 위험도' },
+      { severity: 'Medium', count: result.vulnerabilities_summary?.medium ?? 0, description: '권장 조치' },
+      { severity: 'Low', count: result.vulnerabilities_summary?.low ?? 0, description: '낮은 위험도' }
+    ].filter(s => s.count > 0),
+
+    libraryMappings: result.libraries_and_apis?.map(item => ({
+      library: item.package,
+      version: item.version,
+      api: `${item.module}.${item.api}`,
+      cve: item.related_cves?.join(', ') || '-'
+    })) || [],
+
+    patchPriority: result.patch_priority?.map((patch) => ({
+      id: patch.set_no,
+      setNo: patch.set_no,
+      library: patch.package,
+      version: patch.current_version,
+      cves: 'N/A',
+      score: patch.score,
+      urgency: patch.urgency,
+      description: patch.note || `${patch.package} ${patch.recommended_version || ''} 업데이트 권장`
+    })) || [],
+
+    logs: Array.isArray(result.logs)
+      ? result.logs.map((log, idx) => {
+          // If log is a string, wrap it in an object
+          if (typeof log === 'string') {
+            return {
+              timestamp: new Date().toLocaleTimeString(),
+              message: log
+            };
+          }
+          // If log is already an object with timestamp and message
+          return {
+            timestamp: log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString(),
+            message: log.message || log
+          };
+        })
+      : []
+  };
+};
+
 const AnalysisMain = ({ analysisId }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [analysisData, setAnalysisData] = useState(null);
@@ -18,86 +101,20 @@ const AnalysisMain = ({ analysisId }) => {
       try {
         setLoading(true);
         const response = await fetch(`/api/analysis/${analysisId}`);
-        
+
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") === -1) {
-             throw new Error("서버 응답이 JSON이 아닙니다. (Proxy 설정을 확인하세요)");
+          throw new Error("서버 응답이 JSON이 아닙니다. (Proxy 설정을 확인하세요)");
         }
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
-        const { result, meta } = data;
 
-        // ▼▼▼ [수정 핵심] 백엔드 필드명(package 등)에 맞춰 매핑 로직 수정 ▼▼▼
-        const transformedData = {
-          title: `${result.language || 'Unknown'} 기반 이미지 분석 요약`,
-          imageTag: meta.file_name || meta.input_file || 'unknown',
-          tags: [result.language || 'Unknown', meta.created_at ? new Date(meta.created_at).toLocaleDateString() : ''],
-          
-          summary: {
-            riskLevel: result.vulnerabilities_summary?.overall_risk || 'UNKNOWN',
-            criticalCount: result.vulnerabilities_summary?.critical ?? result.vulnerabilities_summary?.critical_count ?? 0,
-            highCount: result.vulnerabilities_summary?.high ?? result.vulnerabilities_summary?.high_count ?? 0,
-            mediumCount: result.vulnerabilities_summary?.medium ?? result.vulnerabilities_summary?.medium_count ?? 0,
-            lowCount: result.vulnerabilities_summary?.low ?? result.vulnerabilities_summary?.low_count ?? 0,
-            patchSets: result.patch_priority?.length || 0,
-            patchTargets: result.patch_priority?.slice(0, 3).map(p => p.package).join(', ') || 'N/A',
-            callPaths: result.vulnerabilities?.filter(v => v.is_directly_called).length || 0
-          },
-
-          // [수정] v.package 필드 사용
-          highlights: result.vulnerabilities
-            ?.filter(v => ['CRITICAL', 'HIGH'].includes(v.severity.toUpperCase()))
-            .slice(0, 5)
-            .map(v => `${v.package} ${v.version} (${v.cve_id})`) || [],
-          
-          // [수정] v.package 필드 사용
-          vulnerabilities: result.vulnerabilities?.map(v => ({
-            cve: v.cve_id || 'N/A',
-            package: v.package || 'Unknown', 
-            version: v.version || 'N/A',
-            severity: v.severity || 'Unknown',
-            directCall: v.is_directly_called || v.direct_call ? `예` : '아니요', // direct_call 필드 대응
-            title: v.description ? v.description.substring(0, 50) + '...' : ''
-          })) || [],
-
-          severitySummary: [
-            { severity: 'CRITICAL', count: result.vulnerabilities_summary?.critical ?? 0, description: '즉시 조치 필요' },
-            { severity: 'HIGH', count: result.vulnerabilities_summary?.high ?? 0, description: '높은 위험도' },
-            { severity: 'MEDIUM', count: result.vulnerabilities_summary?.medium ?? 0, description: '권장 조치' },
-            { severity: 'LOW', count: result.vulnerabilities_summary?.low ?? 0, description: '낮은 위험도' }
-          ].filter(s => s.count > 0),
-
-          // ▼▼▼ [핵심 수정] 평평한(Flat) 구조에 맞게 단순 map으로 변경 ▼▼▼
-          libraryMappings: result.libraries_and_apis?.map(item => ({
-            library: item.package,           // JSON의 "package" 키
-            version: item.version,           // JSON의 "version" 키
-            api: `${item.module}.${item.api}`, // JSON의 "module", "api" 키 조합
-            cve: item.related_cves?.join(', ') || '-' // JSON의 "related_cves" 키
-          })) || [],
-
-          // [수정] patch_priority 필드명 일치 (package, current_version)
-          patchPriority: result.patch_priority?.map((patch) => ({
-            id: patch.set_no,
-            setNo: patch.set_no,
-            library: patch.package,           // JSON의 "package"
-            version: patch.current_version,   // JSON의 "current_version"
-            cves: 'N/A', // 현재 JSON patch_priority에 CVE 목록이 없으므로 N/A 처리 or vulnerabilities와 조인 필요
-            score: patch.score,
-            urgency: patch.urgency,
-            description: `${patch.package} ${patch.recommended_version} 업데이트 권장`
-          })) || [],
-
-          logs: result.logs?.map(log => ({
-            timestamp: new Date(log.timestamp || Date.now()).toLocaleTimeString(),
-            message: log.message || ''
-          })) || []
-        };
-        // ▲▲▲ 매핑 수정 완료 ▲▲▲
-
+        // Transform backend data to frontend format
+        const transformedData = transformData(data);
         setAnalysisData(transformedData);
       } catch (err) {
         console.error('Analysis data fetch error:', err);
@@ -151,7 +168,7 @@ const AnalysisMain = ({ analysisId }) => {
   ];
 
   const renderTabContent = () => {
-    switch(activeTab) {
+    switch (activeTab) {
       case 'overview':
         return (
           <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs max-h-[350px] overflow-auto">
@@ -309,7 +326,7 @@ const AnalysisMain = ({ analysisId }) => {
             ) : (
               <div className="text-[11px] text-gray-600">라이브러리-API 매핑 데이터가 없습니다.</div>
             )}
-          </div>
+          </div >
         );
 
       case 'patch':
@@ -319,40 +336,17 @@ const AnalysisMain = ({ analysisId }) => {
             <div className="text-[11px] text-gray-600 mb-2">
               "지금 당장 해야 할 패치"를 세트 단위로 묶어 우선순위를 부여합니다.
             </div>
-
-            {analysisData.patchPriority.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="text-left px-2 py-2 text-[11px] text-gray-600 font-medium">세트</th>
-                      <th className="text-left px-2 py-2 text-[11px] text-gray-600 font-medium">라이브러리</th>
-                      <th className="text-left px-2 py-2 text-[11px] text-gray-600 font-medium">버전</th>
-                      <th className="text-left px-2 py-2 text-[11px] text-gray-600 font-medium">CVEs</th>
-                      <th className="text-left px-2 py-2 text-[11px] text-gray-600 font-medium">우선순위</th>
-                      <th className="text-left px-2 py-2 text-[11px] text-gray-600 font-medium">점수</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {analysisData.patchPriority.map((patch) => (
-                      <tr key={patch.id} className="border-b border-gray-200 hover:bg-gray-50">
-                        <td className="px-2 py-2">#{patch.setNo}</td>
-                        <td className="px-2 py-2">{patch.library}</td>
-                        <td className="px-2 py-2">{patch.version}</td>
-                        <td className="px-2 py-2 max-w-[150px] truncate" title={patch.cves}>{patch.cves}</td>
-                        <td className="px-2 py-2">
-                          <RiskBadge level={patch.urgency} />
-                        </td>
-                        <td className="px-2 py-2">{patch.score}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-[11px] text-gray-600">패치 우선순위 데이터가 없습니다.</div>
-            )}
-          </div>
+            <ul className="text-xs text-gray-900 ml-4 leading-relaxed space-y-1">
+              {analysisData.patchPriority.map((patch) => (
+                <li key={patch.id}>
+                  [세트 #{patch.id}] {patch.description}
+                  {patch.packages && patch.packages.length > 0 && (
+                    <span className="text-gray-600"> - {patch.packages.join(', ')}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div >
         );
 
       case 'logs':
@@ -385,7 +379,7 @@ const AnalysisMain = ({ analysisId }) => {
           <div className="text-lg font-semibold text-gray-900">{analysisData.title}</div>
           <div className="text-xs text-gray-600 mt-1 flex gap-2 flex-wrap items-center">
             <span>이미지 태그: <code className="bg-gray-100 px-1 py-0.5 rounded text-blue-700">{analysisData.imageTag}</code></span>
-            {analysisData.tags.map((tag, idx) => (
+            {analysisData.tags && analysisData.tags.map((tag, idx) => (
               <span key={idx} className="px-1.5 py-0.5 rounded-full border border-gray-200 text-[10px] text-gray-600 bg-gray-50">{tag}</span>
             ))}
           </div>
@@ -393,9 +387,8 @@ const AnalysisMain = ({ analysisId }) => {
           <div className="mt-3 grid grid-cols-3 gap-2.5 text-xs">
             <div className="rounded-xl border border-gray-200 bg-gray-50 p-2.5">
               <div className="text-[11px] text-gray-600 mb-1">전체 리스크</div>
-              <div className={`text-[15px] font-semibold ${
-                  analysisData.summary.riskLevel === 'CRITICAL' ? 'text-red-600' :
-                  analysisData.summary.riskLevel === 'HIGH' ? 'text-orange-600' :
+              <div className={`text-[15px] font-semibold ${analysisData.summary.riskLevel === 'CRITICAL' ? 'text-red-600' :
+                analysisData.summary.riskLevel === 'HIGH' ? 'text-orange-600' :
                   'text-gray-900'
                 }`}>
                 {analysisData.summary.riskLevel}

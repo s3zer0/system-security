@@ -20,14 +20,14 @@ function formatTimeAgo(isoTimestamp) {
 function RunItem({ analysis, isActive }){
     return (
         <Link
-            to={`/analysis/${analysis.id}`}
+            to={`/analysis/${analysis.analysis_id}`}
             className={`block p-2.5 rounded-xl cursor-pointer hover:bg-gray-100
                         ${isActive ? 'bg-primary-soft border border-primary' : 'border-transparent'}`}
         >
-            <div className="font-medium text-text-main">{analysis.name}</div>
+            <div className="font-medium text-text-main">{analysis.original_filename || analysis.file_name}</div>
             <div className="flex justify-between items-center text-xs text-text-muted mt-0.5">
-                <span>{formatTimeAgo(analysis.createAt)}</span>
-                <RiskBadge level={analysis.risk}/>
+                <span>{formatTimeAgo(analysis.created_at)}</span>
+                <RiskBadge level={analysis.risk_level}/>
             </div>
         </Link>
     );
@@ -48,10 +48,17 @@ export default function AnalysisSidebar() {
         const fetchList = async () =>  {
             try{
                 const ListFromDB = await getAnalysesList();
+                // Map backend fields to include BOTH new and legacy keys for compatibility
                 const formattedList = ListFromDB.map(item => ({
+                    // New keys (from refactored backend)
+                    analysis_id: item.analysis_id,
+                    original_filename: item.original_filename || item.file_name,
+                    file_name: item.file_name,
+                    created_at: item.created_at,
+                    risk_level: item.risk_level,
+                    // Legacy keys (for backward compatibility with AnalysisPage, ChatPanel)
                     id: item.analysis_id,
-                    name: item.file_name,
-                    createAt: item.created_at,
+                    name: item.original_filename || item.file_name,
                     risk: item.risk_level
                 }));
 
@@ -91,14 +98,15 @@ export default function AnalysisSidebar() {
             const metaData = response.meta || response;
 
             const newAnalysis = {
-                id: metaData.analysis_id || metaData.id || response.id,
-                name: metaData.file_name || metaData.name || file.name,
-                createdAt: metaData.created_at || metaData.createAt || new Date().toISOString(),
-                risk: (metaData.risk_level || metaData.level || 'NEW').toUpperCase(),
+                analysis_id: response.analysis_id,
+                original_filename: file.name,
+                file_name: file.name,
+                created_at: Date.now(),
+                risk_level: response.risk_level || 'Info',
             };
             addAnalysis(newAnalysis);
 
-            navigate(`/analysis/${newAnalysis.id}`);
+            navigate(`/analysis/${newAnalysis.analysis_id}`);
         }catch(err){
             alert('업로드에 실패했습니다: ' + err.message);
             console.error('[Upload Error] 업로드 실패:', err);
@@ -172,11 +180,11 @@ export default function AnalysisSidebar() {
                 최근 분석
             </div>
 
-            {analyses && analyses.filter(analysis => analysis.id).map((analysis) => (
+            {analyses && analyses.filter(analysis => analysis.analysis_id).map((analysis) => (
                 <RunItem
-                    key={analysis.id}
+                    key={analysis.analysis_id}
                     analysis={analysis}
-                    isActive={jobId === analysis.id}
+                    isActive={jobId === analysis.analysis_id}
                 />
             ))}
         </aside>

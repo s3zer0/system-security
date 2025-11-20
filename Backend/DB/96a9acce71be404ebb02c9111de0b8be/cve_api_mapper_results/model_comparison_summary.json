@@ -1,0 +1,25 @@
+{
+    "models_tested": [
+        "gpt-5"
+    ],
+    "comparison": {
+        "Werkzeug": {
+            "2.0.2": {
+                "gpt-5": {
+                    "cve_count": 6,
+                    "mapped_cve_count": 6,
+                    "has_error": false
+                }
+            }
+        },
+        "PyYAML": {
+            "5.3.1": {
+                "gpt-5": {
+                    "cve_count": 1,
+                    "mapped_cve_count": 1,
+                    "has_error": false
+                }
+            }
+        }
+    }
+}

@@ -3,7 +3,7 @@
 import json
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Union
 
@@ -193,7 +193,7 @@ class PerplexitySearcher:
         file_path = directory / filename
         try:
             payload = {
-                'timestamp': datetime.utcnow().isoformat(timespec='seconds'),
+                'timestamp': datetime.now(timezone.utc).isoformat(timespec='seconds'),
                 'cve_id': cve_id,
                 'raw_response': self._serialise_response(response),
             }

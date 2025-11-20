@@ -1,6 +1,14 @@
 import React from 'react'
 
-export default function RiskBadge({ level }){
+export default function RiskBadge({ level }) {
+    // Normalize level from uppercase (CRITICAL) to Titlecase (Critical) for display
+    const normalizedLevel = level
+        ? level.charAt(0).toUpperCase() + level.slice(1).toLowerCase()
+        : 'Info';
+
+    // Convert to uppercase for consistent style lookup
+    const levelKey = level ? level.toUpperCase() : 'SAFE';
+
     const levelStyles = {
         CRITICAL: 'bg-risk-CRITICAL-bg text-risk-CRITICAL-text',
         HIGH: 'bg-risk-HIGH-bg text-risk-HIGH-text',
@@ -12,11 +20,11 @@ export default function RiskBadge({ level }){
         PLANNED: 'bg-risk-PLANNED-bg text-risk-PLANNED-text',
     };
     const baseStyle = 'px-1.5 py-0.5 rounded-full text-[10px] font-semibold';
-    const style = levelStyles[level] || levelStyles.NA;
+    const style = levelStyles[levelKey] || levelStyles.SAFE;
 
     return (
         <span className={`${baseStyle} ${style}`}>
-            {level}
+            {normalizedLevel}
         </span>
     )
 }

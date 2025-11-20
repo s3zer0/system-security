@@ -2,9 +2,17 @@
 API 추출 모듈 - Trivy 보고서에서 CVE와 API를 매핑하는 기능 제공
 """
 
+import logging
 from typing import Callable, Dict, List, Optional
 from .trivy_parser import map_cves_by_package
-from .package_api_extractor import PackageAPIExtractor
+from .package_api_extractor import (
+    PackageAPIExtractor,
+    SecurityException,
+    InstallError,
+    ExtractionError
+)
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -41,7 +49,20 @@ def build_cve_api_mapping(
                 progress_callback(f"{pkg}@{ver}")
 
             # 해당 패키지의 API 목록 추출
-            apis = api_extractor.extract_api_list(pkg.lower(), ver)
+            try:
+                apis = api_extractor.extract_api_list(pkg.lower(), ver)
+            except SecurityException as e:
+                logger.error(f"Security violation while extracting APIs for {pkg}@{ver}: {e}")
+                apis = {}
+            except InstallError as e:
+                logger.warning(f"Failed to install package {pkg}@{ver}: {e}")
+                apis = {}
+            except ExtractionError as e:
+                logger.error(f"Failed to extract APIs from {pkg}@{ver}: {e}")
+                apis = {}
+            except Exception as e:
+                logger.error(f"Unexpected error while processing {pkg}@{ver}: {e}")
+                apis = {}
 
             # CVE와 API 정보를 함께 저장
             combined[pkg][ver] = {
