@@ -1,0 +1,7 @@
+{
+  "analysis_id": "8dd6636f06e848349754c05787912533",
+  "status": "FAILED",
+  "created_at": "2025-11-20T15:05:06.758291+00:00",
+  "updated_at": "2025-11-20T15:05:08.157662+00:00",
+  "error_message": "SourceExtractionError: Permission denied: [WinError 5] 액세스가 거부되었습니다: 'C:\\\\Users\\\\View\\\\AppData\\\\Local\\\\Temp\\\\tmp00jqxnvd\\\\blobs\\\\sha256\\\\10e9f3c3405ebbe676a00625d010f46c31b8a625f777bfd861cbdbd31fd14065' (caused by: PermissionError: [WinError 5] 액세스가 거부되었습니다: 'C:\\\\Users\\\\View\\\\AppData\\\\Local\\\\Temp\\\\tmp00jqxnvd\\\\blobs\\\\sha256\\\\10e9f3c3405ebbe676a00625d010f46c31b8a625f777bfd861cbdbd31fd14065')"
+}
