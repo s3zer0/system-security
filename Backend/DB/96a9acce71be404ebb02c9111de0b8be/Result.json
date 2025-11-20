@@ -1,0 +1,4060 @@
+{
+  "language": "Python",
+  "overview": "Python 이미지 분석 결과, Critical 1, High 3, Medium 5 등 총 10건의 취약점이 탐지되었습니다. (위험도: CRITICAL)",
+  "vulnerabilities_summary": {
+    "critical": 1,
+    "high": 3,
+    "medium": 5,
+    "low": 1,
+    "overall_risk": "CRITICAL"
+  },
+  "vulnerabilities": [
+    {
+      "cve_id": "CVE-2023-30861",
+      "package": "Flask",
+      "version": "2.0.2",
+      "severity": "HIGH",
+      "description": "Flask is a lightweight WSGI web application framework. When all of the following conditions are met, a response containing data intended for one client may be cached and subsequently sent by the proxy to other clients. If the proxy also caches `Set-Cookie` headers, it may send one client's `session` cookie to other clients. The severity depends on the application's use of the session and the proxy's behavior regarding cookies. The risk depends on all these conditions being met.\n\n1. The application must be hosted behind a caching proxy that does not strip cookies or ignore responses with cookies.\n2. The application sets `session.permanent = True`\n3. The application does not access or modify the session at any point during a request.\n4. `SESSION_REFRESH_EACH_REQUEST` enabled (the default).\n5. The application does not set a `Cache-Control` header to indicate that a page is private or should not be cached.\n\nThis happens because vulnerable versions of Flask only set the `Vary: Cookie` header when the session is accessed or modified, not when it is refreshed (re-sent to update the expiration) without being accessed or modified. This issue has been fixed in versions 2.3.2 and 2.2.5.",
+      "direct_call": true,
+      "call_example": "Imported in: Unknown location"
+    },
+    {
+      "cve_id": "CVE-2020-14343",
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "severity": "CRITICAL",
+      "description": "A vulnerability was discovered in the PyYAML library in versions before 5.4, where it is susceptible to arbitrary code execution when it processes untrusted YAML files through the full_load method or with the FullLoader loader. Applications that use the library to process untrusted input may be vulnerable to this flaw. This flaw allows an attacker to execute arbitrary code on the system by abusing the python/object/new constructor. This flaw is due to an incomplete fix for CVE-2020-1747.",
+      "direct_call": true,
+      "call_example": "Imported in: Unknown location"
+    },
+    {
+      "cve_id": "CVE-2023-25577",
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "severity": "HIGH",
+      "description": "Werkzeug is a comprehensive WSGI web application library. Prior to version 2.2.3, Werkzeug's multipart form data parser will parse an unlimited number of parts, including file parts. Parts can be a small amount of bytes, but each requires CPU time to parse and may use more memory as Python data. If a request can be made to an endpoint that accesses `request.data`, `request.form`, `request.files`, or `request.get_data(parse_form_data=False)`, it can cause unexpectedly high resource usage. This allows an attacker to cause a denial of service by sending crafted multipart data to an endpoint that will parse it. The amount of CPU time required can block worker processes from handling legitimate requests. The amount of RAM required can trigger an out of memory kill of the process. Unlimited file parts can use up memory and file handles. If many concurrent requests are sent continuously, this can exhaust or kill all available workers. Version 2.2.3 contains a patch for this issue.",
+      "direct_call": false,
+      "call_example": null
+    },
+    {
+      "cve_id": "CVE-2024-34069",
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "severity": "HIGH",
+      "description": "Werkzeug is a comprehensive WSGI web application library. The debugger in affected versions of Werkzeug can allow an attacker to execute code on a developer's machine under some circumstances. This requires the attacker to get the developer to interact with a domain and subdomain they control, and enter the debugger PIN, but if they are successful it allows access to the debugger even if it is only running on localhost. This also requires the attacker to guess a URL in the developer's application that will trigger the debugger. This vulnerability is fixed in 3.0.3.",
+      "direct_call": false,
+      "call_example": null
+    },
+    {
+      "cve_id": "CVE-2023-46136",
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "severity": "MEDIUM",
+      "description": "Werkzeug is a comprehensive WSGI web application library. If an upload of a file that starts with CR or LF and then is followed by megabytes of data without these characters: all of these bytes are appended chunk by chunk into internal bytearray and lookup for boundary is performed on growing buffer. This allows an attacker to cause a denial of service by sending crafted multipart data to an endpoint that will parse it. The amount of CPU time required can block worker processes from handling legitimate requests. This vulnerability has been patched in version 3.0.1.",
+      "direct_call": false,
+      "call_example": null
+    },
+    {
+      "cve_id": "CVE-2024-49766",
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "severity": "MEDIUM",
+      "description": "Werkzeug is a Web Server Gateway Interface web application library. On Python < 3.11 on Windows, os.path.isabs() does not catch UNC paths like //server/share. Werkzeug's safe_join() relies on this check, and so can produce a path that is not safe, potentially allowing unintended access to data. Applications using Python >= 3.11, or not using Windows, are not vulnerable. Werkzeug version 3.0.6 contains a patch.",
+      "direct_call": false,
+      "call_example": null
+    },
+    {
+      "cve_id": "CVE-2024-49767",
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "severity": "MEDIUM",
+      "description": "Werkzeug is a Web Server Gateway Interface web application library. Applications using `werkzeug.formparser.MultiPartParser` corresponding to a version of Werkzeug prior to 3.0.6 to parse `multipart/form-data` requests (e.g. all flask applications) are vulnerable to a relatively simple but effective resource exhaustion (denial of service) attack. A specifically crafted form submission request can cause the parser to allocate and block 3 to 8 times the upload size in main memory. There is no upper limit; a single upload at 1 Gbit/s can exhaust 32 GB of RAM in less than 60 seconds. Werkzeug version 3.0.6 fixes this issue.",
+      "direct_call": false,
+      "call_example": null
+    },
+    {
+      "cve_id": "CVE-2023-23934",
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "severity": "LOW",
+      "description": "Werkzeug is a comprehensive WSGI web application library. Browsers may allow \"nameless\" cookies that look like `=value` instead of `key=value`. A vulnerable browser may allow a compromised application on an adjacent subdomain to exploit this to set a cookie like `=__Host-test=bad` for another subdomain. Werkzeug prior to 2.2.3 will parse the cookie `=__Host-test=bad` as __Host-test=bad`. If a Werkzeug application is running next to a vulnerable or malicious subdomain which sets such a cookie using a vulnerable browser, the Werkzeug application will see the bad cookie value but the valid cookie key. The issue is fixed in Werkzeug 2.2.3.",
+      "direct_call": false,
+      "call_example": null
+    },
+    {
+      "cve_id": "CVE-2023-5752",
+      "package": "pip",
+      "version": "23.0.1",
+      "severity": "MEDIUM",
+      "description": "When installing a package from a Mercurial VCS URL  (ie \"pip install \nhg+...\") with pip prior to v23.3, the specified Mercurial revision could\n be used to inject arbitrary configuration options to the \"hg clone\" \ncall (ie \"--config\"). Controlling the Mercurial configuration can modify\n how and which repository is installed. This vulnerability does not \naffect users who aren't installing from Mercurial.",
+      "direct_call": false,
+      "call_example": null
+    },
+    {
+      "cve_id": "CVE-2025-8869",
+      "package": "pip",
+      "version": "23.0.1",
+      "severity": "MEDIUM",
+      "description": "When extracting a tar archive pip may not check symbolic links point into the extraction directory if the tarfile module doesn't implement PEP 706.\nNote that upgrading pip to a \"fixed\" version for this vulnerability doesn't fix all known vulnerabilities that are remediated by using a Python version that implements PEP 706.\n\nNote that this is a vulnerability in pip's fallback implementation of tar extraction for Python versions that don't implement PEP 706\nand therefore are not secure to all vulnerabilities in the Python 'tarfile' module. If you're using a Python version that implements PEP 706\nthen pip doesn't use the \"vulnerable\" fallback code.\n\nMitigations include upgrading to a version of pip that includes the fix, upgrading to a Python version that implements PEP 706 (Python >=3.9.17, >=3.10.12, >=3.11.4, or >=3.12),\napplying the linked patch, or inspecting source distributions (sdists) before installation as is already a best-practice.",
+      "direct_call": false,
+      "call_example": null
+    }
+  ],
+  "libraries_and_apis": [
+    {
+      "package": "Flask",
+      "version": "2.0.2",
+      "module": "unknown",
+      "api": "unknown",
+      "related_cves": [
+        "CVE-2023-30861"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "add_constructor",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "add_implicit_resolver",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "add_multi_constructor",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "add_multi_representer",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "add_path_resolver",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "add_representer",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "compose",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "compose_all",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "dump",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "dump_all",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "emit",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "full_load",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "full_load_all",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "load",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "load_all",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "load_warning",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "parse",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "safe_dump",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "safe_dump_all",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "safe_load",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "safe_load_all",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "scan",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "serialize",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "serialize_all",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "unsafe_load",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "unsafe_load_all",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "PyYAML",
+      "version": "5.3.1",
+      "module": "yaml",
+      "api": "warnings",
+      "related_cves": [
+        "CVE-2020-14343"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "_reloader.ensure_echo_on",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "_reloader.run_with_reloader",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "datastructures.auth_property",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "datastructures.cache_control_property",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "datastructures.cache_property",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "datastructures.csp_property",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "datastructures.deepcopy",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "datastructures.fspath",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "datastructures.get_filesystem_encoding",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "datastructures.is_immutable",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "datastructures.iter_multi_items",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "debug.basename",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "debug.console.debug_repr",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "debug.console.dump",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "debug.console.escape",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "debug.gen_salt",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "debug.get_current_traceback",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "debug.get_machine_id",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "debug.get_pin_and_cookie_name",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "debug.hash_pin",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "debug.join",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "debug.parse_cookie",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "debug.render_console_html",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "debug.repr.debug_repr",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "debug.repr.dump",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "debug.repr.escape",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "debug.repr.format_exception_only",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "debug.tbtools.escape",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "debug.tbtools.get_current_traceback",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "debug.tbtools.get_filesystem_encoding",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "debug.tbtools.render_console_html",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "exceptions.abort",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "exceptions.escape",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "filesystem.get_filesystem_encoding",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "formparser.default_stream_factory",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "formparser.exhaust_stream",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "formparser.get_content_length",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "formparser.get_input_stream",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "formparser.parse_form_data",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "formparser.parse_multipart_headers",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "formparser.parse_options_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "formparser.update_wrapper",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "formparser.url_decode_stream",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.cookie_date",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.dump_age",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.dump_cookie",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.dump_csp_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.dump_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.dump_options_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.generate_etag",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.http_date",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.is_byte_range_valid",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.is_entity_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.is_hop_by_hop_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.is_resource_modified",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.mktime",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.parse_accept_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.parse_age",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.parse_authorization_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.parse_cache_control_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.parse_content_range_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.parse_cookie",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.parse_csp_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.parse_date",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.parse_dict_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.parse_etags",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.parse_if_range_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.parse_list_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.parse_options_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.parse_range_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.parse_set_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.parse_www_authenticate_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.quote_etag",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.quote_header_value",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.remove_entity_headers",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.remove_hop_by_hop_headers",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.sha1",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.unquote_etag",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "http.unquote_header_value",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "local.get_ident",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "local.release_local",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "local.update_wrapper",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "middleware.http_proxy.get_input_stream",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "middleware.http_proxy.is_hop_by_hop_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "middleware.http_proxy.url_parse",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "middleware.http_proxy.url_quote",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "middleware.lint.check_type",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "middleware.lint.is_entity_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "middleware.lint.urlparse",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "middleware.lint.warn",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "middleware.proxy_fix.parse_list_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "middleware.shared_data.adler32",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "middleware.shared_data.get_content_type",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "middleware.shared_data.get_filesystem_encoding",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "middleware.shared_data.get_path_info",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "middleware.shared_data.http_date",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "middleware.shared_data.is_resource_modified",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "middleware.shared_data.safe_join",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "middleware.shared_data.time",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "middleware.shared_data.wrap_file",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "routing.Lock",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "routing.get_host",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "routing.parse_converter_args",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "routing.parse_rule",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "routing.pformat",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "routing.redirect",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "routing.url_encode",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "routing.url_join",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "routing.url_quote",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "routing.url_unquote",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "run_simple",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.multipart.cast",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.multipart.dataclass",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.multipart.parse_options_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.request.get_current_url",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.request.get_host",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.request.parse_accept_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.request.parse_authorization_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.request.parse_cache_control_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.request.parse_cookie",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.request.parse_date",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.request.parse_etags",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.request.parse_if_range_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.request.parse_list_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.request.parse_options_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.request.parse_range_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.request.parse_set_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.request.url_decode",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.response.dump_age",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.response.dump_cookie",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.response.dump_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.response.dump_options_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.response.get_content_type",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.response.http_date",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.response.parse_age",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.response.parse_cache_control_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.response.parse_content_range_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.response.parse_csp_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.response.parse_date",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.response.parse_options_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.response.parse_set_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.response.parse_www_authenticate_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.response.quote_etag",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.response.unquote_etag",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.utils.get_current_url",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.utils.get_host",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.utils.host_is_trusted",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.utils.uri_to_iri",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "sansio.utils.url_quote",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "security.check_password_hash",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "security.gen_salt",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "security.generate_password_hash",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "security.pbkdf2_bin",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "security.pbkdf2_hex",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "security.safe_join",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "security.safe_str_cmp",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "serving.generate_adhoc_ssl_context",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "serving.generate_adhoc_ssl_pair",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "serving.get_interface_ip",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "serving.get_sockaddr",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "serving.is_running_from_reloader",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "serving.is_ssl_error",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "serving.load_ssl_context",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "serving.main",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "serving.make_server",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "serving.make_ssl_devcert",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "serving.run_simple",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "serving.run_with_reloader",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "serving.select_address_family",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "serving.uri_to_iri",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "serving.url_parse",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "serving.url_unquote",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "test.TemporaryFile",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "test.create_environ",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "test.dump_cookie",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "test.dump_options_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "test.encode_multipart",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "test.get_content_type",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "test.get_current_url",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "test.iri_to_uri",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "test.parse_options_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "test.random",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "test.run_wsgi_app",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "test.stream_encode_multipart",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "test.time",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "test.url_encode",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "test.url_fix",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "test.url_parse",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "test.url_unparse",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "test.url_unquote",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "testapp.escape",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "testapp.iter_sys_path",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "testapp.render_testapp",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "testapp.test_app",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "testapp.wrap",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "urls.iri_to_uri",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "urls.uri_to_iri",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "urls.url_decode",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "urls.url_decode_stream",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "urls.url_encode",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "urls.url_encode_stream",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "urls.url_fix",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "urls.url_join",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "urls.url_parse",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "urls.url_quote",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "urls.url_quote_plus",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "urls.url_unparse",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "urls.url_unquote",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "urls.url_unquote_plus",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "utils.adler32",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "utils.append_slash_redirect",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "utils.bind_arguments",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "utils.detect_utf_encoding",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "utils.escape",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "utils.find_modules",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "utils.format_string",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "utils.get_content_type",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "utils.import_string",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "utils.invalidate_cached_property",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "utils.redirect",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "utils.safe_join",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "utils.secure_filename",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "utils.send_file",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "utils.send_from_directory",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "utils.time",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "utils.unescape",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "utils.url_quote",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "utils.validate_arguments",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "utils.wrap_file",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wrappers.request.default_stream_factory",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wrappers.request.get_input_stream",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wrappers.request.iter_multi_items",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wrappers.response.generate_etag",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wrappers.response.get_current_url",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wrappers.response.http_date",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wrappers.response.iri_to_uri",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wrappers.response.is_resource_modified",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wrappers.response.parse_etags",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wrappers.response.parse_range_header",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wrappers.response.remove_entity_headers",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wrappers.response.url_join",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wsgi.extract_path_info",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wsgi.get_content_length",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wsgi.get_current_url",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wsgi.get_host",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wsgi.get_input_stream",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wsgi.get_path_info",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wsgi.get_query_string",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wsgi.get_script_name",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wsgi.host_is_trusted",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wsgi.make_chunk_iter",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wsgi.make_line_iter",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wsgi.peek_path_info",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wsgi.pop_path_info",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wsgi.responder",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wsgi.update_wrapper",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wsgi.uri_to_iri",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wsgi.url_join",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wsgi.url_parse",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wsgi.url_quote",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "Werkzeug",
+      "version": "2.0.2",
+      "module": "werkzeug",
+      "api": "wsgi.wrap_file",
+      "related_cves": [
+        "CVE-2023-25577",
+        "CVE-2024-34069",
+        "CVE-2023-46136",
+        "CVE-2024-49766",
+        "CVE-2024-49767",
+        "CVE-2023-23934"
+      ]
+    },
+    {
+      "package": "pip",
+      "version": "23.0.1",
+      "module": "unknown",
+      "api": "unknown",
+      "related_cves": [
+        "CVE-2023-5752",
+        "CVE-2025-8869"
+      ]
+    }
+  ],
+  "patch_priority": [
+    {
+      "set_no": 1,
+      "package": "PyYAML",
+      "current_version": "5.3.1",
+      "recommended_version": "5.4",
+      "score": 98,
+      "urgency": "IMMEDIATE",
+      "note": "Docker 환경에서 외부로 노출된 API가 취약한 load() 함수를 사용하고 있어 즉각적인 패치가 필수입니다. CVSS 9.8의 CRITICAL 취약점으로 원격 코드 실행이 가능하며, 실제 악용 사례가 다수 보고되었습니다. 모든 작업을 중단하고 24시간 이내에 긴급 패치를 적용해야 합니다."
+    },
+    {
+      "set_no": 2,
+      "package": "Werkzeug",
+      "current_version": "2.0.2",
+      "recommended_version": "3.0.6",
+      "score": 92,
+      "urgency": "IMMEDIATE",
+      "note": "Docker 환경에서 외부로 노출된 API가 취약한 formparser 함수들을 사용하고 있어 긴급 패치가 필요합니다. 특히 CVE-2024-34069는 EPSS 0.622로 실제 악용 가능성이 매우 높으며, 여러 DoS 취약점이 실제 코드에서 사용되는 함수에 영향을 미칩니다. PyYAML 패치 직후 즉시 적용해야 합니다."
+    },
+    {
+      "set_no": 3,
+      "package": "Flask",
+      "current_version": "2.0.2",
+      "recommended_version": "2.3.2",
+      "score": 72,
+      "urgency": "PLANNED",
+      "note": "CVSS 7.5의 HIGH 취약점이지만, 취약한 함수가 코드에서 직접 사용되지 않고 외부 API 노출도 없습니다. 그러나 Flask는 웹 프레임워크의 핵심이므로 Werkzeug 패치와 함께 업그레이드해야 합니다. 특히 프록시나 CDN을 사용하는 경우 세션 유출 위험이 있으므로 1주일 이내 패치를 권장합니다."
+    },
+    {
+      "set_no": 4,
+      "package": "pip",
+      "current_version": "23.0.1",
+      "recommended_version": "25.3",
+      "score": 28,
+      "urgency": "PLANNED",
+      "note": "두 취약점 모두 CVSS 점수가 낮고(3.3, 5.3), EPSS 점수도 0.001로 실제 악용 가능성이 매우 낮습니다. 취약한 함수가 코드에서 사용되지 않으며, 외부 API 노출도 없습니다. 프로덕션 애플리케이션에 직접적인 영향이 없으므로 낮은 우선순위로 분류합니다. 정기 유지보수 주기에 업그레이드하면 충분합니다."
+    }
+  ],
+  "logs": []
+}

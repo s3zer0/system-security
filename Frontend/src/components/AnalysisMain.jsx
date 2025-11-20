@@ -1,6 +1,89 @@
 import { useState, useEffect } from 'react';
 import TabButton from './TabButton';
 
+/**
+ * Transform backend API response to frontend component state format
+ * @param {Object} backendData - Response from /api/analysis/:id with {meta, result} structure
+ * @returns {Object} Transformed data for component state
+ */
+const transformData = (backendData) => {
+  const { result, meta } = backendData;
+
+  return {
+    title: `${result.language || 'Unknown'} 기반 이미지 분석 요약`,
+    imageTag: meta.analysis_id?.substring(0, 8) || 'unknown',
+    tags: [result.language || 'Unknown', meta.created_at ? new Date(meta.created_at).toLocaleDateString() : ''],
+
+    summary: {
+      riskLevel: result.vulnerabilities_summary?.overall_risk || 'UNKNOWN',
+      criticalCount: result.vulnerabilities_summary?.critical ?? 0,
+      highCount: result.vulnerabilities_summary?.high ?? 0,
+      mediumCount: result.vulnerabilities_summary?.medium ?? 0,
+      lowCount: result.vulnerabilities_summary?.low ?? 0,
+      patchSets: result.patch_priority?.length || 0,
+      patchTargets: result.patch_priority?.slice(0, 3).map(p => p.package).join(', ') || 'N/A',
+      callPaths: result.vulnerabilities?.filter(v => v.direct_call).length || 0
+    },
+
+    highlights: result.vulnerabilities
+      ?.filter(v => ['CRITICAL', 'HIGH'].includes((v.severity || '').toUpperCase()))
+      .slice(0, 5)
+      .map(v => `${v.package} ${v.version} (${v.cve_id})`) || [],
+
+    vulnerabilities: result.vulnerabilities?.map(v => ({
+      cve: v.cve_id || 'N/A',
+      package: v.package || 'Unknown',
+      version: v.version || 'N/A',
+      severity: (v.severity || 'Unknown').toUpperCase(),
+      directCall: v.direct_call ? '예' : '아니요',
+      evidence: v.call_evidence || 'N/A',
+      title: v.description ? v.description.substring(0, 50) + '...' : ''
+    })) || [],
+
+    severitySummary: [
+      { severity: 'Critical', count: result.vulnerabilities_summary?.critical ?? 0, description: '즉시 조치 필요' },
+      { severity: 'High', count: result.vulnerabilities_summary?.high ?? 0, description: '높은 위험도' },
+      { severity: 'Medium', count: result.vulnerabilities_summary?.medium ?? 0, description: '권장 조치' },
+      { severity: 'Low', count: result.vulnerabilities_summary?.low ?? 0, description: '낮은 위험도' }
+    ].filter(s => s.count > 0),
+
+    libraryMappings: result.libraries_and_apis?.map(item => ({
+      library: item.package,
+      version: item.version,
+      api: `${item.module}.${item.api}`,
+      cve: item.related_cves?.join(', ') || '-'
+    })) || [],
+
+    patchPriority: result.patch_priority?.map((patch) => ({
+      id: patch.set_no,
+      setNo: patch.set_no,
+      library: patch.package,
+      version: patch.current_version,
+      cves: 'N/A',
+      score: patch.score,
+      urgency: patch.urgency,
+      description: patch.note || `${patch.package} ${patch.recommended_version || ''} 업데이트 권장`
+    })) || [],
+
+    logs: Array.isArray(result.logs)
+      ? result.logs.map((log, idx) => {
+          // If log is a string, wrap it in an object
+          if (typeof log === 'string') {
+            return {
+              timestamp: new Date().toLocaleTimeString(),
+              message: log
+            };
+          }
+          // If log is already an object with timestamp and message
+          return {
+            timestamp: log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString(),
+            message: log.message || log
+          };
+        })
+      : []
+  };
+};
+
 const AnalysisMain = ({ analysisId }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [analysisData, setAnalysisData] = useState(null);
@@ -28,70 +111,9 @@ const AnalysisMain = ({ analysisId }) => {
         }
 
         const data = await response.json();
-        const { result, meta } = data;
 
         // Transform backend data to frontend format
-        const transformedData = {
-          title: `${result.language || 'Unknown'} 기반 이미지 분석 요약`,
-          imageTag: meta.file_name || meta.input_file || 'unknown',
-          tags: [result.language || 'Unknown', meta.created_at ? new Date(meta.created_at).toLocaleDateString() : ''],
-
-          summary: {
-            riskLevel: result.vulnerabilities_summary?.overall_risk || 'UNKNOWN',
-            criticalCount: result.vulnerabilities_summary?.critical ?? result.vulnerabilities_summary?.critical_count ?? 0,
-            highCount: result.vulnerabilities_summary?.high ?? result.vulnerabilities_summary?.high_count ?? 0,
-            mediumCount: result.vulnerabilities_summary?.medium ?? result.vulnerabilities_summary?.medium_count ?? 0,
-            lowCount: result.vulnerabilities_summary?.low ?? result.vulnerabilities_summary?.low_count ?? 0,
-            patchSets: result.patch_priority?.length || 0,
-            patchTargets: result.patch_priority?.slice(0, 3).map(p => p.package).join(', ') || 'N/A',
-            callPaths: result.vulnerabilities?.filter(v => v.direct_call).length || 0
-          },
-
-          highlights: result.vulnerabilities
-            ?.filter(v => ['CRITICAL', 'HIGH'].includes((v.severity || '').toUpperCase()))
-            .slice(0, 5)
-            .map(v => `${v.package} ${v.version} (${v.cve_id})`) || [],
-
-          vulnerabilities: result.vulnerabilities?.map(v => ({
-            cve: v.cve_id || 'N/A',
-            package: v.package || 'Unknown',
-            version: v.version || 'N/A',
-            severity: (v.severity || 'Unknown').toUpperCase(),
-            directCall: v.direct_call ? '예' : '아니요',
-            title: v.description ? v.description.substring(0, 50) + '...' : ''
-          })) || [],
-
-          severitySummary: [
-            { severity: 'Critical', count: result.vulnerabilities_summary?.critical ?? 0, description: '즉시 조치 필요' },
-            { severity: 'High', count: result.vulnerabilities_summary?.high ?? 0, description: '높은 위험도' },
-            { severity: 'Medium', count: result.vulnerabilities_summary?.medium ?? 0, description: '권장 조치' },
-            { severity: 'Low', count: result.vulnerabilities_summary?.low ?? 0, description: '낮은 위험도' }
-          ].filter(s => s.count > 0),
-
-          libraryMappings: result.libraries_and_apis?.map(item => ({
-            library: item.package,
-            version: item.version,
-            api: `${item.module}.${item.api}`,
-            cve: item.related_cves?.join(', ') || '-'
-          })) || [],
-
-          patchPriority: result.patch_priority?.map((patch) => ({
-            id: patch.set_no,
-            setNo: patch.set_no,
-            library: patch.package,
-            version: patch.current_version,
-            cves: 'N/A',
-            score: patch.score,
-            urgency: patch.urgency,
-            description: `${patch.package} ${patch.recommended_version || ''} 업데이트 권장`
-          })) || [],
-
-          logs: result.logs?.map(log => ({
-            timestamp: new Date(log.timestamp || Date.now()).toLocaleTimeString(),
-            message: log.message || ''
-          })) || []
-        };
-
+        const transformedData = transformData(data);
         setAnalysisData(transformedData);
       } catch (err) {
         console.error('Analysis data fetch error:', err);

@@ -48,10 +48,17 @@ export default function AnalysisSidebar() {
         const fetchList = async () =>  {
             try{
                 const ListFromDB = await getAnalysesList();
+                // Map backend fields to include BOTH new and legacy keys for compatibility
                 const formattedList = ListFromDB.map(item => ({
+                    // New keys (from refactored backend)
+                    analysis_id: item.analysis_id,
+                    original_filename: item.original_filename || item.file_name,
+                    file_name: item.file_name,
+                    created_at: item.created_at,
+                    risk_level: item.risk_level,
+                    // Legacy keys (for backward compatibility with AnalysisPage, ChatPanel)
                     id: item.analysis_id,
-                    name: item.file_name,
-                    createAt: item.created_at,
+                    name: item.original_filename || item.file_name,
                     risk: item.risk_level
                 }));
 
@@ -173,7 +180,7 @@ export default function AnalysisSidebar() {
                 최근 분석
             </div>
 
-            {analyses && analyses.filter(analysis => analysis.id).map((analysis) => (
+            {analyses && analyses.filter(analysis => analysis.analysis_id).map((analysis) => (
                 <RunItem
                     key={analysis.analysis_id}
                     analysis={analysis}
