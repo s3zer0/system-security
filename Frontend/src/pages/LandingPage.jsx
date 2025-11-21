@@ -8,11 +8,17 @@ const LandingPage = () => {
   const navigate = useNavigate();
 
   return (
+    // 최상위 div: 배경색과 창 높이는 유지
     <div className="min-h-screen bg-gray-100 p-6">
+      
+      {/* ⚠️ 수정: max-w-6xl mx-auto를 유지하여 중앙 정렬 및 최대 너비 지정 */}
       <div className="landing-shell max-w-6xl mx-auto rounded-2xl overflow-hidden shadow-2xl shadow-gray-900/10 border border-gray-200">
+        
         <LandingHeader />
 
         <main className="landing-main p-8 flex flex-col gap-8 bg-gradient-to-br from-indigo-50/50 via-white to-white">
+          
+          {/* Hero 섹션 */}
           <section className="landing-hero grid lg:grid-cols-5 gap-8 items-center">
             <LandingHero />
 
@@ -21,6 +27,7 @@ const LandingPage = () => {
             </div>
           </section>
 
+          {/* Features 섹션 */}
           <section className="landing-features">
             <div className="landing-features-title text-xs uppercase tracking-wider text-gray-500 mb-3 flex justify-between items-center">
               주요 기능
@@ -52,9 +59,10 @@ const LandingPage = () => {
             </div>
           </section>
         </main>
-
-        <footer className="landing-footer border-t border-gray-200 p-3 text-xs text-gray-500 bg-gray-50 text-center">
-          © 2025 System-Security · 내부 PoC 용 UI 시안
+        
+        {/* ⚠️ 충돌 해결: 두 브랜치의 푸터 내용 통합 및 font-normal 유지 */}
+        <footer className="landing-footer border-t border-gray-200 p-3 text-xs text-gray-500 bg-gray-50 text-center font-normal">
+          © 2025 System-Security · 4조 / 내부 PoC 용 UI 시안
         </footer>
       </div>
     </div>
