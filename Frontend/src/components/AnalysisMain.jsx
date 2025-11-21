@@ -486,6 +486,27 @@ const AnalysisMain = ({ analysisId }) => {
           </div>
         );
 
+        case 'patch':
+        return (
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs max-h-[350px] overflow-auto">
+            <div className="text-[13px] font-medium mb-1.5 text-gray-900">Patch Priority</div>
+            <div className="text-[11px] text-gray-600 mb-2">
+              "지금 당장 해야 할 패치"를 세트 단위로 묶어 우선순위를 부여합니다.
+            </div>
+
+            <ul className="text-xs text-gray-900 ml-4 leading-relaxed space-y-1">
+              {analysisData.patchPriority.map((patch) => (
+                <li key={patch.id}>
+                  [세트 #{patch.id}] {patch.description}
+                  {patch.packages && patch.packages.length > 0 && (
+                    <span className="text-gray-600"> - {patch.packages.join(', ')}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div >
+        );
+
       case 'logs':
         return (
           <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs max-h-[350px] overflow-auto">
