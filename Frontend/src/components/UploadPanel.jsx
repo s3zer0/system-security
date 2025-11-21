@@ -3,9 +3,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { uploadImage } from '../api/client'; 
+import { useAnalysis } from '../context/AnalysisContext';
 
 const UploadPanel = () => {
     const navigate = useNavigate();
+
+    const { addAnalysis } = useAnalysis();
     
     // State 설정 (드래그 상태 및 API 관련 상태 포함)
     const [file, setFile] = useState(null); 
@@ -71,6 +74,25 @@ const UploadPanel = () => {
             
             // Job ID 확인 및 페이지 이동
             if (result && result.analysis_id) {
+
+                const pendingJob = {
+                    analysis_id: result.analysis_id,
+                    original_filename: file.name,
+                    file_name: file.name,
+                    created_at: Date.now(),
+                    risk_level: 'Analyzing',
+
+                    id: result.analysis_id,
+                    name: file.name,
+                    risk: 'Analyzing'
+                };
+                const savedPending = JSON.parse(localStorage.getItem('pendingAnalyses') || '[]');
+                
+                if(!savedPending.find(job => String(job.analysis_id) === String(result.analysis_id))){
+                    localStorage.setItem('pendingAnalyses', JSON.stringify([...savedPending, pendingJob]));
+                }
+
+                addAnalysis(pendingJob);
                 navigate(`/analysis/${result.analysis_id}`);
             } else {
                 setError("분석 시작 실패: 서버 응답에 Job ID가 없습니다.");

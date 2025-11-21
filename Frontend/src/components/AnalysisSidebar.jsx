@@ -47,8 +47,8 @@ export default function AnalysisSidebar() {
     const [now, setNow] = useState(Date.now());
     const fileInputRef = useRef(null);
 
-    const isAnalyzing =analyses.some(item =>
-        (item.risk_level === 'Analayzing' || item.risk === 'Analyzing')
+    const isAnalyzing = analyses.some(item =>
+        (item.risk_level === 'Analyzing' || item.risk === 'Analyzing')
     );
     
     useEffect(() =>{
@@ -69,7 +69,13 @@ export default function AnalysisSidebar() {
                     risk: item.risk_level
                 }));
 
-                setAnalyses(formattedList);
+                const pendingJobs = JSON.parse(localStorage.getItem('pendingAnalyses') || '[]');
+                const realPendingJobs = pendingJobs.filter(pJob => 
+                    !formattedList.find(dbJob => String(dbJob.analysis_id) === String(pJob.analysis_id))
+                );
+                const mergedList = [...realPendingJobs, ...formattedList];
+
+                setAnalyses(mergedList);
 
             }catch(err){
                 console.error("최근 목록 로딩 실패:", err);
@@ -115,8 +121,12 @@ export default function AnalysisSidebar() {
                 name: file.name,
                 risk: 'Analyzing'
             };
-            addAnalysis(newAnalysis);
+            const savedPending = JSON.parse(localStorage.getItem('pendingAnalyses') || []);
+            if(!savedPending.find(job => String(job.analysis_id) === String(response.analysis_id))){
+                localStorage.getItem('pendingAnalyses', JSON.stringify([...savedPending, newAnalysis]));
+            }
 
+            addAnalysis(newAnalysis);
             navigate(`/analysis/${newAnalysis.analysis_id}`);
         }catch(err){
             alert('업로드에 실패했습니다: ' + err.message);

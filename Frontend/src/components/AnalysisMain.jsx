@@ -178,6 +178,10 @@ const AnalysisMain = ({ analysisId }) => {
                 const finalRisk = String(newRisk).toUpperCase();
                 const finalName = data.meta.original_filename || data.meta.file_name || 'Unknown';
 
+                const savedPending = JSON.parse(localStorage.getItem('pendingAnalyses') || '[]');
+                const updatedPending = savedPending.filter(job => String(job.analysis_id) !== String(analysisId));
+                localStorage.setItem('pendingAnalyses', JSON.stringify(updatedPending));
+
                 setAnalyses(prev => prev.map(item => {
                     if (String(item.analysis_id || item.id) === String(analysisId)) {
                         return {
