@@ -497,7 +497,7 @@ const AnalysisMain = ({ analysisId }) => {
             <ul className="text-xs text-gray-900 ml-4 leading-relaxed space-y-1">
               {analysisData.patchPriority.map((patch) => (
                 <li key={patch.id}>
-                  [세트 #{patch.id}] {patch.description}
+                  {patch.description}
                   {patch.packages && patch.packages.length > 0 && (
                     <span className="text-gray-600"> - {patch.packages.join(', ')}</span>
                   )}
