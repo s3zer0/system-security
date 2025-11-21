@@ -59,13 +59,13 @@ const UploadPanel = () => {
         }
     };
 
-    // 🚀 API 호출 및 로직 통합 (데모 로직 제거, API 로직 유지)
+    // 🚀 API 호출 및 로직 통합 (폴링 메커니즘 포함)
     const handleUploadStart = async () => {
         if (!file) {
             setError("⚠️ 업로드할 파일을 선택해주세요.");
             return;
         }
-        
+
         setUploading(true);
         setError(null);
 
@@ -97,7 +97,48 @@ const UploadPanel = () => {
             } else {
                 setError("분석 시작 실패: 서버 응답에 Job ID가 없습니다.");
                 setUploading(false);
+                return;
             }
+
+            const analysisId = result.analysis_id;
+
+            // 폴링 시작: 분석이 완료될 때까지 상태 확인
+            const pollInterval = 2000; // 2초마다 체크
+            const maxAttempts = 300; // 최대 10분 (300 * 2초)
+            let attempts = 0;
+
+            while (attempts < maxAttempts) {
+                try {
+                    const statusData = await getAnalysisStatus(analysisId);
+
+                    if (statusData.status === "COMPLETED") {
+                        // 분석 완료 - 결과 페이지로 이동
+                        navigate(`/analysis/${analysisId}`);
+                        return;
+                    } else if (statusData.status === "FAILED") {
+                        // 분석 실패
+                        const errorMsg = statusData.error_message || "알 수 없는 오류";
+                        setError(`분석 실패: ${errorMsg}`);
+                        setUploading(false);
+                        setProgress(0);
+                        return;
+                    }
+                    // PENDING 또는 PROCESSING인 경우 계속 대기
+
+                } catch (pollError) {
+                    console.error("Status polling error:", pollError);
+                    // 상태 조회 실패 시에도 계속 시도 (일시적 네트워크 오류 가능성)
+                }
+
+                // 다음 폴링까지 대기
+                await new Promise(resolve => setTimeout(resolve, pollInterval));
+                attempts++;
+            }
+
+            // 타임아웃
+            setError("분석 대기 시간 초과: 분석이 너무 오래 걸리고 있습니다.");
+            setUploading(false);
+            setProgress(0);
 
         } catch (e) {
             console.error("Upload Error:", e);
@@ -172,12 +213,12 @@ const UploadPanel = () => {
             )}
 
             {/* Upload/Action Buttons */}
-            <button 
+            <button
                 className="btn-primary w-full rounded-full px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition mb-2 disabled:opacity-50 mt-3"
                 onClick={handleUploadStart}
-                disabled={!file || uploading} 
+                disabled={!file || uploading}
             >
-                {uploading ? `Uploading... (${progress}%)` : '분석 시작'}
+                {uploading ? (progress < 100 ? `Uploading... (${progress}%)` : 'Processing...') : '분석 시작'}
             </button>
             
             <button 
