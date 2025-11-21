@@ -2,11 +2,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-<<<<<<< HEAD
 import { uploadImage, getAnalysisStatus } from '../api/client'; 
-=======
-import { uploadImage } from '../api/client'; 
->>>>>>> 5166cf53853ae3064b617d2bf165324962225168
 import { useAnalysis } from '../context/AnalysisContext';
 
 const UploadPanel = () => {
