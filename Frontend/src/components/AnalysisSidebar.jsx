@@ -19,8 +19,6 @@ function formatTimeAgo(isoTimestamp) {
 
 function RunItem({ analysis, isActive }){
     const displayRisk = analysis.risk_level || analysis.risk || 'UNKNOWN';
-    const displayName = analysis.original_filename || analysis.file_name || analysis.name || "이름 없음";
-    const currentId = analysis.analysis_id || analysis.id;
 
     return (
         <Link
@@ -115,15 +113,15 @@ export default function AnalysisSidebar() {
                 original_filename: file.name,
                 file_name: file.name,
                 created_at: Date.now(),
-                risk_level: response.risk_level || 'Info',
+                risk_level: 'Analyzing',
 
                 id: response.analysis_id,
                 name: file.name,
                 risk: 'Analyzing'
             };
-            const savedPending = JSON.parse(localStorage.getItem('pendingAnalyses') || []);
+            const savedPending = JSON.parse(localStorage.getItem('pendingAnalyses') || '[]');
             if(!savedPending.find(job => String(job.analysis_id) === String(response.analysis_id))){
-                localStorage.getItem('pendingAnalyses', JSON.stringify([...savedPending, newAnalysis]));
+                localStorage.setItem('pendingAnalyses', JSON.stringify([...savedPending, newAnalysis]));
             }
 
             addAnalysis(newAnalysis);
@@ -219,7 +217,7 @@ export default function AnalysisSidebar() {
                     <RunItem
                         key={analysis.analysis_id}
                         analysis={analysis}
-                        isActive={jobId === analysis.analysis_id}
+                        isActive={isActive}
                     />
                 );
             })}
