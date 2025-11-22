@@ -66,7 +66,13 @@ Backend/DB/
 - API 서버는 `{analysis_id}` 내부의 `Result.json`, `meta.json` 만을 사용하지만 Raw 파일은 디버깅/후처리 용도로 유지됩니다.
 
 ---
+## 저장소 암호화 옵션
 
+- 파일 기반 산출물(`Result.json`, `meta.json`, `trivy_analysis_result.json` 등)을 AES-GCM 으로 암호화하려면 환경변수 `DB_ENCRYPTION=1` 을 설정합니다.
+- 키는 `DB_ENCRYPTION_KEY`(base64 인코딩) 또는 `DB_ENCRYPTION_KEY_PATH`(16/24/32바이트 바이너리 키 파일 경로) 중 하나로 제공합니다.
+- 암호화가 활성화되면 `common.file_utils.write_json/read_json` 이 자동으로 암·복호화를 적용하므로 파이프라인 코드 변경 없이 저장소 보호가 가능합니다.
+
+---
 ## Result.json & meta.json Schema
 
 `app/models/analysis.py` 의 Pydantic 모델과 샘플 산출물은 아래 구조를 따릅니다.
