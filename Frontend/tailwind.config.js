@@ -6,6 +6,11 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['"Noto Sans KR"', 'sans-serif'],
+        mono: ['"Nanum Gothic Coding"', 'monospace'],
+      },
+
       colors:{
         border: '#e5e7eb',
         'text-main': '#111827',

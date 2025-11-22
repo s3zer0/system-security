@@ -29,8 +29,8 @@ const SampleAnalysisPreviewPage = () => {
     ],
     // Overview 및 Vulnerabilities 탭에서 사용
     vulnerabilities: [
-      { cve: 'CVE-2023-30861', package: 'Flask', version: '2.0.2', severity: 'HIGH', directCall: '아니요' },
       { cve: 'CVE-2020-14343', package: 'PyYAML', version: '5.3.1', severity: 'CRITICAL', directCall: '예 (config.py)' },
+      { cve: 'CVE-2023-30861', package: 'Flask', version: '2.0.2', severity: 'HIGH', directCall: '아니요' },
       { cve: 'CVE-2023-25577', package: 'Werkzeug', version: '2.0.2', severity: 'HIGH', directCall: '예 (app.py)' },
       { cve: 'CVE-2024-34069', package: 'Werkzeug', version: '2.0.2', severity: 'HIGH', directCall: '아니요' },
       { cve: 'CVE-2023-46136', package: 'Werkzeug', version: '2.0.2', severity: 'MEDIUM', directCall: '아니요' },
