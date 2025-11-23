@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useAnalysis } from '../context/AnalysisContext';
 import TabButton from './TabButton';
+import RiskBadge from './RiskBadge';
 
 /**
  * Transform backend API response to frontend component state format
@@ -9,9 +11,62 @@ import TabButton from './TabButton';
 const transformData = (backendData) => {
   const { result, meta } = backendData;
 
+  const getRiskScore = (severityString) => {
+    if(!severityString) return 0;
+
+    const normalized = String(severityString).trim().toUpperCase();
+
+    const map = {
+      'CRITICAL': 5,
+      'HIGH': 4,
+      'MEDIUM': 3,
+      'LOW': 2,
+      'UNKNOWN': 1,'INFO': 0
+    };
+
+    return map[normalized] || 0;
+  }
+
+  const sortedVulnerabilities = (result.vulnerabilities || [])
+    .map(v => ({
+        cve: v.cve_id || 'N/A',
+        package: v.package || 'Unknown',
+        version: v.version || 'N/A',
+        severity: (v.severity ? String(v.severity).trim().toUpperCase() : 'UNKNOWN'),
+        directCall: v.direct_call ? '예' : '아니요',
+        evidence: v.call_evidence || 'N/A',
+        title: v.description ? v.description.substring(0, 50) + '...' : ''
+    }))
+    .sort((a, b) => {
+      const scoreA = getRiskScore(a.severity);
+      const scoreB = getRiskScore(b.severity);
+
+      if(scoreB !== scoreA){
+        return scoreB - scoreA;
+      }
+
+      return a.package.localeCompare(b.package);
+    });
+
+  const formattedLogs = Array.isArray(result.logs)
+    ? result.logs.map((log) => {
+        const level = (log.level || (typeof log === 'string' ? 'INFO' : 'INFO')).toUpperCase();
+        let styleClass = 'text-gray-600';
+        if (level === 'ERROR' || level === 'CRITICAL') styleClass = 'text-red-600 font-medium';
+        else if (level === 'WARN') styleClass = 'text-orange-500';
+
+        return {
+          timestamp: log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString(),
+          level: level,
+          message: log.message || log,
+          styleClass: styleClass
+        };
+      })
+  : [];
+
   return {
     title: `${result.language || 'Unknown'} 기반 이미지 분석 요약`,
-    imageTag: meta.analysis_id?.substring(0, 8) || 'unknown',
+    imageTag: meta.original_filename || meta.file_name || meta.analysis_id || 'unknown',
     tags: [result.language || 'Unknown', meta.created_at ? new Date(meta.created_at).toLocaleDateString() : ''],
 
     summary: {
@@ -26,19 +81,11 @@ const transformData = (backendData) => {
     },
 
     highlights: result.vulnerabilities
-      ?.filter(v => ['CRITICAL', 'HIGH'].includes((v.severity || '').toUpperCase()))
+      ?.filter(v => ['CRITICAL', 'HIGH'].includes(String(v.severity || '').trim().toUpperCase()))
       .slice(0, 5)
       .map(v => `${v.package} ${v.version} (${v.cve_id})`) || [],
 
-    vulnerabilities: result.vulnerabilities?.map(v => ({
-      cve: v.cve_id || 'N/A',
-      package: v.package || 'Unknown',
-      version: v.version || 'N/A',
-      severity: (v.severity || 'Unknown').toUpperCase(),
-      directCall: v.direct_call ? '예' : '아니요',
-      evidence: v.call_evidence || 'N/A',
-      title: v.description ? v.description.substring(0, 50) + '...' : ''
-    })) || [],
+    vulnerabilities: sortedVulnerabilities,
 
     severitySummary: [
       { severity: 'Critical', count: result.vulnerabilities_summary?.critical ?? 0, description: '즉시 조치 필요' },
@@ -89,8 +136,13 @@ const AnalysisMain = ({ analysisId }) => {
   const [analysisData, setAnalysisData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedLib, setSelectedLib] = useState(null);
+  const { setAnalyses } = useAnalysis();
 
   useEffect(() => {
+    let isMounted = true;
+    let pollingTimer = null;
+
     const fetchAnalysisData = async () => {
       if (!analysisId) {
         setLoading(false);
@@ -98,33 +150,75 @@ const AnalysisMain = ({ analysisId }) => {
       }
 
       try {
-        setLoading(true);
         const response = await fetch(`/api/analysis/${analysisId}`);
-
+        
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") === -1) {
           throw new Error("서버 응답이 JSON이 아닙니다. (Proxy 설정을 확인하세요)");
         }
-
+        
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-
+        
         const data = await response.json();
+        
+        if (data && data.result) {
+            if(isMounted) {
+                const transformed = transformData(data);
+                setAnalysisData(transformed);
+                setLoading(false);
+                
+                let newRisk = data.result.vulnerabilities_summary?.overall_risk;
+                if (!newRisk) {
+                    const crit = data.result.vulnerabilities_summary?.critical || 0;
+                    if (crit > 0) newRisk = 'CRITICAL';
+                    else newRisk = 'LOW';
+                }
+                const finalRisk = String(newRisk).toUpperCase();
+                const finalName = data.meta.original_filename || data.meta.file_name || 'Unknown';
 
-        // Transform backend data to frontend format
-        const transformedData = transformData(data);
-        setAnalysisData(transformedData);
+                const savedPending = JSON.parse(localStorage.getItem('pendingAnalyses') || '[]');
+                const updatedPending = savedPending.filter(job => String(job.analysis_id) !== String(analysisId));
+                localStorage.setItem('pendingAnalyses', JSON.stringify(updatedPending));
+
+                setAnalyses(prev => prev.map(item => {
+                    if (String(item.analysis_id || item.id) === String(analysisId)) {
+                        return {
+                            ...item,
+                            risk_level: finalRisk,
+                            risk: finalRisk,
+                            original_filename: finalName,
+                            name: finalName,
+                            file_name: finalName,
+                            status: 'Done'
+                        };
+                    }
+                    return item;
+                }));
+            }
+          } else {
+          if(isMounted) {
+              console.log("분석 중... 3초 후 재요청");
+              pollingTimer = setTimeout(fetchAnalysisData, 3000);
+          }
+        }
       } catch (err) {
         console.error('Analysis data fetch error:', err);
-        setError(err.message || '분석 데이터를 불러오는데 실패했습니다.');
-      } finally {
-        setLoading(false);
+        if(isMounted){
+          setError(err.message || '분석 데이터를 불러오는데 실패했습니다.');
+          setLoading(false);
+        }
       }
     };
-
+    setLoading(true);
     fetchAnalysisData();
-  }, [analysisId]);
+
+    return () => {
+      isMounted = false;
+      if (pollingTimer) clearTimeout(pollingTimer);
+    };
+  }, [analysisId, setAnalyses]);
 
   if (loading) {
     return (
@@ -207,13 +301,7 @@ const AnalysisMain = ({ analysisId }) => {
                       <td className="px-2 py-2">{vuln.package}</td>
                       <td className="px-2 py-2">{vuln.version}</td>
                       <td className="px-2 py-2">
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${vuln.severity === 'Critical' || vuln.severity === 'CRITICAL' ? 'bg-red-100 text-red-700' :
-                          vuln.severity === 'High' || vuln.severity === 'HIGH' ? 'bg-orange-100 text-orange-700' :
-                            vuln.severity === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-gray-100 text-gray-700'
-                          }`}>
-                          {vuln.severity}
-                        </span>
+                          <RiskBadge level={vuln.severity} />
                       </td>
                       <td className="px-2 py-2">{vuln.directCall}</td>
                     </tr>
@@ -249,13 +337,7 @@ const AnalysisMain = ({ analysisId }) => {
                 {analysisData.severitySummary.map((item, idx) => (
                   <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50">
                     <td className="px-2 py-2">
-                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${item.severity === 'Critical' ? 'bg-red-100 text-red-700' :
-                        item.severity === 'High' ? 'bg-orange-100 text-orange-700' :
-                          item.severity === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-gray-100 text-gray-700'
-                        }`}>
-                        {item.severity}
-                      </span>
+                      <RiskBadge level={item.severity} />
                     </td>
                     <td className="px-2 py-2">{item.count}</td>
                     <td className="px-2 py-2">{item.description}</td>
@@ -285,13 +367,7 @@ const AnalysisMain = ({ analysisId }) => {
                       <td className="px-2 py-2">{vuln.package}</td>
                       <td className="px-2 py-2">{vuln.version}</td>
                       <td className="px-2 py-2">
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${vuln.severity === 'Critical' || vuln.severity === 'CRITICAL' ? 'bg-red-100 text-red-700' :
-                          vuln.severity === 'High' || vuln.severity === 'HIGH' ? 'bg-orange-100 text-orange-700' :
-                            vuln.severity === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-gray-100 text-gray-700'
-                          }`}>
-                          {vuln.severity}
-                        </span>
+                        <RiskBadge level={vuln.severity} />
                       </td>
                       <td className="px-2 py-2">{vuln.directCall}</td>
                     </tr>
@@ -302,51 +378,119 @@ const AnalysisMain = ({ analysisId }) => {
           </div>
         );
 
-      case 'libs':
+        case 'libs':
+        // 1. 데이터 준비
+        const uniqueLibraries = Array.from(
+            new Set(analysisData.libraryMappings.map(item => item.library))
+        ).sort();
+
+        const filteredMappings = selectedLib 
+            ? analysisData.libraryMappings.filter(m => m.library === selectedLib)
+            : analysisData.libraryMappings;
+
+        // CVE 줄바꿈 렌더링 함수
+        const renderCveList = (cveString) => {
+            if (!cveString || cveString === '-') return '-';
+            const cves = cveString.split(',').map(s => s.trim());
+            const chunkSize = 3;
+            const chunks = [];
+            for (let i = 0; i < cves.length; i += chunkSize) {
+                chunks.push(cves.slice(i, i + chunkSize));
+            }
+            return (
+                <div className="flex flex-col gap-1">
+                    {chunks.map((chunk, i) => (
+                        <div key={i} className="whitespace-nowrap">
+                            {chunk.join(', ')}
+                            {i < chunks.length - 1 ? ',' : ''}
+                        </div>
+                    ))}
+                </div>
+            );
+        };
+
         return (
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs max-h-[350px] overflow-auto">
-            <div className="text-[13px] font-medium mb-1.5 text-gray-900">Libraries &amp; APIs</div>
-            <div className="text-[11px] text-gray-600 mb-2">
-              어떤 라이브러리가 어떤 API를 통해 취약점과 연결되는지 정리한 뷰입니다.
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs max-h-[350px] flex flex-col h-full">
+            
+            {/* 1. 상단: 라이브러리 선택 버튼 */}
+            <div className="mb-3 flex-shrink-0">
+                <div className="text-[11px] text-gray-500 mb-1.5 font-medium">
+                    라이브러리 선택 ({uniqueLibraries.length}개):
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                    <button
+                        onClick={() => setSelectedLib(null)}
+                        className={`px-2.5 py-1 rounded border text-[11px] transition-all
+                            ${!selectedLib 
+                                ? 'bg-gray-800 text-white border-gray-800 font-medium shadow-sm' 
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}
+                    >
+                        ALL
+                    </button>
+
+                    {uniqueLibraries.map((lib) => (
+                        <button
+                            key={lib}
+                            onClick={() => setSelectedLib(lib)}
+                            className={`px-2.5 py-1 rounded border text-[11px] transition-all
+                                ${selectedLib === lib 
+                                    ? 'bg-blue-600 text-white border-blue-600 font-medium shadow-sm' 
+                                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600'}`}
+                        >
+                            {lib}
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            {analysisData.libraryMappings.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="text-left px-2 py-2 text-[11px] text-gray-600 font-medium">라이브러리</th>
-                      <th className="text-left px-2 py-2 text-[11px] text-gray-600 font-medium">버전</th>
-                      <th className="text-left px-2 py-2 text-[11px] text-gray-600 font-medium">API</th>
-                      <th className="text-left px-2 py-2 text-[11px] text-gray-600 font-medium">CVE</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {analysisData.libraryMappings.slice(0, 20).map((mapping, idx) => (
-                      <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50">
-                        <td className="px-2 py-2">{mapping.library}</td>
-                        <td className="px-2 py-2">{mapping.version}</td>
-                        <td className="px-2 py-2">
-                          <code className="bg-gray-100 px-1 py-0.5 rounded text-blue-700">{mapping.api}</code>
-                        </td>
-                        <td className="px-2 py-2 max-w-[150px] truncate" title={mapping.cve}>{mapping.cve}</td>
-                      </tr>
-                    ))}
-                  </tbody>
+            {/* 2. 헤더 (스크롤 안됨, 버튼 바로 아래 고정) */}
+            <div className="bg-gray-100 border-y border-gray-200 flex-shrink-0 pr-2">
+                <table className="w-full text-xs table-fixed">
+                    <thead>
+                        <tr>
+                            <th className="text-left px-2 py-2 font-medium text-gray-600 w-[20%]">라이브러리</th>
+                            <th className="text-left px-2 py-2 font-medium text-gray-600 w-[15%]">버전</th>
+                            <th className="text-left px-2 py-2 font-medium text-gray-600 w-[30%]">사용된 API</th>
+                            <th className="text-left px-2 py-2 font-medium text-gray-600 w-[35%]">관련 CVE</th>
+                        </tr>
+                    </thead>
                 </table>
-                {analysisData.libraryMappings.length > 20 && (
-                  <div className="text-[11px] text-gray-600 mt-2 text-center">
-                    ...외 {analysisData.libraryMappings.length - 20}개 매핑
-                  </div>
+            </div>
+
+            {/* 3. 바디 (여기만 스크롤 됨) */}
+            <div className="flex-1 overflow-y-auto bg-white">
+                {filteredMappings.length > 0 ? (
+                    <table className="w-full text-xs table-fixed">
+                        <tbody>
+                            {filteredMappings.map((mapping, idx) => (
+                                <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
+                                    {/* 위 헤더와 같은 width(%)를 주어 열을 맞춤 */}
+                                    <td className={`px-2 py-2 align-top font-medium w-[20%] ${selectedLib === mapping.library ? 'text-blue-700' : 'text-gray-800'}`}>
+                                        {mapping.library}
+                                    </td>
+                                    <td className="px-2 py-2 align-top text-gray-600 w-[15%]">{mapping.version}</td>
+                                    <td className="px-2 py-2 align-top w-[30%]">
+                                        <code className="bg-white border border-gray-200 px-1.5 py-0.5 rounded text-blue-600 font-mono text-[10px] break-all inline-block">
+                                            {mapping.api}
+                                        </code>
+                                    </td>
+                                    <td className="px-2 py-2 align-top text-red-500 text-[11px] leading-relaxed w-[35%]">
+                                        {renderCveList(mapping.cve)}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                ) : (
+                    <div className="text-center py-8 text-gray-400">
+                        데이터가 없습니다.
+                    </div>
                 )}
-              </div>
-            ) : (
-              <div className="text-[11px] text-gray-600">라이브러리-API 매핑 데이터가 없습니다.</div>
-            )}
-          </div >
+            </div>
+          </div>
         );
 
-      case 'patch':
+        case 'patch':
         return (
           <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs max-h-[350px] overflow-auto">
             <div className="text-[13px] font-medium mb-1.5 text-gray-900">Patch Priority</div>
@@ -357,7 +501,7 @@ const AnalysisMain = ({ analysisId }) => {
             <ul className="text-xs text-gray-900 ml-4 leading-relaxed space-y-1">
               {analysisData.patchPriority.map((patch) => (
                 <li key={patch.id}>
-                  [세트 #{patch.id}] {patch.description}
+                  {patch.description}
                   {patch.packages && patch.packages.length > 0 && (
                     <span className="text-gray-600"> - {patch.packages.join(', ')}</span>
                   )}

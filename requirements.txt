@@ -2,6 +2,7 @@ anthropic>=0.72.1
 fastapi>=0.110.0
 google-genai>=1.50.1
 graphviz>=0.21.0
+cryptography>=43.0.0
 openai>=1.55.0
 perplexityai>=0.20.0
 pydantic>=2.7.0

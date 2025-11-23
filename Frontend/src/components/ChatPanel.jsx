@@ -14,9 +14,11 @@ export default function ChatPanel(){
     const [isAiThinking, setIsAiThinking] = useState(false);
     const [input, setInput] = useState('');
 
-    const currentAnalysis = analyses.find(a => a.id === jobId);
+    const currentAnalysis = analyses.find(a => String(a.id) === String(jobId));
 
-    const displayName = currentAnalysis ? currentAnalysis.name : "분석 선택 안됨";
+    const displayName = currentAnalysis
+        ? (currentAnalysis.name || currentAnalysis.original_filename || currentAnalysis.file_name)
+        : (jobId ? `분석 ID: ${jobId.substring(0,8)}...` : "분석 선택 안됨");
 
     useEffect(() => {
         if (!jobId) {
@@ -25,12 +27,16 @@ export default function ChatPanel(){
         }
         
         setIsLoadingHistroy(true);
-        setTimeout(() => {
+        setMessages([]);
+
+        const timer = setTimeout(() => {
             setMessages([
                 { from: 'agent', text: `안녕하세요! "${displayName}" 분석에 대해 무엇이 궁금하신가요?`}
             ]);
             setIsLoadingHistroy(false);
         }, 300);
+
+        return () => clearInterval(timer);
     }, [jobId, displayName]);
 
     const handleSendChat = async () => {
