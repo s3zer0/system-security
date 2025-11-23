@@ -81,9 +81,9 @@ const transformData = (backendData) => {
     },
 
     highlights: result.vulnerabilities
-      ?.filter(v => ['CRITICAL', 'HIGH'].includes(v.severity))
+      ?.filter(v => ['CRITICAL', 'HIGH'].includes(String(v.severity || '').trim().toUpperCase()))
       .slice(0, 5)
-      .map(v => `${v.package} ${v.version} (${v.cve})`) || [],
+      .map(v => `${v.package} ${v.version} (${v.cve_id})`) || [],
 
     vulnerabilities: sortedVulnerabilities,
 
