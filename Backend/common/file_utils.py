@@ -17,7 +17,7 @@ PathLike = Union[str, Path]
 
 
 DEFAULT_NONCE_SIZE = 12
-ALLOWED_AES_KEY_SIZES = {16,42,32}
+ALLOWED_AES_KEY_SIZES = {16, 24, 32}
 
 
 def _to_path(path: PathLike) -> Path:
