@@ -10,11 +10,14 @@ export default function RiskBadge({ level }) {
     const levelKey = level ? level.toUpperCase() : 'SAFE';
 
     const levelStyles = {
-        CRITICAL: 'bg-red-100 text-risk-CRITICAL-text',
-        HIGH: 'bg-orange-100 text-risk-HIGH-text',
-        MEDIUM: 'bg-yellow-100 text-risk-MEDIUM-text',
-        LOW: 'bg-green-100 text-risk-LOW-text',
-        SAFE: 'bg-blue-100 text-risk-SAFE-text'
+        CRITICAL: 'bg-risk-CRITICAL-bg text-risk-CRITICAL-text',
+        HIGH: 'bg-risk-HIGH-bg text-risk-HIGH-text',
+        MEDIUM: 'bg-risk-MEDIUM-bg text-risk-MEDIUM-text',
+        LOW: 'bg-risk-LOW-bg text-risk-LOW-text',
+        INFO: 'bg-risk-INFO-bg text-risk-INFO-text',
+        NA: 'bg-risk-NA-bg text-risk-NA-text',
+        IMMEDIATE: 'bg-risk-IMMEDIATE-bg text-risk-IMMEDIATE-text',
+        PLANNED: 'bg-risk-PLANNED-bg text-risk-PLANNED-text',
     };
     const baseStyle = 'px-1.5 py-0.5 rounded-full text-[10px] font-semibold';
     const style = levelStyles[levelKey] || levelStyles.SAFE;

@@ -21,7 +21,7 @@ const LandingHero = () => {
       <div className="landing-hero-actions flex gap-3 flex-wrap mb-4">
         <button 
           className="btn-primary rounded-full px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition"
-          onClick={() => navigate('/analysis/mock-job-id-1234')}
+          onClick={() => navigate('/analysis/')}
         >
           이미지 업로드로 시작하기
         </button>
