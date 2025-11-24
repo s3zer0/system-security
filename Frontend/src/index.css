@@ -5,6 +5,11 @@
 @tailwind components;
 @tailwind utilities;
 
+html{
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
 body, html, button, input, textarea, select {
     font-family: 'Noto Sans KR', sans-serif;
 }
