@@ -1,9 +1,11 @@
 import json
 import os
 import pytest
+import shutil
 from datetime import datetime, timezone
 from fastapi.testclient import TestClient
 from pathlib import Path
+import tarfile
 import sys
 from unittest.mock import patch
 
@@ -15,8 +17,19 @@ from app.core.analysis_engine import DEFAULT_DB_DIR, create_analysis_status
 
 client = TestClient(app)
 
-TEST_TARGET_PATH = Path(__file__).resolve().parents[1] / "test_target" / "test_target.tar"
+TEST_TARGET_DIR = Path(__file__).resolve().parents[1] / "test_target"
 
+
+def _build_test_archive(tmp_path: Path) -> Path:
+    """Create a temporary tar archive from the test_target fixture directory."""
+    assert TEST_TARGET_DIR.exists(), f"Test fixture directory missing: {TEST_TARGET_DIR}"
+    archive_path = tmp_path / "test_target.tar"
+    with tarfile.open(archive_path, "w") as tar:
+        for item in TEST_TARGET_DIR.iterdir():
+            if item.name == "__pycache__":
+                continue
+            tar.add(item, arcname=item.name)
+    return archive_path
 
 def mock_process_analysis_background(
     analysis_id: str,
@@ -26,7 +39,7 @@ def mock_process_analysis_background(
     """
     Mock implementation that simulates successful analysis completion
     without running the heavy security pipeline.
-
+x$
     This mock:
     1. Updates the database status to "COMPLETED"
     2. Writes minimal dummy meta.json and Result.json files
@@ -69,7 +82,7 @@ def mock_process_analysis_background(
 
 
 @patch("app.routers.analysis.process_analysis_background", side_effect=mock_process_analysis_background)
-def test_run_analysis_flow(mock_process):
+def test_run_analysis_flow(mock_process, tmp_path):
     """
     Test the full analysis flow:
     1. Upload a file to /analysis
@@ -77,9 +90,8 @@ def test_run_analysis_flow(mock_process):
     3. Check status at /analysis/{id}/status
     4. Verify status is COMPLETED (thanks to mock)
     """
-    assert TEST_TARGET_PATH.exists(), f"Test file not found at {TEST_TARGET_PATH}"
-
-    with open(TEST_TARGET_PATH, "rb") as f:
+    archive_path = _build_test_archive(tmp_path)
+    with open(archive_path, "rb") as f:
         response = client.post(
             "/analysis",
             files={"file": ("test_target.tar", f, "application/x-tar")}
@@ -110,3 +122,8 @@ def test_run_analysis_flow(mock_process):
     result = response.json()
     assert result["meta"]["analysis_id"] == analysis_id
     assert result["result"]["language"] == "Python"
+
+    # Cleanup the generated analysis directory to keep the test idempotent
+    analysis_dir = DEFAULT_DB_DIR / analysis_id
+    if analysis_dir.exists():
+        shutil.rmtree(analysis_dir)
