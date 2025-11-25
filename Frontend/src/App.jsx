@@ -3,6 +3,8 @@ import LandingPage from './pages/LandingPage';
 import CardLayout from './components/CardLayout';
 import AnalysisPage from './pages/AnalysisPage';
 import SampleAnalysisPreviewPage from './pages/SampleAnalysisPreviewPage';
+import DocsPage from './pages/DocsPage';
+import LoginPage from './pages/LoginPage';
 
 const PlaceholderPage = ({ title }) => (
   <CardLayout title={title} showAnalysisButton={title !== "로그인"}>
@@ -15,10 +17,10 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      <Route path="/features" element={<PlaceholderPage title="주요 기능 상세" />} />
-      <Route path="/docs" element={<PlaceholderPage title="문서 · Getting Started" />} />
+      <Route path="/features" element={<PlaceholderPage title="기능 안내" />} />
+      <Route path="/docs" element={<DocsPage />} />
       <Route path="/github" element={<PlaceholderPage title="GitHub Repository 안내" />} />
-      <Route path="/login" element={<PlaceholderPage title="로그인" />} />
+      <Route path="/login" element={<LoginPage />} />
       <Route path="/analysis" element={<AnalysisPage />} />
       <Route path="/analysis/:jobId" element={<AnalysisPage />} />
       <Route path="/summary/:jobId" element={<SampleAnalysisPreviewPage />} />
