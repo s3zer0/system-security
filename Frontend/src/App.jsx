@@ -17,8 +17,8 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      <Route path="/features" element={<DocsPage />} />
-      <Route path="/docs" element={<PlaceholderPage title="문서 · Getting Started" />} />
+      <Route path="/features" element={<PlaceholderPage title="기능 안내" />} />
+      <Route path="/docs" element={<DocsPage />} />
       <Route path="/github" element={<PlaceholderPage title="GitHub Repository 안내" />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/analysis" element={<AnalysisPage />} />
