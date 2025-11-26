@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { uploadImage, getAnalysisStatus } from '../api/client'; 
+import { uploadImage, getAnalysisStatus, getAnalysesList } from '../api/client'; 
 import { useAnalysis } from '../context/AnalysisContext';
 
 const UploadPanel = () => {
@@ -16,6 +16,7 @@ const UploadPanel = () => {
     const [progress, setProgress] = useState(0); 
     const [error, setError] = useState(null); 
     const [isDragging, setIsDragging] = useState(false); 
+    const [isLoadingRecent, setIsLoadingRecent] = useState(false);
     
     const formatFileSize = (bytes) => {
         if (!bytes) return '0 MB';
@@ -148,6 +149,33 @@ const UploadPanel = () => {
         }
     };
 
+    const handleLoadRecent = async () => {
+        setIsLoadingRecent(true);
+        setError(null);
+        try{
+            const list = await getAnalysesList();
+            const pendingList = JSON.parse(localStorage.getItem('pendingAnalyses') || '[]');
+            const allAnalyses = [...pendingList, ...list].sort((a, b) => {
+                const timeA = new Date(a.created_at).getTime();
+                const timeB = new Date(b.created_at).getTime();
+                return timeB - timeA;
+            });
+
+            if(allAnalyses.length > 0){
+                const mostRecent = allAnalyses[0];
+                const targetId = mostRecent.analysis_id || mostRecent.id;
+                navigate(`/analysis/${targetId}`);
+            } else {
+                setError("최근 분석 기록이 없습니다. 파일을 먼저 업로드해주세요.");
+            }
+        } catch (err) {
+            console.error(err);
+            setError("분석 목록을 불러오는데 실패했습니다.");
+        } finally {
+            setIsLoadingRecent(false);
+        }
+    };
+
     return (
         // 최신 스타일: w-full, font-medium/normal 적용
         <div className="landing-upload-panel w-full rounded-xl border border-gray-300 bg-white p-5 shadow-xl shadow-blue-500/10">
@@ -223,10 +251,10 @@ const UploadPanel = () => {
             
             <button 
                 className="btn-ghost w-full rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition disabled:opacity-50"
-                onClick={() => navigate('/summary/sample-job-id')}
-                disabled={uploading}
+                onClick={handleLoadRecent}
+                disabled={uploading || isLoadingRecent}
             >
-                최근에 돌린 분석 불러오기 (샘플)
+                {isLoadingRecent ? '목록 확인 중...' : '최근에 돌린 분석 불러오기'}
             </button>
 
             {/* Pills UI는 완전히 삭제되었습니다. */}

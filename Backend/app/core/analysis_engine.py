@@ -23,6 +23,7 @@ from .exceptions import (
     ASTAnalysisError,
     EnrichmentError,
 )
+from .killchain_detector import detect_killchains
 from .services import (
     SourceExtractionService,
     ScannerService,
@@ -925,6 +926,7 @@ def _build_pipeline_response(
     vuln_summary = _build_vulnerability_summary(trivy_data)
     overview_text = _build_overview(vuln_summary, language)
     patch_priority = _build_patch_priority_list(fetch_priority_data)
+    killchain_findings = detect_killchains(sources_dir, trivy_data)
 
     meta_block = _build_meta_block(
         analysis_id=analysis_id,
@@ -941,6 +943,7 @@ def _build_pipeline_response(
         "vulnerabilities": _build_vulnerabilities(trivy_data, used_modules),
         "libraries_and_apis": _build_library_api_mappings(mapping_data),
         "patch_priority": patch_priority,
+        "killchains" : killchain_findings,
         "logs": [],
     }
 

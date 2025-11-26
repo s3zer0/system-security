@@ -60,6 +60,14 @@ class PatchPriorityItem(BaseModel):
     note: str
 
 
+class KillchainFinding(BaseModel):
+    rule_id: str
+    title: str
+    severity: Literal["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"] = "INFO"
+    description: str
+    evidences: List[str] = Field(default_factory=list)
+
+
 class AnalysisResult(BaseModel):
     language: str
     overview: str
@@ -67,6 +75,7 @@ class AnalysisResult(BaseModel):
     vulnerabilities: List[Vulnerability] = Field(default_factory=list)
     libraries_and_apis: List[LibraryApiMapping] = Field(default_factory=list)
     patch_priority: List[PatchPriorityItem] = Field(default_factory=list)
+    killchains : List[KillchainFinding] = Field(default_factory=list)
     logs: List[str] = Field(default_factory=list)
 
 
@@ -108,6 +117,7 @@ __all__ = [
     "Vulnerability",
     "LibraryApiMapping",
     "PatchPriorityItem",
+    "KillchainFinding"
     "AnalysisResult",
     "AnalysisMeta",
     "AnalysisResponse",

@@ -105,13 +105,13 @@ export default function ChatPanel(){
                     onChange={(e) => setInput(e.target.value)}
                     placeholder={jobId ? "예 : RCE 가능성만 필터링..." : "분석을 선택하세요"}
                     disabled={!jobId || isLoadingHistory || isAiThinking}
-                    className='flex-1 resize-none rounded-full border border-border bg-white px-3 py-2 text-sm h-10 outline-none'
+                    className='flex-1 min-w-0 resize-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm h-10 outline-none focus:ring-2 focus:ring-blue-500 shadow-sm'
                     rows={1}
                 />
                 <button
                     onClick={handleSendChat}
                     disabled={!jobId || isLoadingHistory || isAiThinking}
-                    className='p-2.5 rounded-full bg-primary text-white h-10 w-10 flex-shrink-0'
+                    className='h-10 w-10 rounded-lg flex items-center justify-center text-white transition-colors flex-shrink-0 shadow-sm bg-blue-600'
                 >
                     {isAiThinking ? "..." : <span className='text-lg leading-none'>⮞</span>}
                 </button>
