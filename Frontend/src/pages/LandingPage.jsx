@@ -1,4 +1,4 @@
-// src/pages/LandingPage.jsx (고정 배경화면 보이도록 투명도 수정)
+// src/pages/LandingPage.jsx (모든 환경에서 동일하게 보이도록 최적화)
 
 import React, { useState, useEffect, useRef } from 'react'; 
 import { useNavigate } from 'react-router-dom';
@@ -6,7 +6,7 @@ import LandingHeader from '../components/LandingHeader';
 import UploadPanel from '../components/UploadPanel';
 import LandingHero from '../components/LandingHero'; 
 
-// FeatureSlide 컴포넌트: 배경색 클래스를 제거하여 투명하게 만듭니다.
+// FeatureSlide 컴포넌트
 const FeatureSlide = ({ title, description, index }) => {
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef(null);
@@ -18,7 +18,7 @@ const FeatureSlide = ({ title, description, index }) => {
           setIsVisible(true);
         }
       },
-      { threshold: 0.2 } // 20% 보이면 트리거 (더 일찍 시작)
+      { threshold: 0.2 }
     );
 
     if (ref.current) {
@@ -35,7 +35,7 @@ const FeatureSlide = ({ title, description, index }) => {
   return (
     <div 
       ref={ref}
-      // 배경색 클래스 제거: 전역 고정 배경이 이 섹션을 통해 비쳐 보입니다.
+      // 🔴 [복구]: 원래의 클래스 유지 (duration-700 및 translate-y-20)
       className={`min-h-screen flex flex-col items-center justify-center p-8 transition-all duration-700 snap-start snap-always ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'
       }`}
@@ -100,8 +100,10 @@ const LandingPage = () => {
   };
 
   return (
+    // 🔴 [수정]: 기존 bg-white 제거, 배경은 Fixed 레이어에 위임
     <div className="min-h-screen flex flex-col relative"> 
-      {/* 고정 배경화면: 추상적 색상/도형 효과 강화 (Fixed Layer) */}
+      
+      {/* 🔴 [통합]: 강화된 고정 배경화면 코드로 교체 */}
       <div className="fixed inset-0 -z-10 bg-white">
         {/* 상단 은은한 블루 그라데이션 - 색상과 크기 강화 */}
         <div className="absolute top-0 left-0 right-0 h-[800px] bg-gradient-to-b from-blue-200/50 to-transparent"></div>
@@ -109,6 +111,7 @@ const LandingPage = () => {
         <div className="absolute bottom-0 right-0 w-[1200px] h-[1200px] bg-gradient-to-tl from-indigo-200/40 to-transparent rounded-full blur-2xl lg:blur-3xl"></div> 
       </div>
 
+      {/* Fixed Header */}
       <div className="fixed top-0 left-0 right-0 w-full border-b border-gray-100 bg-white/90 backdrop-blur-sm z-20">
         <div className='max-w-full mx-auto px-4 sm:px-6 lg:px-8'>
           <LandingHeader />
@@ -116,31 +119,38 @@ const LandingPage = () => {
       </div>
 
       <main className="flex-1 w-full max-w-full mx-auto flex flex-col relative z-0 pt-16">
-        {/* Hero 섹션 */}
+        {/* Hero 섹션 - 환경 독립적 중앙 정렬 */}
         <section 
           ref={heroRef} 
-          // 🔴 [수정]: lg:gap-32를 lg:gap-48로 변경하여 중앙 간격을 넓힙니다.
-          className="min-h-screen grid lg:grid-cols-12 gap-8 lg:gap-48 items-center max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 snap-start snap-always ml-custom-165-positive"
+          className="min-h-screen flex items-center justify-center w-full px-4 sm:px-6 lg:px-8 py-8 snap-start snap-always"
         >
-          <div 
-            className="lg:col-span-7 flex flex-col justify-center"
-            style={{
-              animation: 'fadeInLeft 1s ease-out forwards',
-              opacity: 0
-            }}
-          > 
-            <LandingHero /> 
-          </div>
+          <div className="w-full max-w-7xl mx-auto">
+            <div className="grid lg:grid-cols-[1fr_auto] gap-8 items-center">
+              {/* 왼쪽: 텍스트 콘텐츠 */}
+              <div 
+                // 🟢 [수정]: lg:-ml-8을 추가하여 텍스트 컨테이너를 왼쪽으로 32px 오프셋합니다.
+                // 중앙 정렬을 깨지 않고 시각적인 위치만 조정합니다.
+                className="flex flex-col justify-center relative z-10 lg:-ml-24" 
+                style={{
+                  animation: 'fadeInLeft 1s ease-out forwards',
+                  opacity: 0
+                }}
+              > 
+                <LandingHero /> 
+              </div>
 
-          <div 
-            className="lg:col-span-5 w-full flex justify-center lg:justify-end"
-            style={{
-              animation: 'fadeInRight 1s ease-out 0.3s forwards',
-              opacity: 0
-            }}
-          >
-            <div className="w-full max-w-md lg:max-w-[520px]">
-                <UploadPanel />
+              {/* 오른쪽: 업로드 패널 */}
+              <div 
+                className="w-full flex justify-center lg:justify-end relative z-0 lg:ml-16 xl:ml-24"
+                style={{
+                  animation: 'fadeInRight 1s ease-out 0.3s forwards',
+                  opacity: 0
+                }}
+              >
+                <div className="w-full max-w-md lg:max-w-md xl:max-w-lg">
+                  <UploadPanel />
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -161,7 +171,7 @@ const LandingPage = () => {
           </div>
         </div>
 
-        {/* 기능 섹션들 - 고정 배경이 비쳐 보이게 됩니다 */}
+        {/* 기능 섹션들 */}
         <div className='max-w-full w-full'> 
           {FEATURES_DATA.map((feature, index) => (
             <FeatureSlide 
@@ -193,13 +203,6 @@ const LandingPage = () => {
       </main>
 
       <style>{`
-        /* 마진 정의: Left Margin 값은 그대로 유지됩니다. */
-        @media (min-width: 1024px) {
-          .ml-custom-165-positive {
-            margin-left: 190px !important; 
-          }
-        }
-        
         @keyframes fadeInLeft {
           from {
             opacity: 0;

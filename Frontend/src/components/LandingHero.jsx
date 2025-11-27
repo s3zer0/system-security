@@ -7,17 +7,19 @@ const LandingHero = ({ onScrollButtonClick }) => {
   const navigate = useNavigate();
 
   return (
-    <div className="text-center lg:text-left"> 
+    <div className="text-center lg:text-left max-w-none">
       {/* 🔴 [최종 수정]: 줄 간격을 leading-tight에서 leading-relaxed로 변경하여 충분한 여백 확보 */}
-      <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-wide text-gray-900 leading-relaxed mb-6 break-keep">
-        Docker 이미지를 올리면
-        <br /> 
-        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-          취약점부터 패치 우선순위까지
-          </span>
-          <br /> 
-          AI가 한 번에 정리합니다.
-      </h1>
+      <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold tracking-wide text-gray-900 leading-relaxed mb-6 whitespace-nowrap">
+  	Docker 이미지를 올리면
+	</h1>
+	<h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold tracking-wide mb-6">
+  	<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 whitespace-nowrap">
+    	취약점부터 패치 우선순위까지
+ 	 </span>
+	</h1>
+	<h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold tracking-wide text-gray-900 leading-relaxed mb-6 whitespace-nowrap">
+  	AI가 한 번에 정리합니다.
+	</h1>
       
       <p className="text-base sm:text-lg text-gray-600 mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
         .tar / .zip 이미지를 업로드하면 Trivy 스캔, 라이브러리·API·AST 분석, CVE 매핑을 
