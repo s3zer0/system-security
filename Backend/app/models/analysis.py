@@ -66,7 +66,7 @@ class KillchainFinding(BaseModel):
     severity: Literal["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"] = "INFO"
     description: str
     evidences: List[str] = Field(default_factory=list)
-
+    attack_mappings: List[str] = Field(default_factory=list, description="List of MITRE ATT&CK technique IDs")
 
 class AnalysisResult(BaseModel):
     language: str
@@ -117,7 +117,7 @@ __all__ = [
     "Vulnerability",
     "LibraryApiMapping",
     "PatchPriorityItem",
-    "KillchainFinding"
+    "KillchainFinding",
     "AnalysisResult",
     "AnalysisMeta",
     "AnalysisResponse",

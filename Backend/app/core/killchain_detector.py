@@ -3,13 +3,14 @@
 This module inspects extracted build artefacts (Dockerfile) alongside
 vulnerability metadata to flag common end-to-end attack paths such as
 network-triggered RCE leading to container takeover and lateral movement.
+Runtime hints (netstat/ps) are also incorporated when available.
 """
 
 from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Set
+from typing import Any, Dict, Iterable, List, Set, Tuple
 
 # Secret-like keywords to flag from environment variable names
 _SECRET_KEYWORDS = (
@@ -27,6 +28,12 @@ _SENSITIVE_MOUNT_MARKERS = (
     "kube/config",
     "/var/lib/mysql",
 )
+
+# MITRE ATT&CK technique IDs for mapping
+_ATTACK_MAPPINGS = {
+    "remote_rce": ["T1190"],  # Exploit Public-Facing Application
+    "post_rce_secrets": ["T1552", "T1611"],  # Unsecured Credentials, Escape to Host
+}
 
 
 def _looks_like_secret(var_name: str) -> bool:
@@ -101,6 +108,96 @@ def _parse_dockerfile(path: Path) -> Dict[str, Any]:
     }
 
 
+def _parse_netstat_output(text: str) -> Tuple[Set[int], List[str]]:
+    """Parse `netstat`/`ss` outputs and return listening ports and raw lines."""
+
+    listening_ports: Set[int] = set()
+    listener_lines: List[str] = []
+
+    for raw in text.splitlines():
+        if "LISTEN" not in raw.upper():
+            continue
+        # Common formats: tcp   0  0 0.0.0.0:80   0.0.0.0:*   LISTEN   123/nginx
+        match = re.search(r":(\d+)\b", raw)
+        if match:
+            try:
+                listening_ports.add(int(match.group(1)))
+                listener_lines.append(raw.strip())
+            except ValueError:
+                continue
+    return listening_ports, listener_lines
+
+
+def _parse_ps_output(text: str) -> Tuple[List[str], List[str]]:
+    """Parse `ps aux` style output and return processes plus root-owned ones."""
+
+    processes: List[str] = []
+    root_processes: List[str] = []
+
+    for raw in text.splitlines():
+        stripped = raw.strip()
+        if not stripped or stripped.upper().startswith("USER"):
+            continue
+
+        parts = stripped.split()
+        user = parts[0]
+        command = " ".join(parts[10:]) if len(parts) >= 11 else " ".join(parts[1:])
+        entry = f"{user}: {command}".strip()
+        if entry:
+            processes.append(entry)
+        if user.lower() == "root":
+            root_processes.append(command or "(unknown)")
+
+    return processes, root_processes
+
+
+def _collect_runtime_facts(sources_dir: Path) -> Dict[str, Any]:
+    """Collect optional runtime artefacts such as netstat/ps outputs."""
+
+    runtime_dir = sources_dir / "runtime"
+    runtime_ports: Set[int] = set()
+    listener_lines: List[str] = []
+    processes: List[str] = []
+    root_processes: List[str] = []
+
+    if not runtime_dir.exists():
+        return {
+            "runtime_ports": [],
+            "runtime_listeners": [],
+            "runtime_processes": [],
+            "runtime_root_processes": [],
+        }
+
+    for candidate in ("netstat.txt", "ss.txt", "netstat", "ss_output.txt"):
+        path = runtime_dir / candidate
+        if path.exists():
+            try:
+                text = path.read_text(encoding="utf-8", errors="ignore")
+            except OSError:
+                continue
+            ports, listeners = _parse_netstat_output(text)
+            runtime_ports.update(ports)
+            listener_lines.extend(listeners)
+
+    for candidate in ("ps.txt", "ps.log", "ps_output.txt"):
+        path = runtime_dir / candidate
+        if path.exists():
+            try:
+                text = path.read_text(encoding="utf-8", errors="ignore")
+            except OSError:
+                continue
+            proc_entries, root_entries = _parse_ps_output(text)
+            processes.extend(proc_entries)
+            root_processes.extend(root_entries)
+
+    return {
+        "runtime_ports": sorted(runtime_ports),
+        "runtime_listeners": listener_lines,
+        "runtime_processes": processes,
+        "runtime_root_processes": root_processes,
+    }
+
+
 def _collect_container_facts(sources_dir: Path) -> Dict[str, Any]:
     exposed_ports: Set[int] = set()
     env_keys: Set[str] = set()
@@ -108,28 +205,29 @@ def _collect_container_facts(sources_dir: Path) -> Dict[str, Any]:
     run_user: str | None = None
     dockerfile_paths: List[str] = []
 
-    if not sources_dir.exists():
-        return {
-            "exposed_ports": [],
-            "env_keys": [],
-            "secret_env_keys": [],
-            "sensitive_mounts": [],
-            "run_user": None,
-            "runs_as_root": True,
-            "dockerfiles": dockerfile_paths,
-        }
+    runtime_facts = _collect_runtime_facts(sources_dir) if sources_dir.exists() else {
+        "runtime_ports": [],
+        "runtime_listeners": [],
+        "runtime_processes": [],
+        "runtime_root_processes": [],
+    }
 
-    for dockerfile in sources_dir.rglob("Dockerfile"):
-        dockerfile_paths.append(str(dockerfile))
-        parsed = _parse_dockerfile(dockerfile)
-        exposed_ports.update(parsed["exposed_ports"])
-        env_keys.update(parsed["env_keys"])
-        sensitive_mounts.update(parsed["sensitive_mounts"])
-        # Last USER directive wins
-        if parsed["run_user"] is not None:
-            run_user = parsed["run_user"]
+    if sources_dir.exists():
+        for dockerfile in sources_dir.rglob("Dockerfile"):
+            dockerfile_paths.append(str(dockerfile))
+            parsed = _parse_dockerfile(dockerfile)
+            exposed_ports.update(parsed["exposed_ports"])
+            env_keys.update(parsed["env_keys"])
+            sensitive_mounts.update(parsed["sensitive_mounts"])
+            # Last USER directive wins
+            if parsed["run_user"] is not None:
+                run_user = parsed["run_user"]
 
     secret_env_keys = sorted(key for key in env_keys if _looks_like_secret(key))
+
+    runs_as_root = (run_user is None or run_user.lower() == "root") or bool(
+        runtime_facts.get("runtime_root_processes")
+    )
 
     return {
         "exposed_ports": sorted(exposed_ports),
@@ -137,8 +235,10 @@ def _collect_container_facts(sources_dir: Path) -> Dict[str, Any]:
         "secret_env_keys": secret_env_keys,
         "sensitive_mounts": sorted(sensitive_mounts),
         "run_user": run_user,
-        "runs_as_root": run_user is None or run_user.lower() == "root",
+        "runs_as_root": runs_as_root,
         "dockerfiles": dockerfile_paths,
+        **runtime_facts,
+
     }
 
 
@@ -191,15 +291,41 @@ def detect_killchains(sources_dir: Path, trivy_data: Dict[str, Any]) -> List[Dic
 
     findings: List[Dict[str, Any]] = []
 
-    if network_rces and facts["exposed_ports"] and facts["runs_as_root"]:
+    observed_ports = set(facts["exposed_ports"]) | set(facts["runtime_ports"])
+
+    if network_rces and observed_ports and facts["runs_as_root"]:
         cve_list = sorted(
-            {v.get("id") or v.get("VulnerabilityID") for v in network_rces if v.get("id") or v.get("VulnerabilityID")}
+             {
+                v.get("id") or v.get("VulnerabilityID")
+                for v in network_rces
+                if v.get("id") or v.get("VulnerabilityID")
+            }
         )
         evidences = [
             f"Network-exploitable CVEs: {', '.join(cve_list)}",
             f"Exposed ports in Dockerfile: {_format_ports(facts['exposed_ports'])}",
-            "Container runs as root (USER not set)" if facts["run_user"] is None else f"Container runs as user '{facts['run_user']}'",
+
         ]
+        if facts["runtime_ports"]:
+            evidences.append(
+                "Observed listening ports at runtime: "
+                + _format_ports(facts["runtime_ports"])
+            )
+        if facts["runtime_listeners"]:
+            evidences.append(
+                "Runtime listeners (netstat/ss): "
+                + "; ".join(facts["runtime_listeners"][:3])
+            )
+        if facts["run_user"] is None:
+            evidences.append("Container runs as root (USER not set)")
+        else:
+            evidences.append(f"Container runs as user '{facts['run_user']}'")
+        if facts["runtime_root_processes"]:
+            evidences.append(
+                "Root-owned runtime processes: "
+                + "; ".join(facts["runtime_root_processes"][:3])
+            )
+
         findings.append(
             {
                 "rule_id": "KILLCHAIN_REMOTE_RCE_ROOT",
@@ -207,6 +333,7 @@ def detect_killchains(sources_dir: Path, trivy_data: Dict[str, Any]) -> List[Dic
                 "severity": "HIGH",
                 "description": "네트워크에서 악용 가능한 RCE와 외부 노출 포트, root 권한이 결합되어 즉시 컨테이너 장악이 가능합니다.",
                 "evidences": evidences,
+                "attack_mappings": _ATTACK_MAPPINGS["remote_rce"],
             }
         )
 
@@ -228,6 +355,7 @@ def detect_killchains(sources_dir: Path, trivy_data: Dict[str, Any]) -> List[Dic
                     "severity": "CRITICAL",
                     "description": "컨테이너 탈취 시 시크릿 또는 민감 마운트를 이용해 내부 자산이나 호스트로 이동이 가능합니다.",
                     "evidences": lateral_evidence,
+                    "attack_mappings": _ATTACK_MAPPINGS["post_rce_secrets"],
                 }
             )
 
