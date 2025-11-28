@@ -228,25 +228,26 @@ const UploadPanel = () => {
                 disabled={uploading}
             />
             
-            {/* Progress Bar */}
-            {uploading && (
-                <div className="w-full bg-gray-200 rounded-full h-2.5 mb-3 mt-2">
-                    <div 
-                        className="bg-blue-600 h-2.5 rounded-full text-[10px] font-medium text-white transition-all duration-300 ease-out flex items-center justify-center" 
-                        style={{ width: `${progress}%` }}
-                    >
-                        {progress > 10 ? `${progress}%` : ''}
-                    </div>
-                </div>
-            )}
+            {/* ❌ Progress Bar 제거됨 */}
 
             {/* Upload/Action Buttons */}
             <button
-                className="btn-primary w-full rounded-full px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition mb-2 disabled:opacity-50 mt-3"
+                className="relative overflow-hidden w-full rounded-full px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition mb-2 disabled:opacity-50 mt-3"
                 onClick={handleUploadStart}
                 disabled={!file || uploading}
             >
-                {uploading ? (progress < 100 ? `Uploading... (${progress}%)` : 'Processing...') : '분석 시작'}
+                {/* 🎨 Progress background bar (버튼을 로딩바로 활용) */}
+                {uploading && (
+                    <span
+                        className="absolute inset-0 bg-blue-700 opacity-70 transition-all duration-300 ease-out"
+                        style={{ width: `${progress}%` }}
+                        aria-hidden="true"
+                    ></span>
+                )}
+                {/* 버튼 텍스트 (항상 중앙에 표시) */}
+                <span className="relative z-10">
+                    {uploading ? (progress < 100 ? `Uploading... (${progress}%)` : 'Processing...') : '분석 시작'}
+                </span>
             </button>
             
             <button 

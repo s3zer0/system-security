@@ -12,3 +12,19 @@ body, html, button, input, textarea, select {
 code, pre, kbd, samp {
     font-family: 'Nanum Gothic Coding', monospace;
 }
+
+/* --- 스크롤 애니메이션 정의 추가 --- */
+
+/* fadeIn 애니메이션의 동작 정의 */
+@keyframes fadeIn {
+  /* 시작 상태: 투명하고 아래로 20px 이동한 상태 */
+  from { opacity: 0; transform: translateY(20px); }
+  /* 끝 상태: 완전히 불투명하고 원래 위치로 복귀 */
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Tailwind CSS에서 사용할 수 있는 클래스 정의 */
+.animate-fadeIn {
+  /* 애니메이션 이름, 지속 시간 (0.8초), 타이밍 함수 (ease-out), 종료 시 상태 유지 (forwards) */
+  animation: fadeIn 0.8s ease-out forwards;
+}
