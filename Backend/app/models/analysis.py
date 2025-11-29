@@ -75,7 +75,7 @@ class AnalysisResult(BaseModel):
     vulnerabilities: List[Vulnerability] = Field(default_factory=list)
     libraries_and_apis: List[LibraryApiMapping] = Field(default_factory=list)
     patch_priority: List[PatchPriorityItem] = Field(default_factory=list)
-    killchains : List[KillchainFinding] = Field(default_factory=list)
+    killchains: List[KillchainFinding] = Field(default_factory=list)
     logs: List[str] = Field(default_factory=list)
 
 

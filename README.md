@@ -47,6 +47,11 @@ python main.py --image test_target/pyyaml-vuln.tar --run-security-analysis --emi
 5. **CVE ↔ API mapping (LLM)** – `cve_api_mapper`가 GPT‑5 등 여러 모델을 비교 실행해 결과를 `DB/gpt5_results.json` 등에 저장합니다.
 6. **Patch priority** – `fetch_priority`가 AST/Trivy/LLM 결과를 모아 패치 우선순위와 권장 조치를 `DB/fetch_priority.json`으로 출력합니다.
 
+## Killchain detection & runtime evidence
+- `Backend/app/core/killchain_detector.py`는 Dockerfile에서 노출 포트/USER/ENV/VOLUME 정보를 파싱하고, Trivy 취약점 중 네트워크 RCE 특성을 갖는 항목을 매칭해 **원격 RCE → 컨테이너 탈취** 및 **시크릿/호스트 확장** 킬체인을 보고합니다.
+- `sources_dir/runtime/`에 존재할 경우 `netstat.txt`·`ss.txt`(리스닝 포트)와 `ps.txt`(프로세스/루트 프로세스)까지 읽어 규칙 근거에 포함하며, MITRE ATT&CK 기법 ID도 함께 제공합니다.
+- 분석 결과의 `killchains` 필드는 각 규칙의 `rule_id`, `severity`, `evidences`, `attack_mappings`를 담고 있으므로 API 소비자는 킬체인별 근거를 UI에 바로 노출할 수 있습니다.
+
 ## Documentation
 자세한 단계별 설명과 산출물 구조, 모듈별 CLI 예시는 [report.md](report.md)에서 확인할 수 있습니다.
 
