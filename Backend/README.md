@@ -24,7 +24,7 @@ Backend 서비스는 Docker 이미지(`.tar`)를 업로드 받으면 전체 취�
 5. **AST 호출 그래프 분석 (`ast_visualizer/`)**
    - `step_ast_analysis` 이 `ast_visualizer.utils.ast_to_png.visualize_call_flow()` 를 실행하여 `ast_visualize_result.json` 과 필요 시 Graphviz 파일, LLM 기반 보안 분석(`ast_visualize_security_analysis.json`)을 만듭니다.
 6. **CVE ↔ API 상관관계 확장 (`cve_api_mapper/`)**
-   - `step_cve_api_mapper` 가 `CveApiMapper` 를 호출하여 GPT-5 기반 CVE-API 근거(`cve_api_mapper_results/gpt-5_results.json`)와 원본 응답(`cve_api_mapper_raw/`)을 남기고 요약본을 `gpt5_results.json` 으로 복사합니다.
+   - `step_cve_api_mapper` 가 `CveApiMapper` 를 호출하여 Claude Opus 4.5 기반 CVE-API 근거(`cve_api_mapper_results/claude-opus-4.5_results.json`)와 원본 응답(`cve_api_mapper_raw/claude-opus-4.5_raw_responses.json`)을 남기고, 호환성을 위해 요약본을 `gpt5_results.json` 으로 복사합니다.
 7. **패치 우선순위 산출 (`fetch_priority/`)**
    - `step_fetch_priority` 가 `fetch_priority.module.PatchPriorityEvaluator` 를 통해 AST/Trivy/LLM 산출물과 Perplexity 사례를 결합해 `fetch_priority.json` 을 생성합니다.
 8. **Result/meta 생성 및 저장**
@@ -48,13 +48,13 @@ Backend/DB/
 │   ├── lib2cve2api.json             # 라이브러리→CVE→API 매핑
 │   ├── ast_visualize_result.json    # AST 호출 그래프 요약
 │   ├── ast_visualize_security_analysis.json?  # (옵션) LLM 기반 AST 보안 분석
-│   ├── gpt5_results.json            # GPT-5 CVE-API 매핑 요약본
+│   ├── gpt5_results.json            # Claude Opus CVE-API 매핑 요약본(호환 이름)
 │   ├── fetch_priority.json          # PatchPriorityEvaluator 출력
 │   ├── fetch_prioiriy_raw_response.json # 패치 우선순위 LLM raw 스냅샷
 │   ├── cve_api_mapper_results/
-│   │   └── gpt-5_results.json       # 모델별 정밀 결과 & 비교 리포트
+│   │   └── claude-opus-4.5_results.json       # 모델별 정밀 결과 & 비교 리포트
 │   ├── cve_api_mapper_raw/
-│   │   └── gpt-5_raw_responses.json # GPT-5 원본 응답
+│   │   └── claude-opus-4.5_raw_responses.json # Claude Opus 원본 응답
 │   ├── perplexity_raw_responses/    # 실제 공격 사례 검색 raw 결과
 │   ├── output/                      # 추출된 애플리케이션 소스 스냅샷
 │   └── ast_visualize*               # Graphviz/PNG 출력물 접두사

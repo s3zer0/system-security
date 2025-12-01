@@ -29,7 +29,7 @@ The analysis pipeline uses the **Orchestrator Pattern**, where `AnalysisEngine` 
 
 **Key Methods**:
 - `build_library_cve_api_mapping()`: Maps libraries to CVEs and APIs
-- `run_cve_api_mapper()`: Runs GPT-5 powered CVE-API mapping
+- `run_cve_api_mapper()`: Runs Claude Opus 4.5 powered CVE-API mapping
 
 #### 4. ASTAnalysisService
 **Responsibility**: Perform AST call graph and security analysis

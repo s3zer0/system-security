@@ -10,6 +10,7 @@ from google import genai
 from google.genai import types
 
 logger = logging.getLogger(__name__)
+CLAUDE_OPUS_MODEL_ID = "claude-opus-4-5-20251101"
 
 class LLMClient:
     """LLM 클라이언트의 기본 클래스"""
@@ -218,10 +219,18 @@ class CveApiMapper:
         
         # 테스트할 모델 리스트 (기본값: 모든 모델)
         if models_to_test is None:
-            models_to_test = ["gpt-5", "claude-sonnet-4.5", "grok-4", "gemini-2.5-pro"]
+            models_to_test = ["claude-opus-4.5", "claude-sonnet-4.5", "grok-4", "gemini-2.5-pro"]
         
         # 클라이언트 초기화
         self.clients = {}
+
+        if "claude-opus-4.5" in models_to_test:
+            api_key = os.getenv("ANTHROPIC_API_KEY")
+            if api_key:
+                self.clients["claude-opus-4.5"] = ClaudeClient(api_key, CLAUDE_OPUS_MODEL_ID)
+                logger.info("Claude Opus 4.5 client initialized")
+            else:
+                logger.warning("ANTHROPIC_API_KEY not found, skipping Claude Opus")
         
         if "gpt-5" in models_to_test:
             api_key = os.getenv("OPENAI_API_KEY")

@@ -73,10 +73,10 @@ def main():
         return
 
     # 테스트할 모델 선택 (명령행 인자로 받을 수 있음)
-    models_to_test = ["gpt-5", "claude-sonnet-4.5", "grok-4", "gemini-2.5-pro"]
+    models_to_test = ["claude-opus-4.5", "claude-sonnet-4.5", "grok-4", "gemini-2.5-pro"]
     
     if len(sys.argv) > 1:
-        # 명령행에서 모델 선택: python main.py gpt-5 claude-sonnet-4.5
+        # 명령행에서 모델 선택: python main.py claude-opus-4.5 claude-sonnet-4.5
         models_to_test = sys.argv[1:]
         logging.info(f"Testing selected models: {models_to_test}")
     else:
@@ -113,6 +113,6 @@ if __name__ == "__main__":
     main()
 
 # 사용 예시:
-# python3 main.py                              # 모든 모델을 테스트합니다.
-# python3 main.py gpt-5                        # GPT-5만 테스트합니다.
-# python3 main.py gpt-5 claude-sonnet-4.5     # GPT-5와 Claude를 함께 테스트합니다.
+# python3 main.py                                    # 모든 모델을 테스트합니다.
+# python3 main.py claude-opus-4.5                    # Claude Opus 4.5만 테스트합니다.
+# python3 main.py claude-opus-4.5 claude-sonnet-4.5 # Opus와 Claude Sonnet을 함께 테스트합니다.

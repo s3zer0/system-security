@@ -88,7 +88,7 @@
 - `trivy_extracter/main.py` – Trivy CLI 를 호출해 `trivy_analysis_result.json` 을 생성하고, `--enhance` 플래그 사용 시 `description_enhancer.DescriptionEnhancer` 로 CVE 설명을 Anthropic API 기반으로 재작성한다. `analysis_engine.step_trivy_scan()` 이 동일 모듈을 import 하여 사용한다.
 - `python_api_extracter/main.py` – Trivy JSON 을 파싱해 패키지/버전별 CVE 목록을 만들고, `extracter/package_api_extractor.py` 가 임시 가상환경에서 해당 버전을 설치한 뒤 `extract_apis.py` 스크립트를 통해 모듈별 API 리스트를 덤프한다. 출력은 `lib2cve2api.json`.
 - `ast_visualizer/main.py` – 지정된 디렉터리를 순회하며 Python 파일을 모두 분석하고 `ast_visualizer/utils/ast_to_png.py` 를 사용해 호출 그래프와 그래프 이미지, API 분류를 생성한다. `--security-analysis` 옵션 시 `utils/security_analyzer.py` 가 Anthropic API 로 고위험 API, 아키텍처 이슈 등을 JSON 으로 반환한다. FastAPI 파이프라인에서는 그래프 생성 여부(`emit_graph`), 보안 분석 여부(`run_security_analysis`)에 따라 출력 파일을 제어한다.
-- `cve_api_mapper/mapper/cve_api_mapper.py` – `CveApiMapper` 는 GPT-5(OpenAI), Claude(Anthropic), Gemini(Google), Grok(X.AI) 각각에 대해 공통 프롬프트(`LLMClient.create_prompt`)로 CVE와 API 사이 근거를 요청한다. 응답 JSON 을 파싱해 모델별 결과 디렉터리에 저장하고, 파싱 실패 시 raw 응답을 그대로 남긴다. `analysis_engine.step_cve_api_mapper()` 는 결과 중 `gpt-5_results.json` 을 복사해 FastAPI 응답에 포함한다.
+- `cve_api_mapper/mapper/cve_api_mapper.py` – `CveApiMapper` 는 Claude Opus 4.5(Anthropic)를 기본으로, 추가로 선택된 Claude/Gemini/Grok 모델을 공통 프롬프트(`LLMClient.create_prompt`)로 호출해 CVE와 API 사이 근거를 요청한다. 응답 JSON 을 파싱해 모델별 결과 디렉터리에 저장하고, 파싱 실패 시 raw 응답을 그대로 남긴다. `analysis_engine.step_cve_api_mapper()` 는 결과 중 `claude-opus-4.5_results.json` 을 복사해 FastAPI 응답에 포함한다(호환 파일명 `gpt5_results.json`).
 - `fetch_priority/module/evaluator.py` – `PatchPriorityEvaluator` 는 Trivy/AST/LLM 결과를 로드하고 EPSS API, Perplexity 사례 검색기(`perplexity_searcher.py`)를 통해 실사례 정보를 수집한다. 각 CVE 에 대해 API 사용 여부(`analyze_api_usage`), 외부 노출 여부, EPSS 점수, 사례 유무를 종합하여 `modules_by_priority` 리스트를 만들고, 이를 `fetch_priority.json` 으로 저장한다. `analysis_engine.step_fetch_priority()` 가 이 파일을 최종 Result 의 `patch_priority` 로 변환한다.
 
 ## 5. 데이터 포맷 및 계약(Contract) 정리
@@ -107,7 +107,7 @@ image.tar
  ├─ search_source → output/ (소스 스냅샷)
  ├─ trivy_extracter → trivy_analysis_result.json
  │    └─ python_api_extracter → lib2cve2api.json
- │          └─ cve_api_mapper → cve_api_mapper_results/, gpt5_results.json
+ │          └─ cve_api_mapper → cve_api_mapper_results/claude-opus-4.5_results.json, gpt5_results.json(호환)
  ├─ ast_visualizer → ast_visualize_result.json (+ security_analysis)
  └─ fetch_priority (inputs: ast_result, gpt5_results, lib2cve2api, trivy, Perplexity raw)
        └─ fetch_priority.json

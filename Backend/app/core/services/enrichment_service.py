@@ -54,7 +54,7 @@ class EnrichmentService:
 
         Args:
             ast_json: Path to AST analysis results
-            gpt5_json: Path to GPT-5 CVE-API mapping results
+            gpt5_json: Path to Claude Opus CVE-API mapping results (legacy filename: gpt5_results.json)
             mapping_json: Path to library CVE API mapping
             trivy_json: Path to Trivy scan results
             output_json: Path to write priority evaluation results
@@ -90,7 +90,7 @@ class EnrichmentService:
             missing_files = []
             for name, path in [
                 ("AST", ast_json),
-                ("GPT-5 results", gpt5_json),
+                ("Claude Opus results", gpt5_json),
                 ("Library mapping", mapping_json),
                 ("Trivy results", trivy_json),
             ]:

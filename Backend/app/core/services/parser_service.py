@@ -123,14 +123,14 @@ class ParserService:
         force: bool = False,
     ) -> None:
         """
-        Run the GPT-5 powered CVE -> API mapping job.
+        Run the Claude Opus 4.5 powered CVE -> API mapping job.
 
         Args:
             trivy_output: Path to Trivy scan results
             mapping_output: Path to library CVE API mapping
             results_dir: Directory to store mapper results
             raw_dir: Directory to store raw LLM outputs
-            gpt5_output: Path to write final GPT-5 results
+            gpt5_output: Path to write final Claude Opus results (kept for compatibility)
             force: Force regeneration even if results exist
 
         Raises:
@@ -166,9 +166,9 @@ class ParserService:
                     exc
                 )
 
-            logger.info("Running CVE -> API mapper (GPT-5) -> %s", gpt5_output)
+            logger.info("Running CVE -> API mapper (Claude Opus 4.5) -> %s", gpt5_output)
 
-            mapper = CveApiMapper(models_to_test=["gpt-5"])
+            mapper = CveApiMapper(models_to_test=["claude-opus-4.5"])
             mapper.run_analysis(
                 trivy_input_file=str(trivy_output),
                 api_input_file=str(mapping_output),
@@ -177,7 +177,7 @@ class ParserService:
             )
 
             # Verify mapper produced expected output
-            source_file = results_dir / "gpt-5_results.json"
+            source_file = results_dir / "claude-opus-4.5_results.json"
             if not source_file.exists():
                 raise ParserError(
                     f"CVE API mapper did not produce expected output file: {source_file}"
